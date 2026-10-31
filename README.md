@@ -7,7 +7,7 @@ the finished 12-page book can be read on screen (page turns, "Read to me") or do
 Theme: happy, joyous kindergarten ("Crayon Classroom"). Built on [Anvil](https://anvil.works).
 
 - **App repo:** github.com/arkulinskis/little-hero-books (branch `master`). Anvil pulls `master`.
-- **Live:** not published yet (Anvil: clone from GitHub, then publish).
+- **Live:** https://little-hero-books.anvil.app
 
 ## What it does
 
