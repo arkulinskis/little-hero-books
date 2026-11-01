@@ -389,7 +389,9 @@
   UI.ICONS.download = '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>';
   UI.ICONS.link = '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>';
   UI.ICONS.dice = '<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/>';
-  UI.ICONS.volume = '<path d="M5 10v4h3l4 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>';
+  UI.ICONS.brush = '<path d="M14.5 4.5 19.5 9.5 11 18l-5-5z"/><path d="M6 13c-2 0-3 1.5-3 3.5S2 20 2 20s4 .5 5.5-1 1.5-3.5 1.5-3.5"/><path d="m16.5 3 4.5 4.5"/>';
+  UI.ICONS.print = '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>';
+  UI.ICONS.volume ='<path d="M5 10v4h3l4 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>';
   UI.ICONS.smile = '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>';
 
   function brand() {
@@ -1265,6 +1267,7 @@
   'use strict';
   var LH = window.LH = window.LH || {};
   var esc = function (s) { return UI.esc(s); };
+  var INK = '#2B2350', SOFT = '#4A3F6B';
 
   LH.confetti = function () {
     var box = document.createElement('div'), cs = ['#ef5a36', '#ffc93c', '#3dbe8b', '#4ea8f5', '#8a6bd8', '#ff8fb8'];
@@ -1286,7 +1289,7 @@
 
   LH.coverHtml = function (story, hero, o) {
     o = o || {};
-    return '<div class="lh-cover" style="--cv:' + esc(story.color) + '"><div class="pic">' + LH.sceneSvg(story.key, 'cover', hero, { clip: LH.uid('cv') }) + '</div>' +
+    return '<div class="lh-cover' + (o.outline ? ' out' : '') + '" style="--cv:' + esc(story.color) + '"><div class="pic">' + LH.sceneSvg(story.key, 'cover', hero, { clip: LH.uid('cv'), outline: o.outline }) + '</div>' +
       '<div class="ttl"><span>' + esc(LH.title(story, hero)) + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span></div></div>';
   };
 
@@ -1294,6 +1297,14 @@
     var pages = [{ kind: 'cover' }, { kind: 'dedication' }];
     for (var i = 0; i < book.story.text.length; i++) pages.push({ kind: 'story', i: i });
     pages.push({ kind: 'end' });
+    return pages;
+  };
+  /* The PDF's pages: a colouring book always gets a "draw your favourite part" page, and a print-ready book gets it
+     when needed to make the inside pages an even number (printers bind sheets, two pages each). */
+  LH.pdfPages = function (book, opts) {
+    var pages = LH.bookPages(book);
+    opts = opts || {};
+    if (opts.outline || (opts.print && (pages.length - 1) % 2)) pages.splice(pages.length - 1, 0, { kind: 'draw' });
     return pages;
   };
   LH.dedication = function (book) {
@@ -1304,23 +1315,25 @@
     var d = book.created ? new Date(book.created) : new Date();
     return 'Made with Little Hero Books on ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '.';
   };
+  function portrait(hero, o) { return hero ? LH.bookAvatar(hero.look, o) : (o.outline ? LH.outline : LH.soften)(LH.avatarSvg(null, Object.assign({}, o, { ghost: true }))); }
 
-  LH.pageHtml = function (book, p, n, total) {
-    var hero = book.hero, st = book.story, clip = LH.uid('pg');
+  LH.pageHtml = function (book, p, n, total, mode) {
+    mode = mode || {};
+    var hero = book.hero, st = book.story, clip = LH.uid('pg'), out = !!mode.outline, so = { clip: clip, outline: out, grain: !out };
     if (p.kind === 'cover') {
-      return '<div class="rd-cov" style="--cv:' + esc(st.color) + '"><div class="rd-pic">' + LH.sceneSvg(st.key, 'cover', hero, { clip: clip }) + '</div>' +
-        '<h2>' + esc(LH.title(st, hero)) + '<small>A Little Hero Book</small></h2></div>';
+      return '<div class="rd-cov" style="--cv:' + esc(st.color) + '"><div class="rd-pic">' + LH.sceneSvg(st.key, 'cover', hero, so) + '</div>' +
+        '<h2>' + esc(LH.title(st, hero)) + '<small>' + (out ? 'A Little Hero colouring book' : 'A Little Hero Book') + '</small></h2></div>';
     }
     if (p.kind === 'dedication') {
       var h = hero || LH.GENERIC;
-      return '<div class="rd-ded"><div class="frame">' + (hero ? LH.avatarSvg(hero.look, { crop: 'head', mood: 'laugh' }) : LH.avatarSvg(null, { crop: 'head', ghost: true })) + '</div>' +
-        '<div class="belongs">This book belongs to</div><div class="who">' + esc(h.name) + '</div><p class="msg">' + esc(LH.dedication(book)) + '</p></div>';
+      return '<div class="rd-ded"><div class="frame">' + portrait(hero, { crop: 'head', mood: 'laugh', outline: out }) + '</div>' +
+        '<div class="belongs">' + (out ? 'This colouring book belongs to' : 'This book belongs to') + '</div><div class="who">' + esc(h.name) + '</div><p class="msg">' + esc(LH.dedication(book)) + '</p></div>';
     }
     if (p.kind === 'end') {
-      return '<div class="rd-end"><div class="fig">' + (hero ? LH.avatarSvg(hero.look, { pose: 'wave', mood: 'laugh' }) : LH.avatarSvg(null, { ghost: true })) + '</div>' +
+      return '<div class="rd-end"><div class="fig">' + portrait(hero, { pose: 'wave', mood: 'laugh', outline: out }) + '</div>' +
         '<h2>The End</h2><p>' + esc(st.source) + '</p><p>' + esc(LH.madeLine(book)) + '</p></div>';
     }
-    return '<div class="rd-pic">' + LH.sceneSvg(st.key, p.i, hero, { clip: clip }) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
+    return '<div class="rd-pic">' + LH.sceneSvg(st.key, p.i, hero, so) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
       '<div class="rd-num">' + (p.i + 1) + '</div>';
   };
   LH.pageSpeech = function (book, p) {
@@ -1331,19 +1344,52 @@
     return LH.fill(book.story.text[p.i], book.hero);
   };
 
+  /* ------------------------------------------------------------------ colour me in (on screen) */
+  LH.CRAYONS = ['#EF5A36', '#FF9A3C', '#FFC93C', '#FFE36B', '#8ED37A', '#3DBE8B', '#7FC8F8', '#4EA8F5', '#8A6BD8', '#FF8FB8', '#C98B4E', '#F6CFAE', '#9C98AE', '#2B2350'];
+  var SHAPES = 'svg path, svg circle, svg ellipse, svg rect, svg text';
+  /* What a tap colours: a filled shape's fill, or the white middle of an outlined thick line. Ink stays ink. */
+  function paintable(el) {
+    if (el.closest('clipPath, defs')) return null;
+    var f = (el.getAttribute('fill') || '').toUpperCase(), s = (el.getAttribute('stroke') || '').toUpperCase();
+    if (f && f !== 'NONE' && f !== INK && f.indexOf('URL') < 0) return 'fill';
+    if ((!f || f === 'NONE') && s && s !== INK) return 'stroke';
+    return null;
+  }
+  /* A tap on one circle of a cloud or bush colours the whole puff (blob() draws its circles side by side). */
+  function puff(el) {
+    var group = [el];
+    if (el.tagName.toLowerCase() !== 'circle' || el.hasAttribute('stroke')) return group;
+    var same = function (n) { return n && n.tagName && n.tagName.toLowerCase() === 'circle' && !n.hasAttribute('stroke') && (n.getAttribute('fill') || '').toUpperCase() !== INK; };
+    for (var a = el.previousElementSibling; same(a); a = a.previousElementSibling) group.push(a);
+    for (var b = el.nextElementSibling; same(b); b = b.nextElementSibling) group.push(b);
+    return group;
+  }
+
   /* ------------------------------------------------------------------ the reader */
   LH.reader = function (el, book, opts) {
     opts = opts || {};
     var pages = LH.bookPages(book), at = Math.min(opts.start || 0, pages.length - 1), seen = {}, reading = false, finished = false;
-    el.innerHTML = '<div class="rd"><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
+    var colouring = false, crayon = LH.CRAYONS[0], painted = {};
+    el.innerHTML = '<div class="rd"><div data-rd-crayons></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
       '<div class="rd-book" data-rd-book></div><button class="rd-nav next" data-rd="next" aria-label="Next page">' + UI.icon('arrow') + '</button></div>' +
       '<div class="rd-bar"><div class="rd-dots" data-rd-dots></div><div class="rd-tools">' +
       ('speechSynthesis' in window ? '<button class="ui-btn sm" data-rd="speak">' + UI.icon('chat') + '<span>Read to me</span></button>' : '') +
+      (opts.colour === false ? '' : '<button class="ui-btn sm" data-rd="colour">' + UI.icon('brush') + '<span>Colour me in</span></button>') +
       (opts.tools || '') + '</div></div></div>';
-    var bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]');
+    var bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]');
+    function drawCrayons() {
+      crayEl.innerHTML = colouring ? '<div class="rd-crayons"><div class="hint">Pick a crayon, then tap the picture</div>' + LH.CRAYONS.map(function (c) {
+        return '<button type="button" data-crayon="' + c + '" style="--cr:' + c + '" class="' + (c === crayon ? 'on' : '') + '" aria-label="Crayon ' + c + '"></button>';
+      }).join('') + '<button type="button" data-crayon="#FFFFFF" style="--cr:#fff" class="' + (crayon === '#FFFFFF' ? 'on' : '') + '" aria-label="Rubber" title="Rubber">' + UI.icon('x') + '</button></div>' : '';
+    }
     function draw(dir) {
       seen[at] = true;
-      bookEl.innerHTML = '<div class="rd-page' + (dir < 0 ? ' back' : '') + '">' + LH.pageHtml(book, pages[at], at, pages.length) + '</div>';
+      bookEl.classList.toggle('out', colouring);
+      bookEl.innerHTML = '<div class="rd-page' + (dir < 0 ? ' back' : '') + '">' + LH.pageHtml(book, pages[at], at, pages.length, { outline: colouring }) + '</div>';
+      if (colouring && painted[at]) {
+        var list = bookEl.querySelectorAll(SHAPES);
+        Object.keys(painted[at]).forEach(function (i) { var p = painted[at][i]; if (list[i]) list[i].setAttribute(p[0], p[1]); });
+      }
       el.querySelector('[data-rd=prev]').disabled = at === 0;
       el.querySelector('[data-rd=next]').disabled = at === pages.length - 1;
       dots.innerHTML = pages.map(function (p, i) { return '<button data-rd-go="' + i + '" class="' + (i === at ? 'on' : seen[i] ? 'seen' : '') + '" aria-label="Page ' + (i + 1) + '"></button>'; }).join('');
@@ -1374,14 +1420,30 @@
       var b = el.querySelector('[data-rd=speak]');
       if (b) { b.classList.remove('on'); b.querySelector('span').textContent = 'Read to me'; }
     }
+    function paint(t) {
+      var list = Array.prototype.slice.call(bookEl.querySelectorAll(SHAPES));
+      puff(t).forEach(function (s) {
+        var how = paintable(s);
+        if (!how) return;
+        s.setAttribute(how, crayon);
+        (painted[at] = painted[at] || {})[list.indexOf(s)] = [how, crayon];
+      });
+    }
     el.addEventListener('click', function (e) {
+      var c = e.target.closest('[data-crayon]');
+      if (c) { crayon = c.getAttribute('data-crayon'); drawCrayons(); return; }
+      if (colouring && e.target.closest('[data-rd-book] svg') && /^(path|circle|ellipse|rect|text)$/i.test(e.target.tagName)) { paint(e.target); return; }
       var b = e.target.closest('[data-rd],[data-rd-go]');
       if (!b) return;
       if (b.hasAttribute('data-rd-go')) return go(+b.getAttribute('data-rd-go'));
       var k = b.getAttribute('data-rd');
       if (k === 'prev') go(at - 1);
       else if (k === 'next') go(at + 1);
-      else if (k === 'speak') {
+      else if (k === 'colour') {
+        colouring = !colouring;
+        b.classList.toggle('on', colouring); b.querySelector('span').textContent = colouring ? 'Back to colour' : 'Colour me in';
+        drawCrayons(); draw(1);
+      } else if (k === 'speak') {
         if (reading) return stopSpeak();
         reading = true; b.classList.add('on'); b.querySelector('span').textContent = 'Stop reading'; speak();
       }
@@ -1401,13 +1463,18 @@
     });
     draw(1);
     return {
-      go: go, at: function () { return at; }, count: pages.length,
+      go: go, at: function () { return at; }, count: pages.length, colouring: function () { return colouring; },
       destroy: function () { document.removeEventListener('keydown', key); stopSpeak(); }
     };
   };
 
-  /* ------------------------------------------------------------------ PDF */
-  var PX = 1500, INK = '#2B2350';
+  /* ------------------------------------------------------------------ PDF
+     Pages are laid out on a 1500 x 1500 grid (an 8 x 8 in page). For home printing that grid is the canvas; for a
+     print-ready book the canvas is the trim size plus bleed at 300 dpi and the grid is scaled into it, with the
+     background running out into the bleed. Keep text and faces at least ~50 grid units inside the edge. */
+  var PX = 1500, DPI = 300, K = 1, OUT = false, PRINT = false;
+  function ink() { return OUT ? INK : SOFT; }
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
   function svgImage(svg) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
@@ -1420,16 +1487,44 @@
     ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
     ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   }
+  function shadow(ctx, blur, dy, a) { ctx.shadowColor = 'rgba(74,63,107,' + a + ')'; ctx.shadowBlur = blur * K; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = dy * K; }
   function paper(ctx, bg) {
-    ctx.fillStyle = bg || '#FFF8EC'; ctx.fillRect(0, 0, PX, PX);
-    ctx.fillStyle = 'rgba(43,35,80,.06)';
-    for (var y = 18; y < PX; y += 36) for (var x = 18; x < PX; x += 36) { ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 7); ctx.fill(); }
-    ctx.fillStyle = 'rgba(43,35,80,.12)'; ctx.fillRect(0, 0, 18, PX);
+    ctx.fillStyle = OUT ? '#FFFFFF' : (bg || '#FFFAF0'); ctx.fillRect(-300, -300, PX + 600, PX + 600);
+    if (OUT) return;
+    if (!bg) {
+      // soft pastel light in the corners and a faint dot grid, like the app's paper
+      [[0, 0, '#FFC93C'], [PX, 0, '#FF8FB8'], [0, PX, '#3DBE8B'], [PX, PX, '#4EA8F5']].forEach(function (c) {
+        var gr = ctx.createRadialGradient(c[0], c[1], 0, c[0], c[1], 560); gr.addColorStop(0, rgba(c[2], .16)); gr.addColorStop(1, rgba(c[2], 0));
+        ctx.fillStyle = gr; ctx.fillRect(-300, -300, PX + 600, PX + 600);
+      });
+      ctx.fillStyle = 'rgba(74,63,107,.045)';
+      for (var y = 18; y < PX; y += 36) for (var x = 18; x < PX; x += 36) { ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 7); ctx.fill(); }
+    } else {
+      var hi = ctx.createRadialGradient(PX * .3, PX * .18, 0, PX * .3, PX * .18, PX * .75); hi.addColorStop(0, 'rgba(255,255,255,.34)'); hi.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hi; ctx.fillRect(-300, -300, PX + 600, PX + 600);
+    }
+    if (!PRINT) { var sp = ctx.createLinearGradient(0, 0, 30, 0); sp.addColorStop(0, 'rgba(74,63,107,.16)'); sp.addColorStop(1, 'rgba(74,63,107,0)'); ctx.fillStyle = sp; ctx.fillRect(0, 0, 30, PX); }
   }
+  /* A picture on a rounded white mat with a soft shadow (or a plain ink line in the colouring book). */
   function framed(ctx, img, x, y, w, h, r) {
-    ctx.save(); ctx.fillStyle = INK; rrect(ctx, x + 12, y + 12, w, h, r); ctx.fill(); ctx.restore();
-    ctx.save(); rrect(ctx, x, y, w, h, r); ctx.clip(); ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h); ctx.drawImage(img, x, y, w, h); ctx.restore();
-    ctx.save(); ctx.lineWidth = 7; ctx.strokeStyle = INK; rrect(ctx, x, y, w, h, r); ctx.stroke(); ctx.restore();
+    if (OUT) {
+      ctx.save(); rrect(ctx, x, y, w, h, r); ctx.clip(); ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h); ctx.drawImage(img, x, y, w, h); ctx.restore();
+      ctx.save(); ctx.lineWidth = 6; ctx.strokeStyle = INK; rrect(ctx, x, y, w, h, r); ctx.stroke(); ctx.restore();
+      return;
+    }
+    ctx.save(); shadow(ctx, 40, 16, .3); ctx.fillStyle = '#FFFFFF'; rrect(ctx, x - 16, y - 16, w + 32, h + 32, r + 14); ctx.fill(); ctx.restore();
+    ctx.save(); rrect(ctx, x, y, w, h, r); ctx.clip(); ctx.drawImage(img, x, y, w, h); ctx.restore();
+  }
+  function card(ctx, x, y, w, h, r, fill) {
+    if (OUT) { ctx.fillStyle = '#fff'; rrect(ctx, x, y, w, h, r); ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke(); return; }
+    ctx.save(); shadow(ctx, 34, 12, .24); ctx.fillStyle = fill || '#FFFAF0'; rrect(ctx, x, y, w, h, r); ctx.fill(); ctx.restore();
+  }
+  /* Big letters: soft colour with a white edge, or white outlined letters to colour in. */
+  function bigText(ctx, s, x, y, font, colour) {
+    ctx.save(); ctx.font = font; ctx.textAlign = 'center'; ctx.lineJoin = 'round';
+    if (OUT) { ctx.lineWidth = 10; ctx.strokeStyle = INK; ctx.strokeText(s, x, y); ctx.fillStyle = '#FFFFFF'; ctx.fillText(s, x, y); }
+    else { ctx.lineWidth = 18; ctx.strokeStyle = '#FFFFFF'; ctx.strokeText(s, x, y); shadow(ctx, 0, 8, .14); ctx.fillStyle = colour; ctx.fillText(s, x, y); }
+    ctx.restore();
   }
   /* Word-wrapped, centred text; words that contain the hero's name are drawn in tomato. */
   function wrap(ctx, words, maxW) {
@@ -1441,12 +1536,13 @@
     });
     return lines;
   }
+  function fontOf(weight, size, font) { return weight + ' ' + size + 'px "' + font + '", "Segoe UI", Arial, sans-serif'; }
   function textBlock(ctx, text, name, box, o) {
     o = o || {};
-    var size = o.size || 52, font = o.font || 'Nunito', weight = o.weight || 700, lh = o.lh || 1.42, lines;
+    var size = o.size || 52, font = o.font || 'Fredoka', weight = o.weight || 500, lh = o.lh || 1.42, lines;
     var words = text.split(/\s+/).filter(Boolean).map(function (t) { return { t: t, hi: !!(name && t.indexOf(name) >= 0) }; });
     for (; size > 24; size -= 2) {
-      ctx.font = weight + ' ' + size + 'px "' + font + '", "Segoe UI", Arial, sans-serif';
+      ctx.font = fontOf(weight, size, font);
       lines = wrap(ctx, words, box.w);
       if (lines.length * size * lh <= box.h) break;
     }
@@ -1455,76 +1551,95 @@
     lines.forEach(function (line) {
       var lw = line.reduce(function (a, b) { return a + b.w; }, 0) + space * (line.length - 1), x = box.x + (box.w - lw) / 2;
       line.forEach(function (wd) {
-        ctx.font = (wd.hi ? 800 : weight) + ' ' + size + 'px "' + font + '", "Segoe UI", Arial, sans-serif';
-        ctx.fillStyle = wd.hi ? '#C23B1A' : (o.color || INK);
+        ctx.font = fontOf(wd.hi ? Math.max(600, weight) : weight, size, font);
+        if (o.outlined) { ctx.save(); ctx.lineJoin = 'round'; ctx.lineWidth = 9; ctx.strokeStyle = INK; ctx.strokeText(wd.t, x, y); ctx.restore(); }
+        ctx.fillStyle = o.outlined ? '#FFFFFF' : wd.hi && !OUT ? '#D9532E' : (o.color || ink());
         ctx.fillText(wd.t, x, y);
         x += wd.w + space;
       });
       y += size * lh;
     });
   }
-  function drawPage(book, p, num) {
-    var c = document.createElement('canvas'); c.width = PX; c.height = PX;
-    var ctx = c.getContext('2d'), st = book.story, hero = book.hero, h = hero || LH.GENERIC, name = h.name;
+  function spaced(ctx, s, x, y, size, colour) {
+    ctx.save(); ctx.font = '800 ' + size + 'px Nunito, Arial, sans-serif'; ctx.fillStyle = OUT ? INK : colour; ctx.textAlign = 'center';
+    ctx.fillText(s.toUpperCase().split('').join(String.fromCharCode(8202)), x, y); ctx.restore();
+  }
+  function drawPage(book, p, num, opts) {
+    opts = opts || {};
+    OUT = !!opts.outline; PRINT = !!opts.print;
+    var size = PX, off = 0;
+    K = 1;
+    if (PRINT) { var trim = Math.round(opts.print.trim * DPI); size = Math.round((opts.print.trim + 2 * opts.print.bleed) * DPI); off = (size - trim) / 2; K = trim / PX; }
+    var c = document.createElement('canvas'); c.width = size; c.height = size;
+    var ctx = c.getContext('2d'), st = book.story, hero = book.hero, h = hero || LH.GENERIC, name = h.name, res = Math.max(1, K);
+    ctx.setTransform(K, 0, 0, K, off, off);
+    var o1 = OUT, p1 = PRINT, k1 = K, restore = function () { OUT = o1; PRINT = p1; K = k1; };  // pages may be drawn side by side
+    var sceneOpts = function (w) { return { w: Math.round(w * res), clip: 'pdf', outline: OUT, grain: !OUT }; };
+    var avatar = function (o) { return portrait(hero, Object.assign({ outline: OUT }, o)); };
+    function sized(svg, w, hgt) { return svg.replace('<svg ', '<svg width="' + Math.round(w * res) + '" height="' + Math.round(hgt * res) + '" '); }
     if (p.kind === 'cover') {
       paper(ctx, st.color);
-      return svgImage(LH.sceneSvg(st.key, 'cover', hero, { w: 1360, clip: 'pdf' })).then(function (img) {
-        framed(ctx, img, 80, 80, 1340, 938, 46);
-        ctx.fillStyle = INK; rrect(ctx, 92, 1092, 1340, 330, 40); ctx.fill();
-        ctx.fillStyle = '#FFF8EC'; rrect(ctx, 80, 1080, 1340, 330, 40); ctx.fill();
-        ctx.lineWidth = 7; ctx.strokeStyle = INK; rrect(ctx, 80, 1080, 1340, 330, 40); ctx.stroke();
-        textBlock(ctx, LH.title(st, hero), null, { x: 130, y: 1100, w: 1240, h: 220 }, { font: 'Baloo 2', weight: 800, size: 104, lh: 1.02 });
-        ctx.font = '800 34px Nunito, Arial, sans-serif'; ctx.fillStyle = '#C23B1A'; ctx.textAlign = 'center';
-        ctx.fillText('A  L I T T L E   H E R O   B O O K', 750, 1376); ctx.textAlign = 'left';
+      return svgImage(LH.sceneSvg(st.key, 'cover', hero, sceneOpts(1340))).then(function (img) { restore();
+        framed(ctx, img, 80, 80, 1340, 938, 64);
+        card(ctx, 80, 1090, 1340, 320, 56);
+        textBlock(ctx, LH.title(st, hero), null, { x: 130, y: 1106, w: 1240, h: 214 }, { font: 'Baloo 2', weight: 800, size: 104, lh: 1.02, outlined: OUT });
+        spaced(ctx, OUT ? 'A Little Hero colouring book' : 'A Little Hero Book', 750, 1372, 34, '#D9532E');
         return c;
       });
     }
     if (p.kind === 'dedication') {
       paper(ctx);
-      var face = hero ? LH.avatarSvg(hero.look, { crop: 'head', mood: 'laugh', bg: '#FFC93C' }) : LH.avatarSvg(null, { crop: 'head', ghost: true, bg: '#FFC93C' });
-      return svgImage(face.replace('<svg ', '<svg width="640" height="640" ')).then(function (img) {
-        ctx.save(); ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(762, 452, 320, 0, 7); ctx.fill(); ctx.restore();
+      return svgImage(sized(avatar({ crop: 'head', mood: 'laugh', bg: '#FFC93C' }), 640, 640)).then(function (img) { restore();
+        ctx.save(); if (!OUT) shadow(ctx, 40, 16, .26); ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(750, 440, OUT ? 320 : 338, 0, 7); ctx.fill(); ctx.restore();
         ctx.save(); ctx.beginPath(); ctx.arc(750, 440, 320, 0, 7); ctx.clip(); ctx.drawImage(img, 430, 120, 640, 640); ctx.restore();
-        ctx.lineWidth = 9; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(750, 440, 320, 0, 7); ctx.stroke();
-        ctx.textAlign = 'center'; ctx.font = '800 40px Nunito, Arial, sans-serif'; ctx.fillStyle = '#C23B1A';
-        ctx.fillText('T H I S   B O O K   B E L O N G S   T O', 750, 880);
-        ctx.font = '800 130px "Baloo 2", Arial, sans-serif'; ctx.fillStyle = INK; ctx.fillText(name, 750, 1020); ctx.textAlign = 'left';
-        textBlock(ctx, LH.dedication(book), null, { x: 200, y: 1080, w: 1100, h: 300 }, { size: 52 });
+        if (OUT) { ctx.lineWidth = 8; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(750, 440, 320, 0, 7); ctx.stroke(); }
+        spaced(ctx, OUT ? 'This colouring book belongs to' : 'This book belongs to', 750, 880, 40, '#D9532E');
+        bigText(ctx, name, 750, 1020, '800 130px "Baloo 2", Arial, sans-serif', ink());
+        textBlock(ctx, LH.dedication(book), null, { x: 200, y: 1080, w: 1100, h: 290 }, { size: 54 });
         return c;
       });
     }
+    if (p.kind === 'draw') {
+      paper(ctx);
+      textBlock(ctx, 'Draw your favourite part of the story!', null, { x: 120, y: 90, w: 1260, h: 140 }, { size: 68, weight: 600 });
+      ctx.save(); ctx.fillStyle = '#FFFFFF'; if (!OUT) shadow(ctx, 30, 10, .18); rrect(ctx, 110, 250, 1280, 1000, 60); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.setLineDash([26, 20]); ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = OUT ? INK : 'rgba(74,63,107,.45)'; rrect(ctx, 110, 250, 1280, 1000, 60); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.strokeStyle = ink(); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(420, 1380); ctx.lineTo(1080, 1380); ctx.stroke(); ctx.restore();
+      ctx.font = fontOf(500, 46, 'Fredoka'); ctx.fillStyle = ink(); ctx.textAlign = 'right'; ctx.fillText('by', 400, 1376); ctx.textAlign = 'left';
+      return svgImage(sized(avatar({ pose: 'wave', mood: 'laugh' }), 220, 239)).then(function (img) { restore(); ctx.drawImage(img, 1150, 1000, 220, 239); return c; });
+    }
     if (p.kind === 'end') {
       paper(ctx);
-      var fig = hero ? LH.avatarSvg(hero.look, { pose: 'wave', mood: 'laugh' }) : LH.avatarSvg(null, { ghost: true });
-      return svgImage(fig.replace('<svg ', '<svg width="520" height="565" ')).then(function (img) {
+      return svgImage(sized(avatar({ pose: 'wave', mood: 'laugh' }), 520, 565)).then(function (img) { restore();
         ctx.drawImage(img, 490, 120, 520, 565);
-        ctx.textAlign = 'center'; ctx.font = '800 170px "Baloo 2", Arial, sans-serif'; ctx.lineWidth = 12; ctx.strokeStyle = INK; ctx.lineJoin = 'round';
-        ctx.strokeText('The End', 750, 900); ctx.fillStyle = '#EF5A36'; ctx.fillText('The End', 750, 900); ctx.textAlign = 'left';
-        textBlock(ctx, st.source, null, { x: 220, y: 980, w: 1060, h: 200 }, { size: 38, weight: 600, color: '#5D5680' });
-        textBlock(ctx, LH.madeLine(book), null, { x: 220, y: 1190, w: 1060, h: 120 }, { size: 36, weight: 700, color: '#5D5680' });
+        bigText(ctx, 'The End', 750, 900, '800 170px "Baloo 2", Arial, sans-serif', '#EF5A36');
+        textBlock(ctx, st.source, null, { x: 220, y: 980, w: 1060, h: 200 }, { size: 40, weight: 400, color: OUT ? INK : '#6D6490' });
+        textBlock(ctx, LH.madeLine(book), null, { x: 220, y: 1190, w: 1060, h: 120 }, { size: 38, weight: 500, color: OUT ? INK : '#6D6490' });
         return c;
       });
     }
     paper(ctx);
-    return svgImage(LH.sceneSvg(st.key, p.i, hero, { w: 1340, clip: 'pdf' })).then(function (img) {
-      framed(ctx, img, 80, 70, 1340, 938, 46);
-      textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 1052, w: 1280, h: 360 }, { size: 54 });
-      ctx.fillStyle = '#FFC93C'; ctx.beginPath(); ctx.arc(750, 1452, 30, 0, 7); ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.stroke();
-      ctx.font = '800 32px Nunito, Arial, sans-serif'; ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.fillText(String(p.i + 1), 750, 1464); ctx.textAlign = 'left';
+    return svgImage(LH.sceneSvg(st.key, p.i, hero, sceneOpts(1340))).then(function (img) { restore();
+      framed(ctx, img, 80, 70, 1340, 938, 64);
+      textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 1050, w: 1280, h: 330 }, { size: 56 });
+      ctx.save(); ctx.fillStyle = OUT ? '#FFFFFF' : '#FFE7A3'; ctx.beginPath(); ctx.arc(750, 1424, 30, 0, 7); ctx.fill(); if (OUT) { ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); } ctx.restore();
+      ctx.font = fontOf(600, 32, 'Fredoka'); ctx.fillStyle = ink(); ctx.textAlign = 'center'; ctx.fillText(String(p.i + 1), 750, 1435); ctx.textAlign = 'left';
       return c;
     });
   }
-  function jpeg(canvas) {
+  function jpeg(canvas, q) {
     return new Promise(function (resolve) {
-      canvas.toBlob(function (b) { b.arrayBuffer().then(function (buf) { resolve(new Uint8Array(buf)); }); }, 'image/jpeg', .9);
+      canvas.toBlob(function (b) { b.arrayBuffer().then(function (buf) { resolve(new Uint8Array(buf)); }); }, 'image/jpeg', q || .9);
     });
   }
-  /* A minimal PDF: one JPEG (DCTDecode) image per square page. */
+  /* A minimal PDF: one JPEG (DCTDecode) image per square page. A page can say its size in points (pt) and its bleed
+     (bleedPt): then it also gets a TrimBox and BleedBox, which print shops read to know where to cut. */
   LH.writePdf = function (images, title) {
-    var size = 576, chunks = [], len = 0, offsets = [];
+    var chunks = [], len = 0, offsets = [];
     function bytes(s) { var b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i) & 255; return b; }
     function add(x) { var b = typeof x === 'string' ? bytes(x) : x; chunks.push(b); len += b.length; }
     function obj(n, s) { offsets[n] = len; add(n + ' 0 obj\n' + s + '\nendobj\n'); }
+    function num(v) { return String(Math.round(v * 100) / 100); }
     var n = images.length, kids = [];
     for (var i = 0; i < n; i++) kids.push((4 + i * 3) + ' 0 R');
     add('%PDF-1.4\n%âãÏÓ\n');
@@ -1533,8 +1648,9 @@
     var safeTitle = String(title || 'Little Hero Book').replace(/[^\x20-\x7e]/g, '').replace(/([()\\])/g, '\\$1');
     obj(3, '<< /Title (' + safeTitle + ') /Creator (Little Hero Books) /Producer (Little Hero Books) >>');
     images.forEach(function (im, i) {
-      var pg = 4 + i * 3, ct = pg + 1, ix = pg + 2, content = 'q ' + size + ' 0 0 ' + size + ' 0 0 cm /Im0 Do Q';
-      obj(pg, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + size + ' ' + size + '] /Resources << /XObject << /Im0 ' + ix + ' 0 R >> /ProcSet [/PDF /ImageC] >> /Contents ' + ct + ' 0 R >>');
+      var pg = 4 + i * 3, ct = pg + 1, ix = pg + 2, size = num(im.pt || 576), b = im.bleedPt || 0, content = 'q ' + size + ' 0 0 ' + size + ' 0 0 cm /Im0 Do Q';
+      var boxes = b ? ' /BleedBox [0 0 ' + size + ' ' + size + '] /TrimBox [' + num(b) + ' ' + num(b) + ' ' + num((im.pt || 576) - b) + ' ' + num((im.pt || 576) - b) + ']' : '';
+      obj(pg, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + size + ' ' + size + ']' + boxes + ' /Resources << /XObject << /Im0 ' + ix + ' 0 R >> /ProcSet [/PDF /ImageC] >> /Contents ' + ct + ' 0 R >>');
       obj(ct, '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
       offsets[ix] = len;
       add(ix + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.data.length + ' >>\nstream\n');
@@ -1545,35 +1661,97 @@
     add(x + 'trailer\n<< /Size ' + total + ' /Root 1 0 R /Info 3 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
     return new Blob(chunks, { type: 'application/pdf' });
   };
-  LH.makePdf = function (book, progress) {
-    var pages = LH.bookPages(book), out = [];
-    var fonts = document.fonts && document.fonts.load ? Promise.all(['800 60px "Baloo 2"', '700 50px Nunito', '800 50px Nunito', '600 40px Nunito'].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : Promise.resolve();
+  LH.makePdf = function (book, progress, opts) {
+    opts = opts || {};
+    var pages = LH.pdfPages(book, opts), out = [], pr = opts.print;
+    var pt = pr ? (pr.trim + 2 * pr.bleed) * 72 : 576, bleedPt = pr ? pr.bleed * 72 : 0;
+    var fonts = document.fonts && document.fonts.load ? Promise.all(['800 60px "Baloo 2"', '500 50px Fredoka', '600 50px Fredoka', '400 40px Fredoka', '800 40px Nunito'].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : Promise.resolve();
     var chain = fonts;
     pages.forEach(function (p, i) {
       chain = chain.then(function () {
         if (progress) progress(i, pages.length);
-        return drawPage(book, p, i).then(jpeg).then(function (data) { out.push({ data: data, w: PX, h: PX }); });
+        return drawPage(book, p, i, opts).then(function (cv) { return jpeg(cv, pr ? .92 : .9).then(function (data) { out.push({ data: data, w: cv.width, h: cv.height, pt: pt, bleedPt: bleedPt }); }); });
       });
     });
-    return chain.then(function () { if (progress) progress(pages.length, pages.length); return LH.writePdf(out, LH.title(book.story, book.hero)); });
+    return chain.then(function () { if (progress) progress(pages.length, pages.length); return LH.writePdf(out, LH.title(book.story, book.hero) + (opts.outline ? ' (colouring book)' : '')); });
   };
   LH.drawPdfPage = drawPage;  // used by the flow test
-  LH.fileName = function (book) { return LH.title(book.story, book.hero).replace(/[\\/:*?"<>|’']+/g, '').replace(/\s+/g, ' ').trim() + '.pdf'; };
+
+  LH.PRINT_SIZES = [{ key: '8in', label: '8 × 8 in', trim: 8 }, { key: '8.5in', label: '8.5 × 8.5 in', trim: 8.5 }, { key: '20cm', label: '20 × 20 cm', trim: 20 / 2.54 }];
+  LH.BLEEDS = [{ key: 'in', label: '0.125 in (3.2 mm)', v: .125 }, { key: '3mm', label: '3 mm', v: 3 / 25.4 }, { key: '5mm', label: '5 mm', v: 5 / 25.4 }];
+  function sizeLabel(inches, metric) { return metric ? (Math.round(inches * 25.4 * 10) / 100) + ' cm' : (Math.round(inches * 1000) / 1000) + ' in'; }
+  LH.fileName = function (book, opts) {
+    opts = opts || {};
+    var extra = opts.outline ? ' - colouring book' : '';
+    if (opts.print) extra += ' - print ' + (opts.print.label || '').replace(/[^\w.]+/g, '');
+    return (LH.title(book.story, book.hero) + extra).replace(/[\\/:*?"<>|’']+/g, '').replace(/\s+/g, ' ').trim() + '.pdf';
+  };
+
+  /* "Download a PDF": which book (pictures or colour-me-in) and where it will be printed. */
+  LH.pdfDialog = function (book) {
+    var saved = UI.store.get('pdfopts', {}) || {}, kind = saved.kind === 'outline' ? 'outline' : 'colour', use = saved.use === 'print' ? 'print' : 'home';
+    var m = UI.modal('<h2>Download a PDF</h2><form class="ui-stack" data-lhp>' +
+      '<div class="lhp-label">Which book?</div><div class="lhp-cards">' +
+      '<label class="lhp-card" data-k="colour"><input type="radio" name="kind" value="colour">' + LH.coverHtml(book.story, book.hero) + '<b>Picture book</b><small>Full colour, just like on screen</small></label>' +
+      '<label class="lhp-card" data-k="outline"><input type="radio" name="kind" value="outline">' + LH.coverHtml(book.story, book.hero, { outline: true }) + '<b>Colour-me-in book</b><small>Outlines for crayons, plus a page to draw on</small></label></div>' +
+      '<div class="lhp-label">Where will you print it?</div><div class="lhp-list">' +
+      '<label class="lhp-row" data-u="home"><input type="radio" name="use" value="home">' + UI.icon('print') + '<span><b>Screen or home printer</b><small>8 × 8 in pages that fit on Letter or A4 paper. A smaller file.</small></span></label>' +
+      '<label class="lhp-row" data-u="print"><input type="radio" name="use" value="print">' + UI.icon('book') + '<span><b>Photo-book printer</b><small>Print-ready: 300 dpi pages with the extra bleed edge that printers trim off.</small></span></label></div>' +
+      '<div class="lhp-print" data-lhp-print><label>Book size<select name="size">' + LH.PRINT_SIZES.map(function (s) { return '<option value="' + s.key + '"' + (saved.size === s.key ? ' selected' : '') + '>' + s.label + '</option>'; }).join('') + '</select></label>' +
+      '<label>Bleed<select name="bleed">' + LH.BLEEDS.map(function (s) { return '<option value="' + s.key + '"' + (saved.bleed === s.key ? ' selected' : '') + '>' + s.label + '</option>'; }).join('') + '</select></label>' +
+      '<p class="small muted" data-lhp-note></p></div>' +
+      '<div class="ui-row end"><button type="button" class="ui-btn ghost" data-close>Cancel</button><button class="ui-btn primary" type="submit">' + UI.icon('download') + 'Make my PDF</button></div></form>');
+    var form = m.el.querySelector('[data-lhp]');
+    function choice() {
+      var f = UI.formData(form), sz = LH.PRINT_SIZES.filter(function (s) { return s.key === f.size; })[0] || LH.PRINT_SIZES[0], bl = LH.BLEEDS.filter(function (s) { return s.key === f.bleed; })[0] || LH.BLEEDS[0];
+      return { kind: kind, use: use, size: sz.key, bleed: bl.key, opts: { outline: kind === 'outline', print: use === 'print' ? { trim: sz.trim, bleed: bl.v, label: sz.label } : null } };
+    }
+    function sync() {
+      m.el.querySelectorAll('[data-k]').forEach(function (l) { var on = l.getAttribute('data-k') === kind; l.classList.toggle('on', on); l.querySelector('input').checked = on; });
+      m.el.querySelectorAll('[data-u]').forEach(function (l) { var on = l.getAttribute('data-u') === use; l.classList.toggle('on', on); l.querySelector('input').checked = on; });
+      var pr = m.el.querySelector('[data-lhp-print]');
+      pr.hidden = use !== 'print';
+      if (use === 'print') {
+        var c = choice(), o = c.opts.print, metric = c.size === '20cm', full = o.trim + 2 * o.bleed, n = LH.pdfPages(book, c.opts).length;
+        m.el.querySelector('[data-lhp-note]').textContent = 'Each page is ' + sizeLabel(full, metric) + ' square (' + sizeLabel(o.trim, metric) + ' plus the bleed), ' + Math.round(full * DPI) + ' × ' + Math.round(full * DPI) +
+          ' pixels. ' + n + ' pages: the cover, then ' + (n - 1) + ' inside pages (an even number, as printers like). Pick the same size and bleed your printer asks for.';
+      }
+    }
+    m.el.addEventListener('click', function (e) {
+      var k = e.target.closest('[data-k]'), u = e.target.closest('[data-u]');
+      if (k) { kind = k.getAttribute('data-k'); sync(); }
+      if (u) { use = u.getAttribute('data-u'); sync(); }
+    });
+    form.addEventListener('change', sync);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var c = choice();
+      UI.store.set('pdfopts', { kind: c.kind, use: c.use, size: c.size, bleed: c.bleed });
+      m.close();
+      LH.downloadPdf(book, c.opts);
+    });
+    sync();
+    return m;
+  };
   /* Make the PDF with a progress modal, then download it. */
-  LH.downloadPdf = function (book) {
-    var m = UI.modal('<h2>Printing your book…</h2><p class="muted" data-pdf-msg>Painting the cover</p><div class="lh-prog"><i data-pdf-bar></i></div>' +
+  LH.downloadPdf = function (book, opts) {
+    opts = opts || {};
+    var m = UI.modal('<h2>' + (opts.outline ? 'Drawing your colouring book…' : 'Printing your book…') + '</h2><p class="muted" data-pdf-msg>Painting the cover</p><div class="lh-prog"><i data-pdf-bar></i></div>' +
       '<p class="small muted">Everything is drawn right here in your browser. Nothing is uploaded.</p>');
-    var msg = m.el.querySelector('[data-pdf-msg]'), bar = m.el.querySelector('[data-pdf-bar]');
-    return LH.makePdf(book, function (i, n) {
-      bar.style.width = Math.round(i / n * 100) + '%';
-      msg.textContent = i >= n ? 'Binding the pages…' : i === 0 ? 'Painting the cover' : 'Painting page ' + i + ' of ' + (n - 1);
-    }).then(function (blob) {
-      var url = URL.createObjectURL(blob), a = document.createElement('a');
-      a.href = url; a.download = LH.fileName(book); document.body.appendChild(a); a.click(); a.remove();
+    var msg = m.el.querySelector('[data-pdf-msg]'), bar = m.el.querySelector('[data-pdf-bar]'), n = LH.pdfPages(book, opts).length;
+    return LH.makePdf(book, function (i, total) {
+      bar.style.width = Math.round(i / total * 100) + '%';
+      msg.textContent = i >= total ? 'Binding the pages…' : i === 0 ? (opts.outline ? 'Drawing the cover' : 'Painting the cover') : (opts.outline ? 'Drawing' : 'Painting') + ' page ' + i + ' of ' + (total - 1);
+    }, opts).then(function (blob) {
+      var url = URL.createObjectURL(blob), a = document.createElement('a'), name = LH.fileName(book, opts);
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
       window.LH_LAST_PDF = blob;
-      m.el.innerHTML = '<button class="ui-btn ghost icon ui-modal-x" data-close aria-label="Close">' + UI.icon('x') + '</button><h2>Your book is ready!</h2><p class="muted">' + esc(LH.fileName(book)) + ' (' + Math.max(1, Math.round(blob.size / 1048576)) + ' MB, ' + LH.bookPages(book).length +
-        ' square pages) is in your downloads. Print it at home, or send it to a photo-book printer as an 8 × 8 inch book.</p><div class="ui-row end"><a class="ui-btn primary" href="' + url + '" target="_blank" rel="noopener">' + UI.icon('external') + 'Open it</a><button class="ui-btn" data-close>Done</button></div>';
+      var how = opts.print ? 'Upload it to your photo-book printer as a square ' + opts.print.label + ' book. The printer trims off the bleed edge, so nothing important sits near it.'
+        : opts.outline ? 'Print it on plain paper (it fits Letter and A4), then get the crayons out!'
+        : 'Print it at home, or read it together on a tablet.';
+      m.el.innerHTML = '<button class="ui-btn ghost icon ui-modal-x" data-close aria-label="Close">' + UI.icon('x') + '</button><h2>' + (opts.outline ? 'Your colouring book is ready!' : 'Your book is ready!') + '</h2><p class="muted">' + esc(name) +
+        ' (' + Math.max(1, Math.round(blob.size / 1048576)) + ' MB, ' + n + ' square pages) is in your downloads. ' + esc(how) + '</p><div class="ui-row end"><a class="ui-btn primary" href="' + url + '" target="_blank" rel="noopener">' + UI.icon('external') + 'Open it</a><button class="ui-btn" data-close>Done</button></div>';
       LH.confetti();
       return blob;
     }, function (e) {
@@ -1640,6 +1818,8 @@
   function blob(cs, f, st, sw) { return D().blob(cs, f, st, sw); }
   function star(x, y, r, f, st, sw) { return D().star(x, y, r, f, st, sw); }
   function rect(x, y, w, h, f, st, sw, rx) {
+    // soft corners by default on everything smaller than a whole wall or sky
+    if (rx == null && Math.abs(w) < 600) rx = P(Math.min(8, Math.abs(w) / 4, Math.abs(h) / 4));
     return '<rect x="' + P(x) + '" y="' + P(y) + '" width="' + P(w) + '" height="' + P(h) + '"' + (rx ? ' rx="' + rx + '"' : '') + ' fill="' + f + '"' +
       (st ? ' stroke="' + st + '" stroke-width="' + (sw || 4) + '" stroke-linejoin="round"' : '') + '/>';
   }
@@ -2334,6 +2514,444 @@
     ]
   };
   function crownIcon(x, y) { return path('M' + (x - 40) + ' ' + y + ' L' + (x - 44) + ' ' + (y - 50) + ' L' + (x - 20) + ' ' + (y - 28) + ' L' + x + ' ' + (y - 60) + ' L' + (x + 20) + ' ' + (y - 28) + ' L' + (x + 44) + ' ' + (y - 50) + ' L' + (x + 40) + ' ' + y + 'Z', C.sun, INK, 4); }
+
+  /* ================================================================== kits for the newer tales (Nov 2026) */
+  function tube(d, w, c) { return path(d, 'none', INK, w + 8) + path(d, 'none', c, w); }   // an outlined thick line (limbs, tails, necks)
+  function snowfall(n, sd) { seed = sd || 23; var s = ''; for (var i = 0; i < n; i++) s += circ(rnd() * 1000, rnd() * 680, 4 + rnd() * 6, '#FFFFFF', INK, 1.5); return s; }
+  function windowSnow(wx, wy, ww, wh) { seed = 61; var s = ''; for (var i = 0; i < 9; i++) s += circ(wx + 14 + rnd() * (ww - 28), wy + 14 + rnd() * (wh - 28), 4 + rnd() * 3, '#FFFFFF', INK, 1.5); return s; }
+  function waves(x0, x1, y0, y1, n, sd) {
+    seed = sd || 11; var s = '';
+    for (var i = 0; i < n; i++) { var x = x0 + rnd() * (x1 - x0 - 50), y = y0 + rnd() * (y1 - y0); s += path('M' + P(x) + ' ' + P(y) + ' q12 -10 24 0 t24 0', 'none', '#FFFFFF', 4, ' opacity=".85"'); }
+    return s;
+  }
+  function riverBand(y0, y1) { return path('M-10 ' + y0 + ' Q500 ' + (y0 - 16) + ' 1010 ' + y0 + ' L1010 ' + y1 + ' L-10 ' + y1 + 'Z', '#7FC8F8', INK, 4) + waves(0, 1000, y0 + 16, y1 - 24, 10, 7); }
+  function waterFront(y) { return path('M-10 ' + y + ' Q120 ' + (y - 12) + ' 250 ' + y + ' T500 ' + y + ' T750 ' + y + ' T1010 ' + y + ' L1010 710 L-10 710Z', '#7FC8F8', INK, 4) + waves(0, 1000, y + 24, 690, 6, 19); }
+  function reeds(x, y, s) {
+    return at(x, y, s, path('M-10 0 Q-60 -50 -70 -90 M10 0 Q50 -40 70 -70', 'none', '#59B45E', 6) + path('M-20 0 Q-26 -90 -40 -150 M0 0 Q2 -110 -4 -180 M20 0 Q30 -80 46 -130', 'none', '#3E8E4E', 6) +
+      ell(-4, -172, 9, 24, '#8A5A3B', INK, 3) + ell(44, -128, 8, 20, '#8A5A3B', INK, 3).replace('/>', ' transform="rotate(20 44 -128)"/>'));
+  }
+  function mountains() {
+    return path('M-10 430 L170 170 L300 330 L460 120 L640 360 L800 200 L1010 430Z', '#B9B2D3', INK, 4) +
+      path('M131 226 L170 170 L210 224 L190 238 L170 224 L150 240Z M420 178 L460 120 L504 182 L482 196 L460 180 L440 198Z M762 254 L800 200 L840 254 L818 264 L800 252 L782 266Z', '#FFFFFF', INK, 3.5);
+  }
+  function hay(x, y, s) { return at(x, y, s, path('M-90 0 Q-84 -120 0 -130 Q84 -120 90 0Z', '#F0C24B', INK, 4) + path('M-50 -20 l10 -40 M-10 -10 l6 -60 M30 -24 l-6 -50 M60 -16 l-10 -30', 'none', '#C99A2E', 4)); }
+  function rollingPin(x, y) { return rect(x - 50, y - 10, 100, 20, '#E8C08A', INK, 3.5, 10) + rect(x - 76, y - 6, 28, 12, C.wood2, INK, 3, 6) + rect(x + 48, y - 6, 28, 12, C.wood2, INK, 3, 6); }
+  function daisy(x, y, r) {
+    var d = '';
+    for (var i = 0; i < 8; i++) d += ell(x, y - r * .9, r * .36, r * .62, '#FFFFFF', INK, 2.5).replace('/>', ' transform="rotate(' + i * 45 + ' ' + P(x) + ' ' + P(y) + ')"/>');
+    return d + circ(x, y, r * .46, C.sun, INK, 2.5);
+  }
+  function leaves(n, sd) {
+    seed = sd || 29; var s = '', cs = ['#F0A040', '#E8742A', '#FFC93C', '#C8372D'];
+    for (var i = 0; i < n; i++) { var x = rnd() * 1000, y = 60 + rnd() * 520; s += ell(x, y, 12, 7, cs[i % 4], INK, 2.5).replace('/>', ' transform="rotate(' + Math.round(rnd() * 180) + ' ' + P(x) + ' ' + P(y) + ')"/>'); }
+    return s;
+  }
+  function scarf(x, y) { return tube('M' + (x - 54) + ' ' + y + ' Q' + x + ' ' + (y + 26) + ' ' + (x + 54) + ' ' + y, 16, C.red) + path('M' + (x - 30) + ' ' + (y + 8) + ' v14 M' + x + ' ' + (y + 12) + ' v14 M' + (x + 30) + ' ' + (y + 8) + ' v14', 'none', '#FFFFFF', 4) + rect(x + 46, y - 4, 18, 46, C.red, INK, 3.5, 6); }
+  function openBook(x, y, s) {
+    return at(x, y, s, path('M0 0 Q-40 -18 -84 -6 L-84 -64 Q-40 -76 0 -58Z', '#FFFFFF', INK, 3.5) + path('M0 0 Q40 -18 84 -6 L84 -64 Q40 -76 0 -58Z', '#FFFFFF', INK, 3.5) +
+      path('M-70 -46 q30 -8 56 2 M-70 -32 q30 -8 56 2 M14 -44 q30 -10 56 -2 M14 -30 q30 -10 56 -2', 'none', '#C9C3D9', 3));
+  }
+  function picnic(x, y, s) {
+    return at(x, y, s, path('M-60 0 L-50 -50 L50 -50 L60 0Z', '#C98B4E', INK, 4) + path('M-40 -50 Q0 -100 40 -50', 'none', INK, 6) + path('M-52 -34 h104 M-56 -18 h112', 'none', '#A86B3A', 3) +
+      path('M80 -6 L132 -6 L106 -46Z', '#FFE7A8', INK, 3.5) + path('M86 -16 L126 -16', 'none', '#6CC46A', 4) +
+      circ(162, -18, 17, C.red, INK, 3.5) + path('M162 -35 q4 -10 10 -10', 'none', '#3E8E4E', 3) +
+      path('M192 -4 L252 -4 L252 -46Z', '#FFE2C2', INK, 3.5) + path('M252 -46 L252 -58 L188 -16 L192 -4Z', '#FF8FB8', INK, 3) + circ(240, -62, 7, C.red, INK, 2.5));
+  }
+  function carrot(x, y, s, rot) { return g('translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')', path('M-14 0 L0 80 L14 0Z', '#FF9A3C', INK, 3.5) + path('M-6 0 q-12 -26 -2 -34 M0 0 q0 -30 8 -36 M6 0 q14 -20 22 -20', 'none', '#3E8E4E', 5)); }
+  function hammer(x, y, s, rot) { return g('translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')', rect(-6, -10, 12, 80, C.wood2, INK, 3.5, 4) + rect(-26, -26, 52, 22, '#A9A2C0', INK, 3.5, 4)); }
+
+  /* the Gingerbread Man: feet at (0,0), about 205 tall */
+  function gingerbread(x, y, s, o) {
+    o = o || {};
+    var c = o.raw ? '#F3D7A8' : '#C9803F', b = '';
+    var legs = o.run ? ['M-12 -64 Q-30 -40 -48 -12', 'M12 -64 Q36 -44 44 -8'] : ['M-12 -64 L-22 -6', 'M12 -64 L22 -6'];
+    var arms = o.cheer ? ['M-30 -112 L-70 -160', 'M30 -112 L70 -160'] : o.run ? ['M-30 -112 L-72 -136', 'M30 -112 L74 -92'] : ['M-30 -112 L-74 -98', 'M30 -112 L74 -98'];
+    legs.concat(arms).forEach(function (d) {
+      b += tube(d, 30, c);
+      if (!o.raw) { var n = d.match(/-?\d+/g), ex = +n[n.length - 2], ey = +n[n.length - 1]; b += path('M' + (ex - 10) + ' ' + (ey - 4) + ' q5 8 10 0 q5 8 10 0', 'none', '#FFFFFF', 4); }
+    });
+    b += ell(0, -90, 40, 46, c, INK, 4) + circ(0, -160, 40, c, INK, 4);
+    if (!o.raw) b += circ(0, -160, 31, 'none', '#FFFFFF', 3, ' stroke-dasharray="7 8"') + circ(0, -114, 6, C.red, INK, 2.5) + circ(0, -93, 6, '#3DBE8B', INK, 2.5) + circ(0, -72, 6, C.sun, INK, 2.5);
+    b += circ(-13, -167, 5.5, '#4A2A18') + circ(13, -167, 5.5, '#4A2A18') + circ(0, -155, 6, C.red, INK, 2.5) + circ(-25, -150, 6, C.pink, null, 0, ' opacity=".7"') + circ(25, -150, 6, C.pink, null, 0, ' opacity=".7"');
+    b += o.mood === 'wow' ? ell(0, -138, 7, 8, '#7A2638', INK, 2.5) : o.mood === 'oops' ? path('M-10 -139 Q0 -145 10 -139', 'none', '#FFFFFF', 4.5) : path('M-14 -145 Q0 -130 14 -145', 'none', '#FFFFFF', 5);
+    return at(x, y, s, b, o.flip);
+  }
+  /* a fox standing, facing right; mood sly (default), wow, sad */
+  function fox(x, y, s, o) {
+    o = o || {};
+    var f = '#E8742A', w = '#FFF4E6', b = '';
+    b += path('M-50 -70 C-120 -60 -184 -110 -150 -184 C-130 -132 -96 -112 -46 -100Z', f, INK, 4) + path('M-150 -184 C-170 -150 -160 -126 -138 -120 C-148 -140 -148 -162 -150 -184Z', w, INK, 3);
+    [-46, -20, 28, 52].forEach(function (lx) { b += rect(lx, -58, 16, 58, f, INK, 4, 8) + rect(lx - 2, -14, 20, 14, '#3A3355', INK, 3, 6); });
+    b += ell(0, -80, 70, 40, f, INK, 4.5) + ell(52, -84, 20, 26, w, INK, 3);
+    b += path('M44 -166 L42 -212 L72 -176Z', f, INK, 4) + path('M78 -176 L104 -210 L102 -164Z', f, INK, 4) + path('M50 -178 L49 -200 L62 -182Z', '#3A3355');
+    b += circ(70, -140, 38, f, INK, 4.5) + path('M92 -152 Q138 -142 140 -128 Q118 -112 88 -120Z', w, INK, 4) + circ(140, -130, 7, INK);
+    if (o.mood === 'wow') b += circ(84, -152, 7, INK) + circ(86, -154, 2.4, '#FFFFFF') + ell(116, -116, 6, 6, '#7A2638', INK, 2.5);
+    else if (o.mood === 'sad') b += path('M76 -150 q8 6 16 0', 'none', INK, 4) + path('M74 -164 l18 6', 'none', INK, 3.5) + path('M104 -116 q12 -8 24 0', 'none', INK, 3.5);
+    else b += path('M74 -154 q9 -7 18 0', 'none', INK, 4.5) + circ(83, -150, 4, INK) + path('M100 -121 q16 10 32 -2', 'none', INK, 3.5) + path('M108 -118 l3 7 l3 -6 M118 -117 l3 7 l3 -7', '#FFFFFF', INK, 2);
+    return at(x, y, s, b, o.flip);
+  }
+  function horse(x, y, s, o) {
+    o = o || {};
+    var c = o.c || '#B87A47', m = '#5A3420', b = tube('M-140 -184 Q-200 -164 -186 -88', 14, m);
+    [-120, -84, 70, 106].forEach(function (lx, i) { var r = o.run ? (i % 2 ? 14 : -14) : 0; b += g('rotate(' + r + ' ' + (lx + 13) + ' -112)', rect(lx, -120, 26, 112, c, INK, 4, 10) + rect(lx - 2, -18, 30, 18, '#3A3355', INK, 3, 5)); });
+    b += rect(-156, -232, 296, 122, c, INK, 4.5, 58) + path('M84 -204 L140 -304 L192 -280 L146 -190Z', c, INK, 4.5) + tube('M150 -334 Q118 -282 92 -216', 14, m) + path('M160 -330 L166 -368 L184 -332Z', c, INK, 4);
+    b += ell(186, -288, 32, 58, c, INK, 4.5).replace('/>', ' transform="rotate(-50 186 -288)"/>') + ell(222, -254, 22, 20, LH.shade(c, .25), INK, 3.5) + circ(232, -254, 3.5, INK) + circ(178, -302, 6, INK) + circ(180, -304, 2, '#FFFFFF');
+    return at(x, y, s, b, o.flip);
+  }
+  /* swans and the grey duckling: ugly = the duckling; swim = no legs, on the water line; sad = head bowed; flap = wings up */
+  function swan(x, y, s, o) {
+    o = o || {};
+    var c = o.c || '#FFFFFF', ugly = !!o.ugly, b = '';
+    var nk = o.sad ? 'M34 -66 Q76 -72 80 -40' : ugly ? 'M36 -68 Q56 -98 46 -124' : 'M40 -66 Q96 -110 56 -160 Q38 -186 60 -200';
+    var e = nk.match(/-?\d+/g), hx = +e[e.length - 2], hy = +e[e.length - 1], hr = ugly ? 22 : 18;
+    if (!o.swim) b += path('M-12 -8 v-22 M14 -8 v-22', 'none', '#FF9A3C', 6) + ell(-16, -4, ugly ? 22 : 16, 6, '#FF9A3C', INK, 2.5) + ell(14, -4, ugly ? 22 : 16, 6, '#FF9A3C', INK, 2.5);
+    if (o.flap) b += path('M-20 -70 Q-60 -170 -124 -150 Q-84 -120 -40 -60Z', c, INK, 4);
+    b += path('M-58 -60 Q-88 -76 -80 -46Z', c, INK, 3.5) + ell(0, -50, 62, 36, c, INK, 4);
+    b += o.flap ? path('M0 -74 Q-10 -184 -70 -194 Q-50 -132 -16 -66Z', LH.shade(c, -.05), INK, 4) : path('M-36 -58 Q4 -30 30 -60 Q6 -18 -36 -58Z', LH.shade(c, -.08), INK, 3);
+    b += tube(nk, ugly ? 22 : 16, c) + circ(hx, hy, hr, c, INK, 4);
+    b += path('M' + (hx + 14) + ' ' + (hy - 6) + ' Q' + (hx + 44) + ' ' + (hy - 2) + ' ' + (hx + 46) + ' ' + (hy + 6) + ' Q' + (hx + 30) + ' ' + (hy + 12) + ' ' + (hx + 12) + ' ' + (hy + 6) + 'Z', ugly ? '#7D7890' : '#FF9A3C', INK, 3);
+    if (!ugly) b += circ(hx + 13, hy - 1, 5, INK);
+    b += o.sad ? path('M' + (hx - 4) + ' ' + (hy - 6) + ' q6 5 12 0', 'none', INK, 3) : circ(hx + 4, hy - 6, 4, INK) + circ(hx + 5.5, hy - 7.5, 1.4, '#FFFFFF');
+    if (ugly) b += path('M' + (hx - 6) + ' ' + (hy - 20) + ' l-6 -12 M' + (hx + 4) + ' ' + (hy - 22) + ' l2 -13', 'none', INK, 3);
+    if (o.swim) b += path('M-84 -14 q20 -10 40 0 t40 0 t40 0 t40 0', 'none', '#FFFFFF', 4);
+    return at(x, y, s, b, o.flip);
+  }
+  function flyer(x, y, s) {
+    return at(x, y, s, path('M-10 -4 Q-20 -70 -70 -86 Q-36 -40 10 -4Z', '#FFFFFF', INK, 3.5) + ell(0, 0, 46, 15, '#FFFFFF', INK, 3.5) + tube('M36 -4 L96 -14', 7, '#FFFFFF') +
+      circ(100, -15, 9, '#FFFFFF', INK, 3) + path('M108 -18 L124 -14 L108 -10Z', '#FF9A3C', INK, 2) + path('M10 -2 Q30 -60 0 -82 Q-4 -40 -16 -2Z', '#F4F2F7', INK, 3.5));
+  }
+  function nest(x, y, s, o) {
+    o = o || {};
+    var b = '';
+    if (o.egg) b += ell(0, -40, 30, 38, '#F4F1E4', INK, 4);
+    if (o.shells) b += path('M-70 -30 Q-74 -64 -48 -70 l6 12 l8 -14 l8 12 Q-30 -40 -38 -30Z', '#F4F1E4', INK, 3) + path('M44 -28 Q40 -52 58 -60 l6 10 l8 -12 l6 12 Q86 -44 80 -26Z', '#F4F1E4', INK, 3);
+    b += path('M-110 -30 Q-100 10 0 12 Q100 10 110 -30 Q60 -10 0 -12 Q-60 -10 -110 -30Z', '#C9A270', INK, 4) + path('M-90 -14 l40 6 M-30 -4 l50 -2 M40 -6 l40 -10 M-70 4 l36 -12 M20 6 l40 -14', 'none', '#8A6A45', 3);
+    return at(x, y, s, b);
+  }
+  function turkey(x, y, s, o) {
+    o = o || {};
+    var b = '', cs = ['#C8372D', '#FF9A3C', '#FFC93C', '#8A5A3B', '#C8372D', '#FF9A3C', '#FFC93C'];
+    for (var i = 0; i < 7; i++) b += ell(-30, -150, 18, 70, cs[i], INK, 3.5).replace('/>', ' transform="rotate(' + (-75 + i * 25) + ' -30 -90)"/>');
+    b += path('M-14 -2 v-24 M14 -2 v-24', 'none', '#E9A23B', 5) + ell(-8, -70, 52, 48, '#7A4E30', INK, 4) + tube('M24 -104 Q40 -132 36 -150', 9, '#A9C9E8') + circ(38, -156, 16, '#A9C9E8', INK, 3.5) +
+      path('M52 -160 L66 -155 L52 -150Z', '#FFB020', INK, 2.5) + path('M47 -150 q8 16 -2 22 q-6 -8 2 -22Z', '#FF3D5A', INK, 2.5) + circ(42, -161, 3.5, INK);
+    return at(x, y, s, b, o.flip);
+  }
+  function pond(cx, cy, rx, ry, o) {
+    o = o || {};
+    var s = ell(cx, cy, rx, ry, o.ice ? '#DDF3FF' : '#86CCF2', INK, 4.5);
+    if (o.ice) s += path('M' + (cx - rx * .55) + ' ' + (cy - 8) + ' l60 18 l50 -24 l70 20 M' + (cx + 60) + ' ' + (cy + 30) + ' l40 -16 l60 12', 'none', '#FFFFFF', 5) + ell(cx - rx * .3, cy - ry * .3, 70, 12, '#FFFFFF', null, 0, ' opacity=".7"');
+    else s += waves(cx - rx * .75, cx + rx * .75, cy - ry * .5, cy + ry * .55, 6, o.sd || 31);
+    if (o.pads) s += ell(cx - rx * .62, cy + ry * .35, 30, 10, '#59B45E', INK, 3) + ell(cx + rx * .55, cy - ry * .25, 26, 9, '#59B45E', INK, 3) + circ(cx + rx * .55 + 10, cy - ry * .25 - 6, 7, C.pink, INK, 2);
+    return s;
+  }
+  /* the troll: friendly underneath; mood grumpy|sad|happy|laugh, arms down|up|hold */
+  function troll(x, y, s, o) {
+    o = o || {};
+    var sk = '#8CC48A', dk = LH.shade(sk, -.2), b = '', mood = o.mood || 'grumpy';
+    b += ell(-40, -10, 44, 18, dk, INK, 4) + ell(40, -10, 44, 18, dk, INK, 4) + path('M-90 -30 Q-112 -200 0 -212 Q112 -200 90 -30 Q0 -12 -90 -30Z', '#A0623A', INK, 4.5) +
+      path('M-50 -90 h30 v30 h-30Z', '#C98B4E', INK, 3) + path('M-50 -90 l30 30 M-20 -90 l-30 30', 'none', INK, 2);
+    var aL = o.arms === 'up' ? 'M-80 -170 Q-140 -230 -128 -292' : o.arms === 'hold' ? 'M-80 -170 Q-96 -110 -30 -112' : 'M-80 -170 Q-128 -120 -118 -70';
+    var aR = aL.replace(/(-?\d+)( -?\d+)/g, function (m0, a, rest) { return (-a) + rest; });
+    b += tube(aL, 32, sk) + tube(aR, 32, sk);
+    b += ell(-92, -272, 24, 36, sk, INK, 4).replace('/>', ' transform="rotate(-24 -92 -272)"/>') + ell(92, -272, 24, 36, sk, INK, 4).replace('/>', ' transform="rotate(24 92 -272)"/>');
+    b += tube('M-34 -348 q-10 -26 4 -40 M0 -352 q0 -34 14 -42 M30 -348 q12 -24 28 -24', 7, '#6A4024') + circ(0, -270, 82, sk, INK, 4.5);
+    b += mood === 'grumpy' ? path('M-52 -308 L-14 -292 M52 -308 L14 -292', 'none', INK, 8) : mood === 'sad' ? path('M-52 -292 L-14 -306 M52 -292 L14 -306', 'none', INK, 7) : path('M-50 -304 q16 -12 32 -2 M50 -304 q-16 -12 -32 -2', 'none', INK, 6);
+    b += mood === 'laugh' ? path('M-42 -282 q12 -12 24 0 M18 -282 q12 -12 24 0', 'none', INK, 5) : circ(-30, -280, 13, '#FFFFFF', INK, 3.5) + circ(30, -280, 13, '#FFFFFF', INK, 3.5) + circ(-27, -277, 6.5, INK) + circ(27, -277, 6.5, INK);
+    b += ell(0, -248, 28, 24, dk, INK, 4) + circ(14, -256, 4, LH.shade(sk, .3));
+    if (mood === 'grumpy') b += path('M-40 -206 Q0 -224 40 -206', 'none', INK, 5) + path('M-24 -213 l6 14 l6 -14Z', '#FFFFFF', INK, 3);
+    else if (mood === 'sad') b += path('M-30 -206 Q0 -224 30 -206', 'none', INK, 5) + ell(48, -262, 7, 11, '#9FD3FF', INK, 2.5);
+    else b += path('M-46 -222 Q0 -168 46 -222Z', '#7A2638', INK, 4) + path('M-20 -219 l6 12 l6 -12Z', '#FFFFFF', INK, 2.5);
+    b += circ(-56, -236, 11, C.pink, null, 0, ' opacity=".55"') + circ(56, -236, 11, C.pink, null, 0, ' opacity=".55"');
+    return at(x, y, s, b, o.flip);
+  }
+  function bridge(x0, x1, y) {
+    var mid = (x0 + x1) / 2, s = '', dy = function (x) { var t = (x - x0) / (x1 - x0); return y - 200 * t * (1 - t); };
+    [x0 + 50, mid - 15, x1 - 80].forEach(function (px) { s += rect(px, dy(px) + 10, 30, 250, C.wood2, INK, 4, 6); });
+    s += path('M' + x0 + ' ' + y + ' Q' + mid + ' ' + (y - 100) + ' ' + x1 + ' ' + y + ' L' + x1 + ' ' + (y + 26) + ' Q' + mid + ' ' + (y - 74) + ' ' + x0 + ' ' + (y + 26) + 'Z', C.wood, INK, 4.5);
+    for (var x = x0 + 36; x < x1 - 20; x += 36) s += path('M' + P(x) + ' ' + P(dy(x) + 2) + ' v22', 'none', C.wood2, 3);
+    for (x = x0 + 10; x <= x1 - 4; x += 70) s += tube('M' + P(x) + ' ' + P(dy(x)) + ' v-58', 6, C.wood2);
+    return s + tube('M' + x0 + ' ' + (y - 56) + ' Q' + mid + ' ' + (y - 156) + ' ' + x1 + ' ' + (y - 56), 8, C.wood);
+  }
+  function goat(x, y, s, o) {
+    o = o || {};
+    var c = o.c || '#FFFFFF', fat = o.round ? 1.3 : 1, b = tube('M-72 -118 l-18 -16', 6, c);
+    [-52, -24, 28, 54].forEach(function (lx) { b += rect(lx, -74, 15, 74, c, INK, 4, 6) + rect(lx - 1, -12, 17, 12, '#5A3F2E', INK, 3, 3); });
+    b += ell(0, -104, 78, 40 * fat, c, INK, 4.5);
+    var hd = path('M46 -124 L74 -176 L104 -164 L84 -110Z', c, INK, 4);
+    if (o.horns === 'curly') hd += tube('M86 -204 C70 -252 140 -262 132 -212 C128 -194 110 -198 114 -214', 9, '#E6D5AE');
+    else if (o.horns !== false) hd += tube(o.horns === 'mid' ? 'M90 -204 q2 -36 26 -44' : 'M92 -204 q4 -22 18 -26', 6, '#E6D5AE');
+    hd += path('M86 -192 L52 -198 L80 -176Z', c, INK, 3.5) + ell(100, -184, 30, 24, c, INK, 4).replace('/>', ' transform="rotate(28 100 -184)"/>') + ell(120, -168, 16, 13, LH.shade(c, -.07), INK, 3.5) +
+      path('M114 -158 l-4 28 l14 -14Z', LH.shade(c, -.2), INK, 3) + circ(127, -172, 2.5, INK);
+    hd += o.mood === 'happy' ? path('M92 -192 q6 -6 12 0', 'none', INK, 3.5) : circ(98, -192, o.mood === 'wow' ? 6 : 4.5, INK) + circ(99.5, -193.5, 1.8, '#FFFFFF');
+    b += o.down ? g('rotate(30 70 -130)', hd) : hd;
+    return at(x, y, s, b, o.flip);
+  }
+  function tortoise(x, y, s, o) {
+    o = o || {};
+    var sk = '#A8D27E', sh = '#5FA052', st = o.step ? 10 : 0, b = '';
+    b += ell(-50 - st, -12, 18, 16, sk, INK, 3.5) + ell(36 + st, -12, 18, 16, sk, INK, 3.5) + path('M-82 -30 l-22 8 l20 6Z', sk, INK, 3) + tube('M56 -44 Q88 -54 96 -80', 22, sk);
+    b += path('M-84 -26 Q-84 -128 0 -132 Q84 -128 84 -26Z', sh, INK, 4.5) + tube('M-92 -26 L92 -26', 8, '#8FC46A') + path('M-44 -32 L-32 -86 L32 -86 L44 -32 M-32 -86 L0 -118 L32 -86 M-32 -86 L-70 -66 M32 -86 L70 -66', 'none', LH.shade(sh, -.25), 4);
+    b += ell(-20 + st, -6, 18, 14, sk, INK, 3.5) + ell(58 - st, -6, 18, 14, sk, INK, 3.5) + circ(104, -92, 28, sk, INK, 4);
+    b += o.mood === 'happy' ? path('M104 -102 q7 -6 14 0', 'none', INK, 3.5) : circ(112, -100, 5.5, INK) + circ(113.5, -101.5, 2, '#FFFFFF');
+    b += path('M108 -80 q10 6 18 -4', 'none', INK, 3.5) + circ(120, -86, 6, C.pink, null, 0, ' opacity=".6"');
+    if (o.medal) b += path('M86 -68 L96 -40 L106 -66', 'none', C.red, 6) + daisy(96, -36, 14);
+    return at(x, y, s, b, o.flip);
+  }
+  /* the hare: pose stand (sitting up), run, sleep; hips; blush */
+  function hare(x, y, s, o) {
+    o = o || {};
+    var c = o.c || '#C9A483', w = '#FFF6EA', b = '', pose = o.pose || 'stand';
+    function face(hx, hy, r) {
+      var f = (o.mood === 'sleep' ? path('M' + (hx + 2) + ' ' + (hy - 6) + ' q7 5 14 0', 'none', INK, 3.5) : circ(hx + 9, hy - 6, o.mood === 'wow' ? 7 : 5.5, INK) + circ(hx + 10.5, hy - 7.5, 2, '#FFFFFF')) +
+        ell(hx + r - 4, hy + 6, 6, 5, C.pink, INK, 2) + path('M' + (hx + r - 8) + ' ' + (hy + 12) + ' q-6 8 -14 4', 'none', INK, 2.5) + rect(hx + r - 16, hy + 14, 10, 10, '#FFFFFF', INK, 2, 2) +
+        path('M' + (hx + r - 2) + ' ' + (hy + 6) + ' l26 -6 M' + (hx + r - 2) + ' ' + (hy + 8) + ' l26 6', 'none', INK, 1.5);
+      if (o.blush || o.mood === 'wow') f += circ(hx - 2, hy + 10, 9, C.pink, null, 0, ' opacity=".7"');
+      return f;
+    }
+    function ears(hx, hy, rot) {
+      return [-10, 14].map(function (dx, i) { var ex = hx + dx; return g('rotate(' + (rot + (i ? 12 : -6)) + ' ' + ex + ' ' + (hy - 20) + ')', ell(ex, hy - 56, 12, 44, c, INK, 3.5) + ell(ex, hy - 52, 5, 30, C.pink)); }).join('');
+    }
+    if (pose === 'run') {
+      b += tube('M-50 -60 Q-100 -40 -140 -22', 22, c) + tube('M50 -70 Q100 -60 140 -42', 16, c) + path('M-176 -96 h-60 M-166 -66 h-80 M-176 -36 h-50', 'none', '#9FC7F0', 6);
+      b += circ(-80, -84, 16, '#FFFFFF', INK, 3.5) + ell(0, -72, 76, 34, c, INK, 4) + ell(14, -60, 40, 14, w) + ears(80, -100, -70) + circ(80, -100, 32, c, INK, 4) + face(80, -100, 32);
+    } else if (pose === 'sleep') {
+      b += circ(-90, -42, 14, '#FFFFFF', INK, 3) + ell(0, -34, 90, 34, c, INK, 4) + ell(10, -22, 44, 11, w) + ell(36, -86, 46, 11, c, INK, 3.5) + ell(30, -72, 46, 11, c, INK, 3.5) + circ(80, -56, 32, c, INK, 4) + face(80, -56, 32);
+    } else {
+      b += circ(-46, -36, 15, '#FFFFFF', INK, 3) + ell(0, -70, 46, 64, c, INK, 4) + ell(12, -62, 26, 42, w) + ell(30, -8, 34, 11, c, INK, 3.5);
+      b += tube(o.hips ? 'M16 -104 Q-14 -84 -2 -62' : 'M24 -104 Q46 -86 40 -64', 13, c) + ears(24, -158, 0) + circ(24, -158, 38, c, INK, 4) + face(24, -158, 38);
+    }
+    return at(x, y, s, b, o.flip);
+  }
+  function hedgehog(x, y, s, flip) {
+    return at(x, y, s, path('M-56 0 L-62 -20 L-50 -26 L-54 -46 L-36 -44 L-30 -62 L-14 -52 L0 -66 L10 -50 L26 -58 L28 -40 L40 -40 L36 -20 L30 0Z', '#8A5A3B', INK, 3.5) +
+      ell(34, -16, 22, 15, '#F2D9A6', INK, 3) + circ(56, -16, 4.5, INK) + circ(38, -22, 3, INK) + ell(-20, -2, 10, 5, '#F2D9A6', INK, 2.5) + ell(16, -2, 10, 5, '#F2D9A6', INK, 2.5), flip);
+  }
+  function finish(x0, x1, y, broken) {
+    var s = tube('M' + x0 + ' ' + y + ' v-170 M' + x1 + ' ' + y + ' v-170', 8, C.wood2) + path('M' + x0 + ' ' + (y - 170) + ' l40 12 l-40 12Z M' + x1 + ' ' + (y - 170) + ' l40 12 l-40 12Z', C.sun, INK, 3);
+    if (!broken) s += tube('M' + x0 + ' ' + (y - 120) + ' Q' + ((x0 + x1) / 2) + ' ' + (y - 96) + ' ' + x1 + ' ' + (y - 120), 7, C.red);
+    else s += tube('M' + x0 + ' ' + (y - 120) + ' Q' + (x0 + 40) + ' ' + (y - 70) + ' ' + (x0 + 16) + ' ' + (y - 30), 7, C.red) + tube('M' + x1 + ' ' + (y - 120) + ' Q' + (x1 - 50) + ' ' + (y - 80) + ' ' + (x1 - 24) + ' ' + (y - 40), 7, C.red);
+    return s;
+  }
+  function thought(x, y, inner) { return blob([[x - 70, y, 50], [x, y - 24, 62], [x + 70, y, 50], [x, y + 26, 50]], '#FFFFFF', INK, 4) + circ(x - 100, y + 80, 14, '#FFFFFF', INK, 3.5) + circ(x - 122, y + 116, 9, '#FFFFFF', INK, 3) + inner; }
+
+  /* ------------------------------------------------------------------ The Gingerbread Man */
+  var gbKitchen = function (o) {
+    o = o || {};
+    var s = room({ wall: '#FFF0DA', floor: '#C98B4E', dot: '#FFD8A8', window: [690, 80, 170, 140], curtain: C.red }) + windowSnow(690, 80, 170, 140);
+    if (o.door) s += rect(880, 250, 130, 270, '#DDF2FF', INK, 4, 4) + path('M880 470 Q940 450 1010 466 L1010 520 L880 520Z', '#F4F8FF', INK, 3) + path('M880 250 L842 272 L842 536 L880 520Z', '#A86B3A', INK, 4);
+    return s;
+  };
+  var gbBank = function () { return sky() + sun(860, 100, 40) + cloud(140, 90, .8) + hills('#7CCB6E', C.grass2, -90) + riverBand(420, 560) + ground(560, C.grass) + reeds(80, 620, .8) + reeds(930, 640, .9); };
+  S.gingerbread = {
+    cover: function (h) {
+      return sky() + sun(860, 100, 46) + cloud(150, 90, .8) + hills() + tree(920, 540, 1) + flowers(10, 600, 640, 12) + path('M-10 660 Q500 600 1010 640', 'none', C.path, 80) +
+        h({ x: 360, y: 690, s: .95, pose: 'walk', mood: 'laugh' }) + gingerbread(700, 660, .85, { run: true }) + txt(700, 330, 46, 'RUN, RUN!', C.sun, -6);
+    },
+    pages: [
+      function (h) {
+        return gbKitchen() + table(500, 690, 620) + rect(330, 556, 340, 16, '#F3E2C2', INK, 3.5, 8) + gingerbread(500, 556, .5, { raw: true }) + rollingPin(640, 546) + circ(380, 546, 14, '#F3D7A8', INK, 3) + circ(416, 548, 12, '#F3D7A8', INK, 3) +
+          per('grandma', 180, 690, .8, { pose: 'hold', mood: 'laugh' }) + h({ x: 820, y: 690, s: .9, pose: 'hold', mood: 'happy', flip: true });
+      },
+      function (h) {
+        return gbKitchen() + oven(560, 640, 1.1, { lit: true }) + path('M520 340 q-20 -30 0 -60 q20 -30 0 -60 M600 340 q-20 -30 0 -60 q20 -30 0 -60', 'none', '#FFFFFF', 7, ' opacity=".9"') +
+          h({ x: 330, y: 690, s: .9, pose: 'reach', mood: 'wow' }) + per('grandma', 820, 690, .8, { pose: 'point', mood: 'happy', flip: true }) + txt(560, 170, 50, 'SNIFF!', C.sun, -6);
+      },
+      function (h) {
+        return gbKitchen({ door: true }) + table(330, 690, 420) + per('grandma', 140, 690, .78, { pose: 'shrug', mood: 'wow' }) + h({ x: 520, y: 690, s: .9, pose: 'shrug', mood: 'wow' }) +
+          gingerbread(790, 690, .7, { run: true }) + txt(640, 220, 42, 'CATCH ME!', C.sun, -6);
+      },
+      function (h) {
+        return sky() + sun(150, 100, 44) + cloud(600, 80, .8) + hills('#7CCB6E', C.grass, -10) + fence(520, 560, 1010) + cow(700, 560, .55) + txt(840, 330, 40, 'MOO!', '#FFFFFF', 6) +
+          path('M-10 660 Q500 610 1010 650', 'none', C.path, 70) + per('grandma', 110, 680, .7, { pose: 'walk', mood: 'wow' }) + h({ x: 330, y: 690, s: .9, pose: 'walk', mood: 'laugh' }) + gingerbread(620, 670, .6, { run: true });
+      },
+      function (h) {
+        return sky() + cloud(200, 80, .8) + cloud(700, 100, .7) + hills('#D9C86A', '#E8D47A', -10) + hay(110, 560, .8) + hay(930, 540, .6) + horse(660, 590, .5, { run: true }) +
+          per('v4', 870, 650, .6, { pose: 'cheer', mood: 'wow' }) + per('grandpa', 420, 630, .6, { pose: 'walk', mood: 'laugh' }) + cow(70, 690, .4) + per('grandma', 270, 690, .62, { pose: 'walk', mood: 'laugh' }) +
+          h({ x: 560, y: 690, s: .85, pose: 'walk', mood: 'laugh' }) + gingerbread(780, 690, .55, { run: true }) + txt(500, 160, 44, 'RUN, RUN!', C.sun, -4);
+      },
+      function (h) { return gbBank() + gingerbread(290, 660, .7, { mood: 'oops' }) + fox(680, 660, .9, { flip: true }) + txt(290, 380, 56, '?!', C.sun); },
+      function (h) {
+        return sky() + sun(150, 100, 40) + cloud(560, 90, .8) + hills('#7CCB6E', C.grass2, -100) + riverBand(400, 710) + fox(460, 690, .9) + waterFront(620) +
+          path('M1010 470 Q840 450 720 500 Q750 600 790 710 L1010 710Z', C.grass, INK, 4) + reeds(950, 560, .7) + h({ x: 870, y: 650, s: .8, pose: 'cheer', mood: 'wow', flip: true }) +
+          gingerbread(460 + 136 * .9, 690 - 142 * .9, .42, { cheer: true, mood: 'wow' }) + txt(380, 220, 50, 'SNIP, SNAP!', C.sun, -6) + txt(840, 330, 44, 'JUMP!', '#FFFFFF', 6);
+      },
+      function (h) {
+        return gbBank() + fox(760, 660, .85, { mood: 'sad', flip: true }) + circ(610, 650, 16, C.red, INK, 3.5) + path('M610 634 q4 -10 10 -10', 'none', '#3E8E4E', 3) +
+          h({ x: 330, y: 690, s: .95, pose: 'hold', mood: 'laugh' }) + gingerbread(330, 690 - 92, .4, { cheer: true }) + hearts(330, 240, 2) + txt(760, 330, 34, 'oh well…', '#FFFFFF');
+      },
+      function (h) {
+        var cookies = '';
+        [[300, .36], [390, .34], [600, .36], [690, .34]].forEach(function (c, i) { cookies += gingerbread(c[0], 572, c[1], { cheer: i % 2 === 0, mood: 'happy' }); });
+        return gbKitchen() + bunting(64, -20, 1020) + table(500, 690, 640) + cookies + gingerbread(495, 572, .44, { cheer: true }) + per('grandma', 860, 690, .76, { pose: 'cheer', mood: 'laugh', flip: true }) +
+          h({ x: 150, y: 690, s: .85, pose: 'cheer', mood: 'laugh' }) + txt(500, 250, 54, 'PARTY!', C.sun, -4) + txt(250, 390, 34, '♪', '#FFFFFF') + txt(760, 380, 34, '♫', '#FFFFFF');
+      }
+    ]
+  };
+
+  /* ------------------------------------------------------------------ The Ugly Duckling */
+  var GREY = '#9C98AE';
+  var pondScene = function (o) {
+    o = o || {};
+    var season = o.season || 'spring', s = sky({ autumn: '#FFE2BC', winter: '#DCE9F5' }[season]);
+    if (season === 'winter') s += cloud(120, 110, 1) + cloud(640, 80, .9) + hills('#E9F1FA', '#F4F8FF');
+    else if (season === 'autumn') s += sun(860, 110, 44) + hills('#D9B060', '#E8C670') + tree(90, 520, 1.1, { c: '#F0A040' }) + tree(920, 500, 1, { c: '#E8742A' });
+    else s += sun(870, 100, 44) + cloud(160, 90, .8) + hills() + tree(80, 520, 1.1) + tree(940, 510, 1.05, { c: '#6CC46A' });
+    s += pond(520, 612, 420, 82, { ice: season === 'winter', pads: season === 'spring' });
+    if (season !== 'winter') s += reeds(140, 600, .9) + reeds(890, 590, .8);
+    return s;
+  };
+  S.duckling = {
+    cover: function (h) { return pondScene() + swan(620, 640, .95, { swim: true }) + chick(820, 690, .6) + chick(870, 680, .5, true) + h({ x: 290, y: 690, s: .95, pose: 'wave', mood: 'laugh' }) + hearts(620, 330, 2); },
+    pages: [
+      function (h) {
+        return pondScene() + duck(450, 666, .8, { sit: true }) + nest(560, 692, 1.1, { egg: true }) + chick(680, 690, .55) + chick(730, 684, .5, true) + chick(380, 690, .5, true) +
+          h({ x: 870, y: 690, s: .88, pose: 'hold', mood: 'wow', flip: true });
+      },
+      function (h) {
+        return pondScene() + duck(290, 680, .8, { mood: 'wow' }) + nest(520, 692, 1.1, { shells: true }) + swan(500, 676, .72, { ugly: true, c: GREY }) + chick(650, 690, .5) + chick(160, 690, .5, true) +
+          h({ x: 830, y: 690, s: .88, pose: 'wave', mood: 'happy', flip: true }) + txt(520, 230, 60, 'CRACK!', C.sun, -6);
+      },
+      function (h) {
+        return farm() + hen(170, 690, .8) + turkey(380, 690, .8) + chick(540, 690, .5) + chick(590, 690, .45, true) + swan(690, 690, .62, { ugly: true, c: GREY, sad: true }) +
+          h({ x: 850, y: 690, s: .85, pose: 'hold', mood: 'sad', flip: true }) + hearts(770, 330, 1) + txt(300, 190, 44, 'TOO BIG!', '#FFFFFF', -6) + txt(560, 140, 44, 'TOO GREY!', C.sun, 6);
+      },
+      function (h) {
+        var r = '';
+        seed = 37;
+        for (var i = 0; i < 7; i++) r += reeds(40 + i * 150 + rnd() * 40, 560 + rnd() * 40, .6 + rnd() * .4);
+        return sky('#CFE3EA') + cloud(150, 100, 1) + cloud(620, 80, .9) + ground(470, '#9CC98A') + ell(250, 600, 140, 26, '#A9DAF2', INK, 3) + ell(780, 560, 110, 20, '#A9DAF2', INK, 3) + r +
+          bird(330, 170, 1.2) + bird(400, 210, 1) + bird(470, 250, .9) + bird(260, 210, 1) + bird(190, 250, .9) + txt(720, 200, 40, 'HONK!', '#FFFFFF', 6) +
+          h({ x: 520, y: 690, s: .95, pose: 'point', mood: 'oops' }) + txt(520, 330, 36, 'WHERE ARE YOU?', '#FFFFFF');
+      },
+      function (h) {
+        return pondScene({ season: 'autumn' }) + leaves(16, 41) + flyer(260, 160, .7) + flyer(380, 210, .7) + flyer(500, 150, .65) + flyer(620, 200, .6) +
+          swan(800, 610, .45, { ugly: true, c: GREY, swim: true }) + reeds(860, 630, .6) + h({ x: 330, y: 690, s: .95, pose: 'point', mood: 'wow' });
+      },
+      function (h) {
+        return pondScene({ season: 'winter' }) + snowfall(40, 3) + swan(580, 630, .62, { ugly: true, c: GREY, swim: true, sad: true }) + h({ x: 300, y: 690, s: .92, pose: 'hold', mood: 'oops' }) +
+          scarf(300, 690 - 96) + txt(600, 420, 34, 'brrr…', '#FFFFFF');
+      },
+      function (h) {
+        return room({ wall: '#FFE7C9', floor: '#C98B4E', dot: '#FFD3A0', window: [690, 80, 170, 140], night: true, curtain: '#3DBE8B' }) + windowSnow(690, 80, 170, 140) + fireplace(210, 600, .9) +
+          ell(520, 660, 300, 38, '#EF5A36', INK, 4) + ell(520, 660, 240, 26, '#FFC93C', INK, 3) + swan(500, 660, .66, { ugly: true, c: '#D8D4E4' }) + [[600, 650], [620, 662], [640, 648]].map(function (p) { return circ(p[0], p[1], 5, '#E0A458', INK, 2); }).join('') +
+          h({ x: 790, y: 690, s: .88, pose: 'hold', mood: 'laugh', flip: true }) + openBook(790, 604, .7) + mug(940, 690, .8);
+      },
+      function (h) {
+        return pondScene() + swan(220, 610, .62, { swim: true }) + swan(360, 630, .55, { swim: true }) + '<g opacity=".3">' + g('translate(0 1236) scale(1 -1)', swan(620, 618, .78, { swim: true, sad: true })) + '</g>' +
+          swan(620, 618, .78, { swim: true, sad: true }) + sparkles(640, 440, 110, 6, 72) + h({ x: 880, y: 690, s: .88, pose: 'cheer', mood: 'wow', flip: true });
+      },
+      function (h) {
+        return pondScene() + swan(260, 620, .7, { swim: true, flap: true }) + swan(440, 600, .6, { swim: true, flap: true }) + swan(640, 630, .78, { swim: true }) +
+          h({ x: 870, y: 690, s: .9, pose: 'wave', mood: 'laugh', flip: true }) + hearts(640, 330, 2);
+      }
+    ]
+  };
+
+  /* ------------------------------------------------------------------ The Three Billy Goats Gruff */
+  var BX0 = 300, BX1 = 740, BY = 470, LITTLE = { c: '#FFFFFF' }, MIDDLE = { c: '#EFE4D2', horns: 'mid' }, BIG = { c: '#C9B496', horns: 'curly' };
+  function deckY(x) { var t = (x - BX0) / (BX1 - BX0); return BY - 200 * t * (1 - t) + 4; }
+  function gt(base, extra) { return Object.assign({}, base, extra || {}); }
+  var hillside = function () { return sky() + sun(150, 100, 44) + cloud(560, 80, .8) + mountains() + hills('#8ED37A', '#7CCB6E', -20) + flowers(10, 600, 690, 71) + grassTufts(14, 560, 690, 72); };
+  var goatRiver = function (o) {
+    o = o || {};
+    seed = 83;
+    var fl = '';
+    for (var i = 0; i < 9; i++) fl += flower(720 + rnd() * 260, 470 + rnd() * 220, ['#FFFFFF', C.sun, C.pink][i % 3], .8 + rnd() * .3);
+    return sky() + sun(880, 90, 40) + cloud(120, 90, .8) + mountains() + path('M-10 404 Q240 384 520 404 L520 710 L-10 710Z', o.bare ? '#CFC48A' : '#8ED37A', INK, 4) +
+      path('M500 404 Q780 380 1010 398 L1010 710 L500 710Z', '#7CCB6E', INK, 4) + fl +
+      path('M470 400 Q460 480 420 560 Q390 640 380 710 L700 710 Q680 620 640 540 Q600 470 570 400Z', '#7FC8F8', INK, 4) + waves(420, 660, 520, 680, 5, 9) +
+      bridge(BX0, BX1, BY) + (o.eyes ? ell(525, BY + 62, 60, 26, '#2E2A63', null, 0, ' opacity=".55"') + circ(506, BY + 60, 7, '#FFE07A') + circ(544, BY + 60, 7, '#FFE07A') : '');
+  };
+  function trollUp(x, mood, arms) { return troll(x, 772, .6, { mood: mood, arms: arms }) + path('M' + (x - 150) + ' 652 Q' + x + ' 626 ' + (x + 150) + ' 652 L' + (x + 170) + ' 710 L' + (x - 170) + ' 710Z', '#7FC8F8', INK, 4) + waves(x - 120, x + 120, 668, 690, 3, 5); }
+  var trollBank = function () { return sky() + sun(860, 100, 40) + cloud(160, 90, .8) + mountains() + hills('#8ED37A', '#7CCB6E', -60) + riverBand(440, 540) + ground(540, C.grass) + flowers(8, 600, 690, 74); };
+  S.goats = {
+    cover: function (h) {
+      return goatRiver() + goat(410, deckY(410), .3, LITTLE) + goat(560, deckY(560), .38, MIDDLE) + trollUp(600, 'happy', 'up') + h({ x: 160, y: 690, s: .95, pose: 'cheer', mood: 'laugh' }) + txt(520, 150, 46, 'TRIP, TRAP!', C.sun, -6);
+    },
+    pages: [
+      function (h) {
+        return hillside() + goat(210, 630, .45, gt(LITTLE, { down: true })) + goat(420, 660, .6, gt(MIDDLE, { down: true })) + goat(680, 680, .8, gt(BIG, { mood: 'happy' })) +
+          h({ x: 880, y: 690, s: .88, pose: 'wave', mood: 'laugh', flip: true }) + txt(330, 330, 36, 'MUNCH!', '#FFFFFF', -6) + txt(560, 290, 36, 'CRUNCH!', C.sun, 6);
+      },
+      function (h) {
+        return goatRiver({ bare: true, eyes: true }) + goat(250, 540, .36, LITTLE) + goat(150, 580, .46, MIDDLE) + goat(120, 690, .6, BIG) + h({ x: 300, y: 690, s: .85, pose: 'point', mood: 'laugh' });
+      },
+      function (h) {
+        return goatRiver({ bare: true }) + goat(470, deckY(470), .34, gt(LITTLE, { mood: 'wow' })) + trollUp(560, 'grumpy', 'up') + goat(150, 580, .46, MIDDLE) + goat(110, 690, .6, BIG) +
+          h({ x: 280, y: 690, s: .78, pose: 'shrug', mood: 'wow' }) + txt(360, 150, 40, 'TRIP, TRAP!', C.sun, -6) + txt(760, 230, 34, 'WHO’S THAT?', '#FFFFFF', 6);
+      },
+      function (h) {
+        return goatRiver({ bare: true }) + goat(860, 600, .38, gt(LITTLE, { down: true })) + goat(480, deckY(480), .42, gt(MIDDLE, { mood: 'wow' })) + trollUp(580, 'grumpy', 'up') + goat(120, 690, .6, BIG) +
+          h({ x: 280, y: 690, s: .78, pose: 'hold', mood: 'oops' }) + txt(360, 150, 44, 'TRIP, TRAP!', C.sun, -6);
+      },
+      function (h) {
+        return goatRiver({ bare: true }) + goat(860, 620, .38, gt(LITTLE, { down: true })) + goat(930, 690, .44, gt(MIDDLE, { down: true })) + goat(470, deckY(470), .52, gt(BIG, { down: true })) +
+          trollUp(620, 'grumpy', 'up') + h({ x: 340, y: deckY(340) + 2, s: .62, pose: 'cheer', mood: 'wow' }) + txt(330, 150, 60, 'STOP!', C.red, -6);
+      },
+      function (h) {
+        return trollBank() + troll(720, 690, .72, { mood: 'sad' }) + h({ x: 360, y: 690, s: .92, pose: 'shrug', mood: 'happy' }) + goat(110, 640, .4, LITTLE) + txt(760, 120, 36, 'rumble…', '#FFFFFF');
+      },
+      function (h) {
+        return trollBank() + goat(120, 600, .4, LITTLE) + goat(930, 610, .44, MIDDLE) + blanket(250, 600, 500, 80, '#EF5A36') + picnic(330, 660, .9) +
+          troll(820, 690, .66, { mood: 'laugh', arms: 'hold' }) + path('M790 590 L830 590 L830 566Z', '#FFE2C2', INK, 3) + h({ x: 190, y: 690, s: .85, pose: 'hold', mood: 'laugh' }) + hearts(820, 160, 2);
+      },
+      function (h) {
+        return goatRiver() + goat(840, 600, .44, gt(MIDDLE, { round: true, down: true })) + goat(920, 690, .58, gt(BIG, { round: true })) + goat(760, 680, .36, gt(LITTLE, { round: true, down: true })) +
+          trollUp(540, 'happy', 'hold') + hammer(600, 560, .9, -30) + h({ x: 380, y: deckY(380), s: .66, pose: 'hold', mood: 'laugh' }) + txt(520, 150, 46, 'TAP, TAP!', C.sun, -6);
+      },
+      function (h) {
+        return goatRiver() + goat(390, deckY(390), .32, LITTLE) + troll(520, deckY(520), .4, { mood: 'laugh', arms: 'up' }) + h({ x: 640, y: deckY(640), s: .62, pose: 'wave', mood: 'laugh', flip: true }) +
+          goat(130, 690, .56, BIG) + goat(250, 640, .42, MIDDLE) + blanket(780, 620, 200, 60, '#4EA8F5') + picnic(820, 670, .55) + hearts(520, 140, 3);
+      }
+    ]
+  };
+
+  /* ------------------------------------------------------------------ The Tortoise and the Hare */
+  var meadow = function (o) { o = o || {}; return sky() + sun(860, 100, 44) + cloud(140, 90, .8) + cloud(520, 70, .7) + hills('#7CCB6E', C.grass, o.dy || 0) + (o.trees === false ? '' : tree(70, 500, .75, { c: '#6CC46A' }) + bush(300, 512, .7) + bush(640, 505, .6, '#4FB65A')) + flowers(o.n == null ? 10 : o.n, 600, 690, o.sd || 51) + grassTufts(16, 560, 690, (o.sd || 51) + 1); };
+  S.tortoise = {
+    cover: function (h) {
+      return meadow() + finish(760, 960, 690) + hare(170, 560, .45, { pose: 'run' }) + h({ x: 380, y: 690, s: .95, pose: 'cheer', mood: 'laugh' }) + tortoise(620, 690, .9, { step: true, mood: 'happy' });
+    },
+    pages: [
+      function (h) {
+        return meadow() + path('M380 600 C380 500 740 500 740 600 C740 680 380 680 380 600', 'none', '#FFFFFF', 5, ' stroke-dasharray="14 14"') + hare(560, 520, .5, { pose: 'run' }) +
+          tortoise(220, 690, .8, { mood: 'happy' }) + cloud(170, 380, .5) + path('M250 600 L210 420', 'none', '#FFFFFF', 3, ' stroke-dasharray="6 10"') + h({ x: 830, y: 690, s: .9, pose: 'wave', mood: 'laugh', flip: true });
+      },
+      function (h) {
+        return meadow({ sd: 53 }) + hedgehog(90, 690, .6) + hare(330, 690, .8, { hips: true }) + tortoise(610, 690, .85) + h({ x: 860, y: 690, s: .85, pose: 'shrug', mood: 'wow', flip: true }) +
+          txt(330, 170, 38, 'I’M THE FASTEST!', C.sun, -4) + txt(620, 420, 34, 'Let’s race!', '#FFFFFF');
+      },
+      function (h) {
+        return meadow({ n: 0, sd: 55, trees: false }) + tree(830, 560, .8) + tree(980, 560, .8) + finish(840, 980, 560) + path('M60 660 L620 660', 'none', '#FFFFFF', 8, ' stroke-dasharray="22 14"') +
+          hare(330, 650, .62) + tortoise(480, 655, .7) + hedgehog(700, 690, .5) + hedgehog(770, 690, .4, true) + hare(640, 610, .3, { c: '#E8DCC8' }) + hare(900, 680, .34, { c: '#B9B4C9', flip: true }) + bird(700, 300, .8) +
+          h({ x: 140, y: 690, s: .85, pose: 'cheer', mood: 'laugh' }) + txt(380, 200, 70, 'GO!', C.red, -6);
+      },
+      function (h) {
+        return meadow({ sd: 57 }) + hare(860, 520, .35, { pose: 'run' }) + blob([[760, 520, 20], [730, 510, 14], [790, 530, 12]], '#F2E6CF', INK, 3) + tortoise(500, 690, .85, { step: true }) +
+          h({ x: 250, y: 690, s: .9, pose: 'cheer', mood: 'laugh' }) + txt(770, 300, 48, 'WHOOSH!', '#FFFFFF', -6) + txt(500, 420, 32, 'slow and steady!', C.sun);
+      },
+      function (h) {
+        return meadow({ sd: 59 }) + tree(620, 600, 1.4) + hare(620, 650, .75, { pose: 'sleep', mood: 'sleep' }) + zzz(700, 430) + thought(860, 230, carrot(860, 210, .8, 70)) + tortoise(110, 620, .4, { step: true });
+      },
+      function (h) {
+        return sky() + sun(150, 100, 44) + cloud(600, 80, .8) + path('M-10 520 Q300 290 620 470 Q800 560 1010 540 L1010 710 L-10 710Z', C.grass, INK, 4) +
+          path('M-10 640 Q200 600 400 640 T800 630 T1010 650', 'none', INK, 40) + path('M-10 640 Q200 600 400 640 T800 630 T1010 650', 'none', '#7FC8F8', 32) + tortoise(380, 430, .6, { step: true }) +
+          h({ x: 700, y: 690, s: .9, pose: 'cheer', mood: 'laugh', flip: true }) + hedgehog(870, 690, .5, true) + hare(940, 690, .32, { c: '#E8DCC8', flip: true }) + txt(560, 240, 40, '♪', '#FFFFFF') + txt(640, 200, 40, '♫', C.sun) + txt(870, 300, 40, '♪', '#FFFFFF');
+      },
+      function (h) {
+        return meadow({ sd: 61 }) + tree(770, 600, 1.4) + hare(770, 650, .7, { pose: 'sleep', mood: 'sleep' }) + zzz(840, 430) + tortoise(470, 690, .8, { step: true }) +
+          h({ x: 200, y: 690, s: .9, pose: 'hold', mood: 'happy' }) + txt(200, 230, 52, 'SHHH!', '#FFFFFF', -6);
+      },
+      function (h) {
+        return meadow({ sd: 63 }) + finish(560, 860, 690, true) + hare(240, 600, .55, { pose: 'run', mood: 'wow' }) + tortoise(700, 690, .85, { mood: 'happy' }) +
+          h({ x: 930, y: 690, s: .8, pose: 'cheer', mood: 'laugh', flip: true }) + sparkles(700, 470, 130, 7, 64) + txt(560, 170, 50, 'HOORAY!', C.sun, -6);
+      },
+      function (h) {
+        return meadow({ sd: 65 }) + hedgehog(130, 690, .5) + hedgehog(200, 690, .4, true) + tortoise(420, 690, .85, { medal: true, mood: 'happy' }) + hare(620, 690, .75, { blush: true }) +
+          h({ x: 840, y: 690, s: .9, pose: 'hold', mood: 'laugh', flip: true }) + hearts(500, 200, 3);
+      }
+    ]
+  };
   LH.SCENES = S;
 
   /* The main character, or the "your hero here" outline in the generic book. */
@@ -2351,16 +2969,60 @@
       return LH.figure(null, o) + (r ? star(o.x - 110 * s, o.y - 290 * s, 16 * s, C.sun, INK, 3) + star(o.x + 120 * s, o.y - 220 * s, 12 * s, '#FFFFFF', INK, 3) + star(o.x + 90 * s, o.y - 330 * s, 9 * s, C.sun, INK, 2.5) : '');
     };
   }
+  /* The storybook finish: a softer plum ink instead of the near-black outline. */
+  var SOFT = '#4A3F6B';
+  LH.SOFT_INK = SOFT;
+  LH.soften = function (svg) { return String(svg).split(INK).join(SOFT); };
+  /* Colour-me-in: every coloured fill turns white, the ink stays. Thick outlined lines (limbs, tails, beanstalks) are
+     drawn as an ink stroke plus a coloured stroke with the same path: the coloured twin turns white so the line stays
+     an outlined tube to colour in. A coloured line with no twin (grass, rain, steam) becomes a thin ink line. */
+  LH.outline = function (svg) {
+    var counts = {}, seen = {};
+    svg = String(svg);
+    svg.replace(/ d="([^"]*)"/g, function (m, d) { counts[d] = (counts[d] || 0) + 1; return m; });
+    return svg.replace(/<(path|circle|ellipse|rect|text)\b([^>]*?)(\/?)>/g, function (all, tag, attrs, close) {
+      var dm = attrs.match(/ d="([^"]*)"/), d = dm && dm[1], k = 0, noFill = / fill="none"/.test(attrs);
+      if (d) { k = seen[d] || 0; seen[d] = k + 1; }
+      attrs = attrs.replace(/ fill="([^"]*)"/, function (mm, f) {
+        if (f === 'none' || f.indexOf('url(') === 0 || f.toUpperCase() === INK) return mm;
+        return f.indexOf('rgba') === 0 ? ' fill="none"' : ' fill="#FFFFFF"';
+      });
+      attrs = attrs.replace(/ stroke="([^"]*)"( stroke-width="([^"]*)")?/, function (mm, st, sww, sw) {
+        if (st === 'none' || st.toUpperCase() === INK) return mm;
+        if (d && noFill && counts[d] > 1) return (k > 0 ? ' stroke="#FFFFFF"' : ' stroke="' + INK + '"') + (sww || '');
+        return ' stroke="' + INK + '" stroke-width="' + Math.min(+(sw || 4), 4) + '"';
+      });
+      return '<' + tag + attrs + close + '>';
+    });
+  };
   LH.sceneSvg = function (key, page, hero, o) {
     o = o || {};
     var st = S[key];
     if (!st) return '';
     var fn = page === 'cover' ? st.cover : st.pages[page];
     if (!fn) return '';
-    var inner;
+    var inner, id = o.clip || 'lhc', defs = '', over = '';
     try { inner = fn(heroDrawer(hero)); } catch (e) { console.error('scene', key, page, e); inner = rect(0, 0, 1000, 700, '#FFE7C2'); }
+    if (o.outline) inner = LH.outline(inner);
+    else {
+      // a warm pastel wash, a soft glow in the middle and gently darker corners, like a painted page
+      inner = LH.soften(inner);
+      defs = '<radialGradient id="' + id + 'v" cx="50%" cy="44%" r="72%"><stop offset="0" stop-color="#FFFBEF" stop-opacity=".22"/><stop offset=".55" stop-color="#FFF4DC" stop-opacity="0"/>' +
+        '<stop offset="1" stop-color="#C98B4E" stop-opacity=".2"/></radialGradient>';
+      over = '<rect width="1000" height="700" fill="#FFF8EC" opacity=".1"/><rect width="1000" height="700" fill="url(#' + id + 'v)"/>';
+      if (o.grain) {
+        defs += '<filter id="' + id + 'g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/>' +
+          '<feColorMatrix values="0 0 0 0 .42  0 0 0 0 .3  0 0 0 0 .2  0 0 0 .16 0"/></filter>';
+        over += '<rect width="1000" height="700" filter="url(#' + id + 'g)"/>';
+      }
+    }
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700"' + (o.w ? ' width="' + o.w + '" height="' + Math.round(o.w * .7) + '"' : '') + ' class="' + (o.cls || 'lh-scene') + '" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
-      '<clipPath id="' + (o.clip || 'lhc') + '"><rect width="1000" height="700"/></clipPath><g clip-path="url(#' + (o.clip || 'lhc') + ')">' + inner + '</g></svg>';
+      '<defs>' + defs + '<clipPath id="' + id + '"><rect width="1000" height="700"/></clipPath></defs><g clip-path="url(#' + id + ')">' + inner + over + '</g></svg>';
+  };
+  /* A portrait or figure for the book pages, in the same finish as the scenes. */
+  LH.bookAvatar = function (look, o) {
+    var svg = LH.avatarSvg(look, o);
+    return o && o.outline ? LH.outline(svg) : LH.soften(svg);
   };
   LH.pageCount = function (key) { return S[key] ? S[key].pages.length : 0; };
 })();
@@ -2436,7 +3098,7 @@
 
     function library() {
       return UI.api('admin_library').then(function (d) {
-        body.innerHTML = '<p class="muted">The eight stories (server_code/Stories.py, pictures in web/pages/_scenes.html), with how many real books each has become. Example books are not counted.</p>' +
+        body.innerHTML = '<p class="muted">The twelve stories (server_code/Stories.py, pictures in web/pages/_scenes.html), with how many real books each has become. Example books are not counted.</p>' +
           '<table class="ad-users"><thead><tr><th>Story</th><th>Words</th><th>Books</th><th>Reads</th></tr></thead><tbody>' + d.stories.map(function (s) {
             return '<tr><td><b>' + esc(s.plain) + '</b><div class="small muted">' + esc(s.source) + '</div></td><td>' + s.words + '</td><td>' + s.made + '</td><td>' + s.reads + '</td></tr>';
           }).join('') + '</tbody></table>';
@@ -2549,7 +3211,7 @@
   function pdfBtn(label) { return '<button class="ui-btn sm primary" data-pdf>' + UI.icon('download') + (label || 'Download PDF') + '</button>'; }
   function signupBtn() { return '<a class="ui-btn sm primary" href="#auth/signup" data-go="auth/signup">' + UI.icon('download') + 'Sign up free to download</a>'; }
   function cta(hero) {
-    return '<div class="ui-card bk-cta">' + (hero && hero.look ? LH.heroFace(hero) : '<span class="face"></span>') + '<div><h3>Make one starring your child</h3><p>Design a little cartoon look-alike in a minute, then pick from eight classic tales. Free.</p></div>' +
+    return '<div class="ui-card bk-cta">' + (hero && hero.look ? LH.heroFace(hero) : '<span class="face"></span>') + '<div><h3>Make one starring your child</h3><p>Design a little cartoon look-alike in a minute, then pick from twelve classic tales. Free.</p></div>' +
       '<a class="ui-btn primary" href="#studio" data-go="studio">' + UI.icon('wand') + 'Start the studio</a></div>';
   }
 
@@ -2596,7 +3258,7 @@
       rd = LH.reader(view.querySelector('[data-reader]'), book, { tools: tools, onFinish: function () { if (b.mine) UI.apiQuiet('book_read', b.id); } });
     }
     view.addEventListener('click', function (e) {
-      if (e.target.closest('[data-pdf]')) { UI.busy(e.target.closest('[data-pdf]'), LH.downloadPdf(book)); return; }
+      if (e.target.closest('[data-pdf]')) { LH.pdfDialog(book); return; }
       if (e.target.closest('[data-share]')) { familyLink(book, function () { var l = view.querySelector('[data-share-label]'); if (l) l.textContent = book.share_key ? 'Family link: on' : 'Family link'; }); return; }
       if (e.target.closest('[data-ded]')) {
         var m = UI.modal('<h2>Dedication</h2><p class="muted">Printed on the first page, under ' + esc(book.hero.name) + '’s portrait.</p><form class="ui-stack" data-dedf><textarea name="d" maxlength="160" rows="3" placeholder="' + esc(LH.dedication(Object.assign({}, book, { dedication: '' }))) + '">' + esc(book.dedication) + '</textarea>' +
@@ -2645,7 +3307,7 @@
     view.addEventListener('click', function (e) {
       var p = e.target.closest('[data-pick]');
       if (p) { choice = LH.heroChoices(lib).filter(function (c) { return c.ref === p.getAttribute('data-pick'); })[0] || choice; history.replaceState(null, '', '#story/' + key + '/' + choice.ref); draw(storyData); return; }
-      if (e.target.closest('[data-pdf]')) { UI.busy(e.target.closest('[data-pdf]'), LH.downloadPdf(book)); return; }
+      if (e.target.closest('[data-pdf]')) { LH.pdfDialog(book); return; }
       if (e.target.closest('[data-make]')) LH.makeBookDialog(storyData, lib.heroes, choice.ref);
     });
     var ready = Promise.all([UI.api('get_story', key), UI.api('get_library')]).then(function (r) {
@@ -2661,7 +3323,7 @@
   UI.page('read', { title: 'A book for you' }, function (view, ctx) {
     var rd = null, book;
     view.innerHTML = '<div class="ui-wrap"><div class="ui-skel" style="height:520px;max-width:760px;margin:0 auto"></div></div>';
-    view.addEventListener('click', function (e) { if (e.target.closest('[data-pdf]')) UI.busy(e.target.closest('[data-pdf]'), LH.downloadPdf(book)); });
+    view.addEventListener('click', function (e) { if (e.target.closest('[data-pdf]')) LH.pdfDialog(book); });
     var ready = UI.api('get_shared_book', ctx.args[0] || '').then(function (r) {
       book = asBook(r.story, r.book.hero, { dedication: r.book.dedication, created: r.book.created });
       view.innerHTML = '<div class="ui-wrap bk-wrap"><div class="bk-head"><div><div class="eyebrow">A book made for ' + esc(r.book.hero.name) + '</div><h1>' + esc(LH.title(r.story, r.book.hero)) + '</h1>' +
@@ -2747,24 +3409,25 @@
   var COPY = {
     eyebrow: 'Personalised picture books',
     title: 'Classic bedtime stories, <em>starring your child</em>',
-    lead: 'Build a cartoon look-alike of your little one, from curls to freckles. Then watch them step into eight beloved fairy tales, and download each book as a PDF to read, print or share.',
+    lead: 'Build a cartoon look-alike of your little one, from curls to freckles. Then watch them step into twelve beloved fairy tales, and download each book as a PDF to read, print, colour in or share.',
     proof: ['Free', 'No photos needed', 'Print-ready PDF'],
     stepsTitle: 'From giggles to bedtime in three steps',
     stepsLead: 'About five minutes, start to finish.',
     steps: [['Design your hero', 'Pick skin tone, face, hair, eyes, a favourite outfit and maybe a crown. Add their name and pronouns.'],
-            ['Pick a story', 'Goldilocks, the Beanstalk, the Magic Porridge Pot… every picture has a space waiting for your child.'],
-            ['Read, print, share', 'Turn pages together on any screen, press “Read to me”, or download a square PDF for the fridge, Grandma or a photo-book printer.']],
+            ['Pick a story', 'Goldilocks, the Gingerbread Man, the Ugly Duckling… every picture has a space waiting for your child.'],
+            ['Read, print, share', 'Turn pages together on any screen, press “Read to me”, or download a square PDF for the fridge, Grandma, a photo-book printer or the crayon box.']],
     featuresTitle: 'Little touches, big smiles',
     features: [['wand', 'A hero studio', '14 hairstyles, 8 skin tones, 5 face shapes, sparkly eyes, freckles, glasses, capes and crowns. “Surprise me” for wild ideas.'],
-               ['book', '8 classic tales', 'Public-domain stories retold short and kind: around 300 words and nine illustrated pages each.'],
-               ['download', 'A real PDF book', 'Cover, dedication page, the story and “The End”: 12 square pages, made right in your browser.'],
+               ['book', '12 classic tales', 'Public-domain stories retold short and kind: around 300 words and nine illustrated pages each.'],
+               ['download', 'A real PDF book', 'Cover, dedication page, the story and “The End”, made right in your browser. Print-ready with bleed for photo-book printers.'],
+               ['brush', 'Colour me in', 'Every book also comes as an outline colouring book: colour the pages on screen, or print them for the crayons.'],
                ['volume', 'Read to me', 'The app reads each page aloud and turns the pages by itself. Lovely for wind-down time.'],
                ['link', 'Family links', 'Share one book with grandparents. They can read and print it without an account.'],
                ['heart', 'A shelf that grows', 'Siblings, cousins, best friends: up to 12 heroes, with reading stars for every bedtime.']],
     faq: [['Is it free?', 'Yes. Designing heroes, making books and downloading the PDFs are all free.'],
           ['Do I need to upload a photo of my child?', 'No, never. You build the cartoon by picking features, so no photo of your child ever leaves your device.'],
-          ['What does the PDF look like?', 'Twelve square pages: a cover with your child, a “This book belongs to” page with your dedication, nine illustrated story pages and a happy “The End”. It prints nicely at home or as an 8 × 8 inch photo book.'],
-          ['Where do the stories come from?', 'They are fairy tales over a hundred years old and in the public domain (Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs and traditional folk tales). We retold them gently for ages 3 to 6: the bears make friends and the giant is just lonely.'],
+          ['What does the PDF look like?', 'Twelve square pages: a cover with your child, a “This book belongs to” page with your dedication, nine illustrated story pages and a happy “The End”. It prints nicely at home. For a photo-book printer, choose the print-ready version: 300 dpi pages in 8 × 8 in, 8.5 × 8.5 in or 20 × 20 cm, with the extra 3 mm bleed edge printers ask for. There is a colour-me-in outline version too.'],
+          ['Where do the stories come from?', 'They are fairy tales over a hundred years old and in the public domain (Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop and traditional folk tales). We retold them gently for ages 3 to 6: the bears make friends, the giant is just lonely and the troll only needed a picnic.'],
           ['Who can see my child’s name and cartoon?', 'Only you, when you’re signed in. If you make a family link for a book, people with that link can see that one book. You can turn the link off any time.'],
           ['Can I try it before signing up?', 'Yes! Open the hero studio and read any story with your hero straight away. A free account lets you keep heroes, fill a bookshelf and download PDFs.']],
     bandTitle: 'Tonight’s story could star them',
@@ -2778,7 +3441,8 @@
     { name: 'Leo', pronoun: 'he', look: { size: 'toddler', skin: 's4', face: 'chubby', hair: 'fuzz', hairColor: 'brown', mouth: 'giggle', outfit: 'pyjamas', outfitColor: 'plum' } }
   ];
   var STORIES = [['bears', '{name} and the Three Bears', '#ef5a36'], ['beanstalk', '{name} and the Beanstalk', '#4ea8f5'], ['turnip', '{name} and the Enormous Turnip', '#3dbe8b'], ['porridge', '{name} and the Magic Porridge Pot', '#ffc93c'],
-                 ['emperor', '{name} and the Emperor’s New Clothes', '#8a6bd8'], ['hen', '{name} and the Little Red Hen', '#ff8fb8'], ['elves', '{name} and the Elves', '#2fa39b'], ['pea', '{name} and the Pea', '#5b8def']];
+                 ['emperor', '{name} and the Emperor’s New Clothes', '#8a6bd8'], ['hen', '{name} and the Little Red Hen', '#ff8fb8'], ['elves', '{name} and the Elves', '#2fa39b'], ['pea', '{name} and the Pea', '#5b8def'],
+                 ['gingerbread', '{name} and the Gingerbread Man', '#d9823b'], ['duckling', '{name} and the Ugly Duckling', '#5fb8e0'], ['goats', '{name} and the Billy Goats Gruff', '#8cc04b'], ['tortoise', '{name} and the Great Race', '#e9a23b']];
   var PAGE = '{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too cold!” Then the wee bowl. “Just right!” said {name}, and before {he} knew it, the little bowl was empty. Oops!';
 
   function heroArt(p) {
@@ -2805,7 +3469,7 @@
       '</div><div data-art></div></div></section>' +
       '<section class="lp-section" id="how"><div class="ui-wrap"><div class="lp-head"><h2>' + esc(C.stepsTitle) + '</h2><p>' + esc(C.stepsLead) + '</p></div>' +
         '<div class="lp-steps">' + C.steps.map(function (s) { return '<div class="ui-card lp-step"><h3>' + esc(s[0]) + '</h3><p class="muted">' + esc(s[1]) + '</p></div>'; }).join('') + '</div></div></section>' +
-      '<section class="lp-section"><div class="ui-wrap"><div class="lp-head"><h2>Eight stories, one little hero</h2><p>Tap a face to change who stars in the whole library.</p></div><div data-shelf></div>' +
+      '<section class="lp-section"><div class="ui-wrap"><div class="lp-head"><h2>Twelve stories, one little hero</h2><p>Tap a face to change who stars in the whole library.</p></div><div data-shelf></div>' +
         '<div class="lp-pals">' + PALS.map(function (p, i) { return '<button type="button" data-pal="' + i + '" aria-label="' + esc(p.name) + '">' + LH.avatarSvg(p.look, { crop: 'head' }) + '</button>'; }).join('') + '</div></div></section>' +
       '<section class="lp-section"><div class="ui-wrap"><div class="lp-head"><h2>' + esc(C.featuresTitle) + '</h2></div>' +
         '<div class="ui-grid lp-feats">' + C.features.map(function (f) { return '<div class="ui-card lp-feature">' + UI.icon(f[0]) + '<h3>' + esc(f[1]) + '</h3><p>' + esc(f[2]) + '</p></div>'; }).join('') + '</div></div></section>' +
@@ -2851,7 +3515,7 @@
     var lib, choices, pick;
     function draw() {
       var hero = pick.hero;
-      view.innerHTML = '<div class="ui-wrap"><div class="ui-page-head"><div><div class="eyebrow">The story library</div><h1>Eight classic tales, one little hero</h1>' +
+      view.innerHTML = '<div class="ui-wrap"><div class="ui-page-head"><div><div class="eyebrow">The story library</div><h1>Twelve classic tales, one little hero</h1>' +
         '<p class="muted">Fairy tales from the public domain, retold short (about 300 words) for ages 3 to 6. Every picture is drawn so your child can step right in.</p></div></div>' +
         '<div class="ui-card lb-star"><b>Starring</b>' + choices.map(function (c) {
           return '<button type="button" class="lb-pick' + (c.ref === pick.ref ? ' on' : '') + '" data-pick="' + esc(c.ref) + '">' +
@@ -2863,8 +3527,8 @@
             '<div class="ui-row"><button class="ui-btn sm" data-read="' + s.key + '">' + UI.icon('book') + 'Read</button>' +
             (pick.own ? '<button class="ui-btn sm primary" data-make="' + s.key + '">' + UI.icon('plus') + 'Add to shelf</button>' : '') + '</div></div></article>';
         }).join('') + '</div>' +
-        '<div class="ui-card flat lb-note">' + UI.icon('heart') + '<div><b>Where do the stories come from?</b><p class="muted small" style="margin:4px 0 0">Each tale is over a hundred years old and free for everyone: Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs and folk tales from England and Russia. ' +
-        'We retold them gently for little ones: the bears make friends, the giant is lonely rather than scary, and everybody shares the bread.</p></div></div></div>';
+        '<div class="ui-card flat lb-note">' + UI.icon('heart') + '<div><b>Where do the stories come from?</b><p class="muted small" style="margin:4px 0 0">Each tale is over a hundred years old and free for everyone: Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop, St. Nicholas Magazine and folk tales from England, Norway and Russia. ' +
+        'We retold them gently for little ones: the bears make friends, the giant is lonely rather than scary, the troll only needed a picnic, nobody eats the Gingerbread Man, and everybody shares the bread.</p></div></div></div>';
     }
     view.addEventListener('click', function (e) {
       var p = e.target.closest('[data-pick]');
@@ -2942,7 +3606,7 @@
     extras: [['hat', 'On their head', 'hat'], ['glasses', 'Glasses', 'head']]
   };
   var POSES = [['stand', 'Hello'], ['wave', 'Wave'], ['cheer', 'Hooray'], ['walk', 'Skip']];
-  var STORIES = ['bears', 'beanstalk', 'turnip', 'porridge', 'emperor', 'hen', 'elves', 'pea'];
+  var STORIES = ['bears', 'beanstalk', 'turnip', 'porridge', 'emperor', 'hen', 'elves', 'pea', 'gingerbread', 'duckling', 'goats', 'tortoise'];
   function colorOf(key, v) { return key === 'skin' ? LH.COL.skin[v] : key === 'hairColor' ? LH.COL.hair[v] : key === 'eyeColor' ? LH.COL.eye[v] : LH.COL.cloth[v]; }
   function swName(key, v, i) { return key === 'skin' ? 'Skin tone ' + (i + 1) : (LH.COLOR_NAMES[v] || v); }
   function sizeLabel(v) { var o = LH.OPTIONS.size.filter(function (x) { return x[0] === v; })[0]; return o ? o[1] : 'Age 6'; }
@@ -2988,7 +3652,8 @@
       LH.saveDraft({ id: st.id, name: st.name, pronoun: st.pronoun, look: look });
     }
     var STORYTITLES = { bears: '{name} and the Three Bears', beanstalk: '{name} and the Beanstalk', turnip: '{name} and the Enormous Turnip', porridge: '{name} and the Magic Porridge Pot',
-                        emperor: '{name} and the Emperor’s New Clothes', hen: '{name} and the Little Red Hen', elves: '{name} and the Elves', pea: '{name} and the Pea' };
+                        emperor: '{name} and the Emperor’s New Clothes', hen: '{name} and the Little Red Hen', elves: '{name} and the Elves', pea: '{name} and the Pea',
+                        gingerbread: '{name} and the Gingerbread Man', duckling: '{name} and the Ugly Duckling', goats: '{name} and the Billy Goats Gruff', tortoise: '{name} and the Great Race' };
     function groups() {
       var look = st.look;
       view.querySelector('[data-groups]').innerHTML = GROUPS[tab].map(function (gr) {
