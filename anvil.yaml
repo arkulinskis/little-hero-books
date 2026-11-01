@@ -254,15 +254,49 @@ db_schema:
     server: full
     title: Users
 metadata:
-  description: Design a cartoon look-alike of your child, then download classic picture-book stories starring them as a PDF.
+  description: Design a cartoon look-alike of your child, then read or download classic picture-book stories starring them
+    as a PDF. Eight fairy tales retold for ages 3 to 6.
   logo_img: asset:icon-512.png
-  title: Little Hero Books
+  title: 'Little Hero Books: picture books starring your child'
 name: Little Hero Books
 native_deps:
-  head_html: "<script src=\"_/theme/legal-kit.js?v=aa709273dd\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
-    \ initial-scale=1, viewport-fit=cover\">\n<meta name=\"theme-color\" content=\"#fff8ec\">\n<meta name=\"apple-mobile-web-app-capable\"\
-    \ content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"\
-    https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap\"\
+  head_html: "<script src=\"_/theme/legal-kit.js?v=aa709273dd\"></script>\n<!-- seo:start (APP_MAKER/seo: edit seo/apps/littleherobooks.json\
+    \ and run seo.py, not here) -->\n<link rel=\"canonical\" href=\"https://little-hero-books.anvil.app/\">\n<meta name=\"\
+    robots\" content=\"index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1\">\n<meta name=\"keywords\"\
+    \ content=\"personalised children&#x27;s book, custom picture book, book with my child&#x27;s name, personalized storybook\
+    \ PDF, fairy tales for kids, bedtime stories ages 3 to 6, child cartoon avatar, printable picture book, inclusive kids\
+    \ books\">\n<meta name=\"author\" content=\"Arkvital\">\n<meta property=\"og:type\" content=\"website\">\n<meta property=\"\
+    og:site_name\" content=\"Little Hero Books\">\n<meta property=\"og:title\" content=\"Little Hero Books: picture books\
+    \ starring your child\">\n<meta property=\"og:description\" content=\"Design a cartoon look-alike of your child, then\
+    \ read or download classic picture-book stories starring them as a PDF. Eight fairy tales retold for ages 3 to 6.\">\n\
+    <meta property=\"og:locale\" content=\"en_CA\">\n<meta property=\"og:url\" content=\"https://little-hero-books.anvil.app/\"\
+    >\n<meta property=\"og:image\" content=\"https://little-hero-books.anvil.app/_/theme/og-image.png\">\n<meta property=\"\
+    og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\">\n<meta property=\"og:image:alt\"\
+    \ content=\"Little Hero Books: Design your child as a cartoon, then read stories starring them\">\n<meta name=\"twitter:card\"\
+    \ content=\"summary_large_image\">\n<meta name=\"twitter:title\" content=\"Little Hero Books: picture books starring your\
+    \ child\">\n<meta name=\"twitter:description\" content=\"Design a cartoon look-alike of your child, then read or download\
+    \ classic picture-book stories starring them as a PDF. Eight fairy tales retold for ages 3 to 6.\">\n<meta name=\"twitter:image\"\
+    \ content=\"https://little-hero-books.anvil.app/_/theme/og-image.png\">\n<link rel=\"alternate\" type=\"text/plain\" title=\"\
+    Little Hero Books for AI assistants\" href=\"https://little-hero-books.anvil.app/llms.txt\">\n<script type=\"application/ld+json\"\
+    >{\"@context\": \"https://schema.org\", \"@graph\": [{\"@type\": \"WebApplication\", \"@id\": \"https://little-hero-books.anvil.app/#app\"\
+    , \"name\": \"Little Hero Books\", \"url\": \"https://little-hero-books.anvil.app/\", \"description\": \"Design a cartoon\
+    \ look-alike of your child, then read or download classic picture-book stories starring them as a PDF. Eight fairy tales\
+    \ retold for ages 3 to 6.\", \"image\": \"https://little-hero-books.anvil.app/_/theme/og-image.png\", \"inLanguage\":\
+    \ \"en\", \"publisher\": {\"@id\": \"https://arkvital.com/#org\"}, \"keywords\": \"personalised children's book, custom\
+    \ picture book, book with my child's name, personalized storybook PDF, fairy tales for kids, bedtime stories ages 3 to\
+    \ 6, child cartoon avatar, printable picture book, inclusive kids books\", \"applicationCategory\": \"EducationalApplication\"\
+    , \"operatingSystem\": \"Any (web browser)\", \"browserRequirements\": \"Requires JavaScript and a modern web browser\"\
+    , \"featureList\": [\"A hero studio with 20 skin tones, 30 hairstyles and many outfits\", \"Head coverings including hijab,\
+    \ patka and kippah\", \"Eight classic fairy tales retold for ages 3 to 6\", \"Your child drawn into every illustration\"\
+    , \"Read on screen with Read to me, or download an 8 x 8 inch PDF\"], \"audience\": {\"@type\": \"Audience\", \"audienceType\"\
+    : \"Parents and grandparents of children aged about 3 to 6\"}}, {\"@type\": \"WebSite\", \"@id\": \"https://little-hero-books.anvil.app/#site\"\
+    , \"url\": \"https://little-hero-books.anvil.app/\", \"name\": \"Little Hero Books\", \"publisher\": {\"@id\": \"https://arkvital.com/#org\"\
+    }}, {\"@type\": \"Organization\", \"@id\": \"https://arkvital.com/#org\", \"name\": \"Arkvital\", \"url\": \"https://arkvital.com\"\
+    , \"email\": \"arkvital@outlook.com\", \"address\": {\"@type\": \"PostalAddress\", \"addressLocality\": \"Montreal\",\
+    \ \"addressRegion\": \"QC\", \"addressCountry\": \"CA\"}}]}</script>\n<!-- seo:end -->\n<meta name=\"viewport\" content=\"\
+    width=device-width, initial-scale=1, viewport-fit=cover\">\n<meta name=\"theme-color\" content=\"#fff8ec\">\n<meta name=\"\
+    apple-mobile-web-app-capable\" content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link\
+    \ rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap\"\
     \ rel=\"stylesheet\">\n<link id=\"ui-favicon\" rel=\"icon\" type=\"image/svg+xml\" href=\"_/theme/icon.svg?v=8c1fa073cd\"\
     >\n<link rel=\"apple-touch-icon\" href=\"_/theme/icon-180.png?v=8c1fa073cd\">\n<script>\n/* Keep our tab icon: Anvil adds\
     \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
