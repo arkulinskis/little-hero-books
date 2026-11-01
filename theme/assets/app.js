@@ -2035,8 +2035,10 @@
   }
   function duck(x, y, s, o) {
     o = o || {};
-    var b = path('M-14 -2 v-14 M12 -2 v-14', 'none', '#FF9A3C', 6) + path('M-26 0 h20 M2 0 h20', 'none', '#FF9A3C', 6) + path('M-60 -60 Q-80 -80 -66 -40', 'none', INK, 3) +
-      ell(0, -50, 56, 38, '#FFFFFF', INK, 4) + path('M-30 -56 Q0 -36 24 -58 Q6 -26 -30 -56Z', '#EDE9F5', INK, 3) + circ(36, -100, 26, '#FFFFFF', INK, 4) + path('M58 -100 Q86 -100 84 -88 Q70 -84 56 -90Z', '#FF9A3C', INK, 3);
+    var dc = o.c || '#FFFFFF';
+    var b = (o.sit ? '' : path('M-14 -2 v-14 M12 -2 v-14', 'none', '#FF9A3C', 6) + path('M-26 0 h20 M2 0 h20', 'none', '#FF9A3C', 6)) + path('M-60 -60 Q-80 -80 -66 -40', 'none', INK, 3) +
+      ell(0, -50, 56, 38, dc, INK, 4) + path('M-30 -56 Q0 -36 24 -58 Q6 -26 -30 -56Z', LH.shade(dc, -.08), INK, 3) + circ(36, -100, 26, dc, INK, 4) + path('M58 -100 Q86 -100 84 -88 Q70 -84 56 -90Z', '#FF9A3C', INK, 3);
+    if (o.mood === 'wow') b += ell(70, -84, 5, 6, '#7A2638', INK, 2);
     b += o.mood === 'sleep' ? path('M36 -106 q6 5 12 0', 'none', INK, 3) : circ(42, -106, 4.5, INK) + circ(43.5, -107.5, 1.5, '#FFFFFF');
     return at(x, y, s, b, o.flip);
   }
