@@ -13,7 +13,7 @@ import anvil.tables as tables
 from . import common as C
 
 LOOK_KEYS = {"size", "skin", "face", "hair", "hairColor", "eyes", "eyeColor", "brows", "nose", "mouth", "cheeks",
-             "freckles", "glasses", "outfit", "outfitColor", "hat"}
+             "freckles", "mark", "glasses", "outfit", "outfitColor", "hat"}
 PRONOUNS = {"she", "he", "they"}
 MAX_HEROES = 12
 

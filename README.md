@@ -16,9 +16,11 @@ Keep this list current: it is the first thing read before every change.
 **For everyone (no account needed):**
 - **Landing page:** an open-book hero picture that cycles through five example kids, an 8-book shelf that changes star
   when you tap a face, how it works, features, safety, FAQ.
-- **Hero studio** (`#studio`): 2 sizes (big kid, little one), 8 skin tones, 5 face shapes, cheeks and freckles, 3 noses,
-  14 hairstyles x 11 hair colours, 5 eye shapes x 7 eye colours, 4 eyebrows, 5 smiles, 7 outfits x 10 colours, 7 hats,
-  4 glasses. Live preview with poses (Hello, Wave, Hooray, Skip), "Surprise me", Undo, the child's name and pronouns
+- **Hero studio** (`#studio`): ages 1 to 12 (the body grows), 20 skin tones, 16 face shapes, 15 noses, cheeks and
+  freckles, 12 face paints and little marks (dimples, beauty spot, birthmark, plaster, stars, whiskers...), 30 hairstyles
+  (incl. locs, cornrows, Bantu knots, space buns) x 23 hair colours, 17 eye shapes x 18 eye colours, 17 eyebrows,
+  17 mouths (gap tooth, braces, bunny teeth...), 20 outfits (tutu, dino suit, astronaut, school blazer...) x 23 colours,
+  21 hats and head coverings (incl. hijab, patka, kippah; a story's crown sits on top of them), 16 glasses. Live preview with poses (Hello, Wave, Hooray, Skip), "Surprise me", Undo, the child's name and pronouns
   (she / he / they), and "Try it in a story" (the current hero on a story cover). Guests keep a draft in the browser;
   pressing Save as a guest goes to sign-up and saves the hero automatically afterwards.
 - **Story library** (`#library`): 8 tales (Three Bears, Enormous Turnip, Magic Porridge Pot, Emperor's New Clothes,
