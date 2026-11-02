@@ -1,0 +1,32 @@
+---
+custom_component: true
+properties:
+  - name: look
+    type: object
+    description: The hero's look (size, skin, hair ...). None draws the dashed "your hero here" outline.
+    default_binding_prop: true
+  - name: crop
+    type: string
+    options: ["", head, hat]
+    default_value: ""
+    description: '"head" for a round face picture, "hat" to show headwear, empty for the whole body'
+  - name: pose
+    type: string
+    default_value: ""
+    description: stand, wave, cheer, walk ... (empty = standing)
+  - name: mood
+    type: string
+    default_value: ""
+    description: happy, laugh, wow ... (empty = happy)
+  - name: fit
+    type: string
+    default_value: ""
+    description: '"tallest" keeps every age the same scale (the studio size picker)'
+toolbox_item:
+  title: Hero avatar
+  group: Little Hero Books
+help_text: |
+  Draws a hero's cartoon with the people engine (theme/assets/lh-avatar.js).
+  Put a class on a wrapper to size it; the SVG fills its box.
+---
+<span class="lh-avatar-box"></span>

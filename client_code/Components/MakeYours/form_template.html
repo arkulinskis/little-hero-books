@@ -1,0 +1,16 @@
+---
+custom_component: true
+properties:
+  - name: hero
+    type: object
+    description: The hero whose face goes on the card (or None)
+    default_binding_prop: true
+toolbox_item:
+  title: Make-yours card
+  group: Little Hero Books
+---
+<div class="ui-card bk-cta">
+  <span class="face"><anvil-component type="Little_Hero_Books.Components.Avatar" name="face" prop:crop="head"></anvil-component></span>
+  <div><h3>Make one starring your child</h3><p>Design a little cartoon look-alike in a minute, then pick from twelve classic tales. Free.</p></div>
+  <a class="ui-btn primary" href="#studio"><i class="ic ic-wand"></i>Start the studio</a>
+</div>

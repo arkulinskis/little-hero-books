@@ -1,0 +1,61 @@
+<anvil-form layout="Little_Hero_Books.Layouts.Shell" prop:active="home">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ui-page-head sh-head">
+        <div>
+          <div class="eyebrow">Your bookshelf</div>
+          <anvil-component type="Label" name="hello" prop:role='["page-title"]' prop:text="Hello! Story time?"></anvil-component>
+          <p class="muted">Every book here stars your little one. Tap a book to read it together, or download it as a PDF to print.</p>
+        </div>
+        <div class="ui-row">
+          <a class="ui-btn" href="#studio/new"><i class="ic ic-wand"></i>New hero</a>
+          <a class="ui-btn primary" href="#library"><i class="ic ic-book"></i>Pick a story</a>
+        </div>
+      </div>
+
+      <div class="sh-stats">
+        <span class="sh-stat"><anvil-component type="Label" name="n_books" prop:role='["sh-num"]'></anvil-component><anvil-component type="Label" name="l_books"></anvil-component></span>
+        <span class="sh-stat" style="--sc:#bde5ff"><anvil-component type="Label" name="n_reads" prop:role='["sh-num"]'></anvil-component>story times</span>
+        <span class="sh-stat" style="--sc:#ffd6e4"><anvil-component type="Label" name="n_heroes" prop:role='["sh-num"]'></anvil-component><anvil-component type="Label" name="l_heroes"></anvil-component></span>
+        <span class="sh-stat" style="--sc:#c9f0d8"><anvil-component type="Label" name="n_stories" prop:role='["sh-num"]'></anvil-component>stories to explore</span>
+      </div>
+
+      <div class="ui-card sh-hello" anvil:name="hello_card">
+        <div>
+          <h2>Let’s make your first hero!</h2>
+          <p>Pick a face, hair, eyes and clothes until the little cartoon looks just like your child. Then every story stars them.</p>
+          <div class="ui-row sh-hello-go"><a class="ui-btn primary" href="#studio/new"><i class="ic ic-wand"></i>Open the hero studio</a></div>
+        </div>
+        <anvil-component type="RepeatingPanel" name="pals_panel" prop:item_template="Little_Hero_Books.Items.FaceBubble" prop:role='["sh-pals"]'></anvil-component>
+      </div>
+
+      <div class="sh-sec"><h2>Your heroes</h2><span class="muted small">Up to 12. Each child (or cousin, or grandchild) gets their own.</span></div>
+      <div class="sh-heroes">
+        <anvil-component type="RepeatingPanel" name="heroes_panel" prop:item_template="Little_Hero_Books.Items.HeroCard" prop:role='["contents"]'></anvil-component>
+        <a class="ui-card sh-hero sh-add" href="#studio/new"><span class="plus"><i class="ic ic-plus"></i></span><b>Add a hero</b></a>
+      </div>
+
+      <div class="sh-sec"><h2>Your books</h2><span class="muted small" anvil:name="stars_note">★ = one story time, read to the last page</span></div>
+      <anvil-component type="RepeatingPanel" name="rows_panel" prop:item_template="Little_Hero_Books.Items.ShelfRow"></anvil-component>
+      <div class="ui-empty" anvil:name="no_books">
+        <i class="ic ic-book"></i>
+        <h3>No books yet</h3>
+        <anvil-component type="Label" name="no_books_text"></anvil-component>
+        <a class="ui-btn primary" href="#library"><i class="ic ic-book"></i>Browse the stories</a>
+      </div>
+
+      <div anvil:name="next_part">
+        <div class="sh-sec">
+          <anvil-component type="Label" name="next_title" prop:role='["sec-title"]'></anvil-component>
+          <a href="#library" class="small sh-all">All stories</a>
+        </div>
+        <anvil-component type="RepeatingPanel" name="next_panel" prop:item_template="Little_Hero_Books.Items.NextStory" prop:role='["sh-next"]'></anvil-component>
+      </div>
+
+      <div anvil:name="examples_part">
+        <div class="sh-sec"><h2>The example shelf</h2><span class="muted small">Books made by our example families. Have a peek!</span></div>
+        <anvil-component type="RepeatingPanel" name="examples_panel" prop:item_template="Little_Hero_Books.Items.ShelfRow"></anvil-component>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

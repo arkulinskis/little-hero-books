@@ -1,0 +1,11 @@
+<div class="ui-card sh-hero">
+  <span class="face" anvil:name="face_ring">
+    <anvil-component type="Little_Hero_Books.Components.Avatar" name="face" prop:crop="head" bind:look="self.item['look']"></anvil-component>
+  </span>
+  <anvil-component type="Label" name="name_label" prop:role='["card-title"]' bind:text="self.item['name']"></anvil-component>
+  <anvil-component type="Label" name="books_label" prop:role='["fine-print"]'></anvil-component>
+  <div class="ui-row">
+    <a class="ui-btn sm" anvil:name="edit_link" href="#studio"><i class="ic ic-edit"></i>Edit</a>
+    <anvil-component type="Button" name="book_button" prop:text="Book" prop:role='["btn", "btn-sm", "btn-sun", "ic-plus"]'></anvil-component>
+  </div>
+</div>

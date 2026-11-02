@@ -1,0 +1,9 @@
+<div class="st-group">
+  <anvil-component type="Label" name="title" prop:role='["st-group-title"]' bind:text="self.item['title']"></anvil-component>
+  <anvil-component type="RepeatingPanel" name="tiles_panel" prop:item_template="Little_Hero_Books.Items.OptionTile" prop:role='["st-opts"]'></anvil-component>
+  <anvil-component type="RepeatingPanel" name="swatches_panel" prop:item_template="Little_Hero_Books.Items.Swatch" prop:role='["st-sw"]'></anvil-component>
+  <div class="st-toggles" anvil:name="toggles">
+    <anvil-component type="Button" name="cheeks_button" prop:text="Rosy cheeks" prop:role='["btn", "btn-sm", "ic-plus"]'></anvil-component>
+    <anvil-component type="Button" name="freckles_button" prop:text="Freckles" prop:role='["btn", "btn-sm", "ic-plus"]'></anvil-component>
+  </div>
+</div>

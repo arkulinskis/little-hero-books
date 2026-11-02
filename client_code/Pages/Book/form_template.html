@@ -1,0 +1,37 @@
+<anvil-form layout="Little_Hero_Books.Layouts.Shell" prop:active="">
+  <anvil-block slot="content">
+    <div class="ui-wrap bk-wrap" anvil:name="found">
+      <div class="bk-head">
+        <div>
+          <a class="bk-back" href="#home" anvil:name="back_link"><i class="ic ic-back"></i><span anvil:name="back_shelf">Shelf</span><span anvil:name="back_library">Library</span></a>
+          <anvil-component type="Label" name="title" prop:role='["bk-title"]'></anvil-component>
+          <div class="ui-row">
+            <anvil-component type="Label" name="read_badge" prop:role='["badge", "badge-brand"]'></anvil-component>
+            <anvil-component type="Label" name="pages_badge" prop:role='["badge"]'></anvil-component>
+          </div>
+        </div>
+      </div>
+      <anvil-component type="Little_Hero_Books.Components.Reader" name="reader">
+        <anvil-component type="Button" name="pdf_button" prop:text="Download PDF" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Link" name="signup_link" prop:text="Sign up free to download" prop:url="#auth/signup" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Button" name="share_button" prop:text="Family link" prop:role='["btn", "btn-sm", "ic-link"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Button" name="dedication_button" prop:text="Dedication" prop:role='["btn", "btn-sm", "ic-edit"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Button" name="remove_button" prop:text="Remove this book" prop:role='["btn", "btn-sm", "btn-icon", "ic-trash"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Link" name="copy_link" prop:text="Make one like this" prop:url="#studio" prop:role='["btn", "btn-sm", "ic-wand"]' container:dropzone="tools"></anvil-component>
+      </anvil-component>
+      <anvil-component type="Little_Hero_Books.Components.MakeYours" name="cta"></anvil-component>
+    </div>
+    <div class="ui-wrap ui-narrow" anvil:name="private">
+      <div class="ui-empty">
+        <i class="ic ic-lock"></i>
+        <h3>This book is private</h3>
+        <anvil-component type="Label" name="private_text"></anvil-component>
+        <div class="ui-row bk-private-go">
+          <a class="ui-btn primary" href="#home" anvil:name="private_home">Back to my shelf</a>
+          <a class="ui-btn primary" href="#auth" anvil:name="private_signin">Sign in</a>
+          <a class="ui-btn" href="#library" anvil:name="private_library">Browse the stories</a>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>
