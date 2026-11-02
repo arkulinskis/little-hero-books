@@ -1,0 +1,28 @@
+<anvil-form layout="Little_Hero_Books.Layouts.Shell" prop:active="library">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ui-page-head">
+        <div>
+          <div class="eyebrow">The story library</div>
+          <h1>Twelve classic tales, one little hero</h1>
+          <p class="muted">Fairy tales from the public domain, retold short (about 300 words) for ages 3 to 6. Every picture is drawn so your child can step right in.</p>
+        </div>
+      </div>
+
+      <div class="ui-card lb-star">
+        <b>Starring</b>
+        <anvil-component type="RepeatingPanel" name="picks_panel" prop:item_template="Little_Hero_Books.Items.PickChip" prop:role='["contents"]'></anvil-component>
+        <a class="lb-pick" href="#studio" anvil:name="new_hero_link"><span class="face ghost">+</span><span anvil:name="guest_text">Make yours</span><span anvil:name="member_text">New hero</span></a>
+      </div>
+
+      <anvil-component type="RepeatingPanel" name="stories_panel" prop:item_template="Little_Hero_Books.Items.StoryCard" prop:role='["lb-grid"]'></anvil-component>
+
+      <div class="ui-card flat lb-note">
+        <i class="ic ic-heart"></i>
+        <div><b>Where do the stories come from?</b>
+          <p class="muted small">Each tale is over a hundred years old and free for everyone: Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop, St. Nicholas Magazine and folk tales from England, Norway and Russia. We retold them gently for little ones: the bears make friends, the giant is lonely rather than scary, the troll only needed a picnic, nobody eats the Gingerbread Man, and everybody shares the bread.</p>
+        </div>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

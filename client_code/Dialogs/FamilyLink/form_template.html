@@ -1,0 +1,18 @@
+<div class="ui">
+  <h2 class="dlg-h">Family link</h2>
+  <anvil-component type="Label" name="intro" prop:role='["fine-print"]'></anvil-component>
+  <div anvil:name="on_part">
+    <div class="bk-link">
+      <anvil-component type="TextBox" name="url_box" prop:enabled="true"></anvil-component>
+      <anvil-component type="Button" name="copy_button" prop:text="Copy" prop:role='["btn", "ic-copy"]'></anvil-component>
+    </div>
+    <div class="ui-row between fl-actions">
+      <anvil-component type="Button" name="off_button" prop:text="Turn the link off" prop:role='["btn", "btn-sm", "btn-danger", "ic-x"]'></anvil-component>
+      <anvil-component type="Button" name="done_button" prop:text="Done" prop:role='["btn", "btn-primary"]'></anvil-component>
+    </div>
+  </div>
+  <div class="ui-row end fl-actions" anvil:name="off_part">
+    <anvil-component type="Button" name="later_button" prop:text="Not now" prop:role='["btn", "btn-ghost"]'></anvil-component>
+    <anvil-component type="Button" name="on_button" prop:text="Make a family link" prop:role='["btn", "btn-primary", "ic-link"]'></anvil-component>
+  </div>
+</div>

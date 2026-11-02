@@ -1,0 +1,21 @@
+<anvil-form layout="Little_Hero_Books.Layouts.Shell" prop:active="library">
+  <anvil-block slot="content">
+    <div class="ui-wrap bk-wrap">
+      <div class="bk-head">
+        <div>
+          <a class="bk-back" href="#library"><i class="ic ic-back"></i>Library</a>
+          <anvil-component type="Label" name="title" prop:role='["bk-title"]'></anvil-component>
+          <anvil-component type="Label" name="intro" prop:role='["bk-intro"]'></anvil-component>
+        </div>
+      </div>
+      <anvil-component type="RepeatingPanel" name="picks_panel" prop:item_template="Little_Hero_Books.Items.PickChip" prop:role='["bk-stars"]'></anvil-component>
+      <anvil-component type="Little_Hero_Books.Components.Reader" name="reader">
+        <anvil-component type="Button" name="make_button" prop:text="Add to my shelf" prop:role='["btn", "btn-sm", "btn-primary", "ic-plus"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Link" name="save_link" prop:text="Save this hero" prop:url="#studio" prop:role='["btn", "btn-sm", "btn-primary", "ic-check"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Button" name="pdf_button" prop:text="Download PDF" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Link" name="signup_link" prop:text="Sign up free to download" prop:url="#auth/signup" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
+      </anvil-component>
+      <anvil-component type="Little_Hero_Books.Components.MakeYours" name="cta"></anvil-component>
+    </div>
+  </anvil-block>
+</anvil-form>

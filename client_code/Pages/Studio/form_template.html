@@ -1,0 +1,76 @@
+<anvil-form layout="Little_Hero_Books.Layouts.Shell" prop:active="studio">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="ui-page-head">
+        <div>
+          <div class="eyebrow">Hero studio</div>
+          <anvil-component type="Label" name="title" prop:role='["page-title"]' prop:text="Make a hero who looks like your child"></anvil-component>
+          <p class="muted">Pick a face, hair, eyes and clothes. Everything changes live, and every story you make will star this little one.</p>
+        </div>
+      </div>
+      <div class="st-wrap">
+        <section class="ui-card st-stage">
+          <div class="st-hero">
+            <anvil-component type="Little_Hero_Books.Components.Avatar" name="preview" prop:pose="wave"></anvil-component>
+          </div>
+          <anvil-component type="Label" name="name_out" prop:role='["st-name"]' prop:text="Your hero"></anvil-component>
+          <anvil-component type="Label" name="sub_out" prop:role='["st-sub"]'></anvil-component>
+          <div class="st-poses">
+            <div class="ui-seg" role="group" aria-label="Pose">
+              <button type="button" anvil:name="pose_stand" data-pose="stand" anvil:on-dom:click="self.pose_click">Hello</button>
+              <button type="button" anvil:name="pose_wave" data-pose="wave" anvil:on-dom:click="self.pose_click">Wave</button>
+              <button type="button" anvil:name="pose_cheer" data-pose="cheer" anvil:on-dom:click="self.pose_click">Hooray</button>
+              <button type="button" anvil:name="pose_walk" data-pose="walk" anvil:on-dom:click="self.pose_click">Skip</button>
+            </div>
+          </div>
+          <div class="ui-row st-dice">
+            <anvil-component type="Button" name="random_button" prop:text="Surprise me" prop:role='["btn", "btn-sm", "btn-sun", "ic-dice"]'></anvil-component>
+            <anvil-component type="Button" name="undo_button" prop:text="Undo" prop:enabled="false" prop:role='["btn", "btn-sm", "ic-back"]'></anvil-component>
+          </div>
+          <div class="st-try">
+            <div class="lab">
+              <span><i class="ic ic-book"></i> Try it in a story</span>
+              <span class="ui-row st-try-nav">
+                <anvil-component type="Button" name="prev_story" prop:text="Previous story" prop:role='["btn", "btn-icon", "btn-sm", "ic-back"]'></anvil-component>
+                <anvil-component type="Button" name="next_story" prop:text="Next story" prop:role='["btn", "btn-icon", "btn-sm", "ic-arrow"]'></anvil-component>
+              </span>
+            </div>
+            <a class="mini" href="#story/bears/draft" anvil:name="try_link">
+              <anvil-component type="Little_Hero_Books.Components.Scene" name="try_scene" prop:page="cover"></anvil-component>
+            </a>
+          </div>
+        </section>
+
+        <section class="st-panel">
+          <div class="ui-card st-who">
+            <label class="ui-field"><span>Your child’s name <em>(as it should appear in the stories)</em></span>
+              <anvil-component type="TextBox" name="name_box" prop:placeholder="e.g. Mila"></anvil-component>
+            </label>
+            <div class="ui-field"><span>In the story, call them</span>
+              <div class="ui-seg" role="group" aria-label="Pronouns">
+                <button type="button" anvil:name="pro_she" data-pronoun="she" anvil:on-dom:click="self.pronoun_click">she / her</button>
+                <button type="button" anvil:name="pro_he" data-pronoun="he" anvil:on-dom:click="self.pronoun_click">he / him</button>
+                <button type="button" anvil:name="pro_they" data-pronoun="they" anvil:on-dom:click="self.pronoun_click">they / them</button>
+              </div>
+            </div>
+          </div>
+          <nav class="ui-tabs">
+            <button type="button" anvil:name="tab_face" data-tab="face" anvil:on-dom:click="self.tab_click"><i class="ic ic-smile"></i>Face</button>
+            <button type="button" anvil:name="tab_hair" data-tab="hair" anvil:on-dom:click="self.tab_click"><i class="ic ic-wand"></i>Hair</button>
+            <button type="button" anvil:name="tab_eyes" data-tab="eyes" anvil:on-dom:click="self.tab_click"><i class="ic ic-sparkle"></i>Eyes &amp; mouth</button>
+            <button type="button" anvil:name="tab_clothes" data-tab="clothes" anvil:on-dom:click="self.tab_click"><i class="ic ic-heart"></i>Clothes</button>
+            <button type="button" anvil:name="tab_extras" data-tab="extras" anvil:on-dom:click="self.tab_click"><i class="ic ic-star"></i>Hats &amp; glasses</button>
+          </nav>
+          <anvil-component type="RepeatingPanel" name="groups_panel" prop:item_template="Little_Hero_Books.Items.OptionGroup"></anvil-component>
+          <div class="st-save">
+            <anvil-component type="Button" name="save_button" prop:text="Save my hero" prop:role='["btn", "btn-primary", "btn-lg", "ic-check"]'></anvil-component>
+            <a class="ui-btn" href="#library" anvil:name="make_link"><i class="ic ic-book"></i>Make a book</a>
+            <span class="ui-spacer" anvil:name="spacer"></span>
+            <anvil-component type="Button" name="remove_button" prop:text="Remove hero" prop:role='["btn", "btn-sm", "btn-danger", "ic-trash"]'></anvil-component>
+            <span class="small muted" anvil:name="guest_note">Free account needed to save, keep a bookshelf and download PDFs.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

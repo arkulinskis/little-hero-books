@@ -7,6 +7,7 @@ Rules every callable follows:
   - expected problems return C.fail("Message the user can read"); the page shows it
 """
 import datetime as dt
+import typing
 import re
 
 import anvil.server
@@ -95,7 +96,7 @@ def rate_limited(key, limit, seconds):
               if (stamp - dt.datetime.fromisoformat(t)).total_seconds() < seconds]
     if len(recent) >= limit:
         return True
-    anvil.server.session[store] = recent + [stamp.isoformat()]
+    typing.cast(dict, anvil.server.session)[store] = recent + [stamp.isoformat()]
     return False
 
 

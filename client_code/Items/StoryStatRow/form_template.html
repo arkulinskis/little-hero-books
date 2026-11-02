@@ -1,0 +1,9 @@
+<div class="ad-table ad-lib-row">
+  <div>
+    <anvil-component type="Label" name="title" prop:role='["strong"]' bind:text="self.item['plain']"></anvil-component>
+    <anvil-component type="Label" name="source" prop:role='["fine-print"]' bind:text="self.item['source']"></anvil-component>
+  </div>
+  <anvil-component type="Label" name="words" bind:text="str(self.item['words'])"></anvil-component>
+  <anvil-component type="Label" name="made" bind:text="str(self.item['made'])"></anvil-component>
+  <anvil-component type="Label" name="reads" bind:text="str(self.item['reads'])"></anvil-component>
+</div>

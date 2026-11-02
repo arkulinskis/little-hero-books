@@ -1,0 +1,28 @@
+---
+custom_component: true
+properties:
+  - name: choice
+    type: object
+    description: '{ref, hero, label, note} from books.hero_choices'
+    default_binding_prop: true
+  - name: selected
+    type: boolean
+    default_value: false
+events:
+  - name: pick
+    default_event: true
+    description: Tapped; the event has ref
+    parameters:
+      - name: ref
+toolbox_item:
+  title: Hero chip
+  group: Little Hero Books
+---
+<button type="button" class="lb-pick" anvil:on-dom:click="self.chip_click">
+  <span class="face" anvil:name="face_box">
+    <anvil-component type="Little_Hero_Books.Components.Avatar" name="face" prop:crop="head"></anvil-component>
+  </span>
+  <span class="face ghost" anvil:name="ghost">?</span>
+  <anvil-component type="Label" name="label" prop:role='["chip-label"]'></anvil-component>
+  <anvil-component type="Label" name="note" prop:role='["chip-note"]'></anvil-component>
+</button>

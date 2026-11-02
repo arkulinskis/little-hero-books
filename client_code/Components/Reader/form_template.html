@@ -1,0 +1,29 @@
+---
+custom_component: true
+custom_component_container: true
+properties:
+  - name: book
+    type: object
+    description: '{story (with text), hero (None = the blank book), dedication, created}'
+    default_binding_prop: true
+  - name: colour
+    type: boolean
+    default_value: true
+    description: Show the "Colour me in" button
+events:
+  - name: finish
+    description: The last page was reached (once per visit)
+  - name: page
+    parameters:
+      - name: index
+toolbox_item:
+  title: Book reader
+  group: Little Hero Books
+help_text: |
+  The page-turning reader (theme/assets/lh-book.js): arrows, swipe, keys, Read to me, Music, Colour me in.
+  Drop Buttons or Links into it: they appear in its toolbar, after the built-in buttons.
+---
+<div class="lh-reader">
+  <div anvil:dom-node="mount"></div>
+  <div class="rd-extra" anvil:dom-node="tools"><anvil-dropzone name="tools"></anvil-dropzone></div>
+</div>

@@ -1,0 +1,15 @@
+<article class="lb-card">
+  <anvil-component type="Little_Hero_Books.Components.Cover" name="cover" bind:story="self.item['story']" bind:hero="self.item['hero']"></anvil-component>
+  <div>
+    <anvil-component type="Label" name="blurb" prop:role='["lb-blurb"]' bind:text="self.item['story']['blurb']"></anvil-component>
+    <div class="facts">
+      <anvil-component type="Label" name="pages_badge" prop:role='["badge"]'></anvil-component>
+      <anvil-component type="Label" name="minutes_badge" prop:role='["badge"]'></anvil-component>
+      <span class="ui-badge brand">Ages 3–6</span>
+    </div>
+    <div class="ui-row">
+      <anvil-component type="Button" name="read_button" prop:text="Read" prop:role='["btn", "btn-sm", "ic-book"]'></anvil-component>
+      <anvil-component type="Button" name="make_button" prop:text="Add to shelf" prop:role='["btn", "btn-sm", "btn-primary", "ic-plus"]' bind:visible="self.item['own']"></anvil-component>
+    </div>
+  </div>
+</article>

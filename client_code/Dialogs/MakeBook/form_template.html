@@ -1,0 +1,18 @@
+<div class="ui mk-dialog">
+  <anvil-component type="Label" name="title" prop:role='["dlg-title"]'></anvil-component>
+  <div class="mk-prev">
+    <anvil-component type="Little_Hero_Books.Components.Cover" name="cover" prop:sub="A Little Hero Book"></anvil-component>
+  </div>
+  <div anvil:name="heroes_part">
+    <div class="small muted mk-starring">Starring</div>
+    <anvil-component type="RepeatingPanel" name="heroes_panel" prop:item_template="Little_Hero_Books.Items.PickChip" prop:role='["mk-heroes"]'></anvil-component>
+  </div>
+  <label class="ui-field"><span>Dedication <em>(optional, printed on the first page)</em></span>
+    <anvil-component type="TextArea" name="dedication_box" prop:height="90"></anvil-component>
+  </label>
+  <anvil-component type="RepeatingPanel" name="ideas_panel" prop:item_template="Little_Hero_Books.Items.IdeaChip" prop:role='["mk-chips"]'></anvil-component>
+  <div class="ui-row end mk-actions">
+    <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-ghost"]'></anvil-component>
+    <anvil-component type="Button" name="make_button" prop:text="Make my book" prop:role='["btn", "btn-primary", "ic-sparkle"]'></anvil-component>
+  </div>
+</div>
