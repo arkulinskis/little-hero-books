@@ -1,22 +1,22 @@
 ---
 name: littleherobooks
-description: Context, workflow and recipes for Little Hero Books on the anvil-components branch (folder little-hero-books-components), the version rebuilt as native Anvil Forms (Python + HTML templates, layouts, custom components, RepeatingPanels) following anvil-works/anvil-agent-references. Load before changing this branch.
+description: Context, workflow and recipes for Little Hero Books (folder little-hero-books-components, master), the user's personalised picture-book app, built as native Anvil Forms (Python + HTML templates, layouts, custom components, RepeatingPanels) since 2026-11-02. Load before any change to it.
 ---
 
-# Little Hero Books, component version (branch `anvil-components`)
+# Little Hero Books (native Anvil Forms)
 
-**What it is:** the same app as `master` (personalised picture books: hero studio, 12 tales, reader, PDF, family
-links; see README.md and the master guide in `C:\Users\arkvi\Documents\CLAUDE\little-hero-books\.claude\skills\littleherobooks\SKILL.md`
-for the product, look and story recipes). This branch rebuilds the interface the way Anvil intends: one Python Form
-per page with an HTML template, a layout Form for the frame, custom components, RepeatingPanels with item templates.
-The drawing engines (cartoon people, story pictures, reader, PDF writer) stay JavaScript and are called from Python.
+**What it is:** personalised picture books (hero studio, 12 tales, reader, PDF, family links; README.md lists every
+feature). Since 2026-11-02 the interface is native Anvil Forms: one Python Form per page with an HTML template, a layout
+Form for the frame, custom components, RepeatingPanels with item templates. The drawing engines (cartoon people, story
+pictures, reader, PDF writer) stay JavaScript and are called from Python. The product, look and story/avatar recipes are
+in the old guide, C:\Users\arkvi\Documents\CLAUDE\little-hero-books\.claude\skills\littleherobooks\SKILL.md (the engines didn't change: _avatar.html = theme/assets/lh-avatar.js,
+_scenes.html = lh-scenes.js, _book.html = lh-book.js).
 
 **Where it lives:**
 - Folder `C:\Users\arkvi\Documents\CLAUDE\little-hero-books-components\` = a git clone of
-  github.com/arkulinskis/little-hero-books on branch **anvil-components**. **"git" layout**: the folder *is* the Anvil
-  app (no sync step, no tools/.anvil-repo). Edit files, commit, `git push origin anvil-components`.
-- `master` (the live app) is still built from `C:\Users\arkvi\Documents\CLAUDE\little-hero-books\` (source layout).
-  Server code is identical on both; if master's server code changes, merge it here.
+  github.com/arkulinskis/little-hero-books, branch **master** (live at https://little-hero-books.anvil.app).
+  **"git" layout**: the folder *is* the Anvil app (no sync step). Edit, commit, `git push origin master`.
+- The old JavaScript source folder `little-hero-books` is retired (its deploy.py refuses to run).
 
 ## Layout
 
@@ -57,8 +57,8 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
    anvilworks/anvil-app-server:1.18.0 on http://localhost:3031 (container lhb-dev, volume lhb-data). Client changes
    show on reload; server changes need `--restart`. `--shots DIR` = every page, desktop + true 390 px phone,
    light + dark, guest + signed in (tools/ui/seed.js makes an account, a hero and a book). Read the PNGs.
-4. Commit only your files as arkulinskis with the Co-Authored-By line; `git push origin anvil-components`.
-   To try it on Anvil, the user points an environment (or the editor) at the branch.
+4. `git pull --ff-only` first (Anvil commits IDE edits). Commit only your files as arkulinskis with the Co-Authored-By
+   line, `git push origin master`. Risky change: push a branch and ask the user for a debug link of it.
 
 ## Patterns (how this branch does things)
 
