@@ -33,7 +33,7 @@ Keep this list current: it is the first thing read before every change.
 - **Colour me in** (a reader button): every picture turns into an outline drawing; pick one of 14 crayons (or the
   rubber) and tap shapes to colour them. Colours stay while you turn pages (not saved).
 - **Family links** (`#read/<key>`): a shared book anyone with the link can read and download.
-- Sign-up with email and password, a feedback form, and the Privacy & Terms page (footer link, `#legal`).
+- Sign-up with email and password or Google, a feedback form, and the Privacy & Terms page (footer link, `#legal`).
 
 **For members:**
 - **Bookshelf** (`#home`): your heroes (up to 12), your books on wooden shelves with reading stars, "Next adventures"
@@ -62,7 +62,7 @@ Keep this list current: it is the first thing read before every change.
 ## Setting it up in Anvil (once)
 
 1. In the Anvil editor: **Create app → Clone from GitHub**, and paste `https://github.com/arkulinskis/little-hero-books`.
-2. **Users** service: email + password, sign-up allowed (already set in `anvil.yaml`; check it).
+2. **Users** service: email + password and "Continue with Google", sign-up allowed (already set in `anvil.yaml`; check it).
 3. Open the app in the editor. If it shows a **Schema Mismatch** alert, choose **"The schema of the source code is correct"** so Anvil creates the tables.
 4. **Run** it and sign up with **arkulinskis@gmail.com** straight away (that account becomes the admin).
 5. **Publish** (Publish → public URL, or your own domain).
