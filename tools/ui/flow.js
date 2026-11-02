@@ -53,7 +53,7 @@
     const before = $('.st-hero').innerHTML;
     await click('.ui-tabs button', 'Hair');
     await until(() => $$('.st-opt').length > 10, 'hair tiles');
-    $$('.st-opt')[5].click();
+    $$('.st-opt').filter((t) => !t.classList.contains('on'))[5].click();  // a hairstyle the hero doesn't have yet
     await until(() => $('.st-hero').innerHTML !== before, 'preview changes');
     ok(true, 'studio: a hairstyle tile changes the preview');
     await click('.anvil-role-ic-dice button');

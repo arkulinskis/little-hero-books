@@ -1,6 +1,6 @@
 """Run the app for real in the open-source Anvil App Server (Docker) and drive it with headless Chrome.
 
-    python -I tools/ui_test.py                 the user journey (tools/ui/flow.js) + the phone-width check (phone.js)
+    python -I tools/ui_test.py                 the user journey (tools/ui/flow.js), the phone-width check (phone.js), admin (admin.js)
     python -I tools/ui_test.py --shots DIR     also screenshots of every page (desktop + phone, light + dark) into DIR
     python -I tools/ui_test.py --stop          stop the local server afterwards
 
@@ -37,9 +37,10 @@ def start(restart=False):
     if not running():
         sh("docker", "rm", "-f", NAME, check=False)
         sh("docker", "run", "-d", "--name", NAME, "-p", "%d:%d" % (PORT, PORT), "-v", "%s:/apps/MainApp" % ROOT.as_posix(),
-           "-v", "lhb-data:/anvil-data", IMAGE, "--app", "MainApp", "--origin", URL)
+           "-v", "lhb-data:/anvil-data", IMAGE, "--app", "MainApp", "--origin", URL,
+           "--ignore-invalid-schema")  # the Users service adds remembered_logins, which anvil.yaml doesn't list
         print("starting the App Server ...")
-    for _ in range(120):
+    for _ in range(300):
         logs = sh("docker", "logs", NAME, check=False)
         if "Downlink client connected" in logs.stdout + logs.stderr:
             try:
@@ -91,7 +92,7 @@ def main():
     start(restart="--restart" in args)
     out = pathlib.Path(tempfile.mkdtemp(prefix="lhb-ui-"))
     failed = False
-    for script, window in (("flow.js", "1280,1000"), ("phone.js", "390,844")):
+    for script, window in (("flow.js", "1280,1000"), ("phone.js", "390,844"), ("admin.js", "1280,1000")):
         text = drive(script, window, out / script.replace(".js", ""))
         res = result(text)
         errors = [l for l in text.splitlines() if "[EXCEPTION]" in l or "Python exception" in l or "Error report" in l]

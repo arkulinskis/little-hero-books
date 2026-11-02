@@ -39,7 +39,7 @@ class Book(BookTemplate):
         for c in (self.share_button, self.dedication_button, self.remove_button):
             c.visible = mine
         self.copy_link.visible = not mine
-        self.copy_link.url = "#studio/copy/" + b["hero"]["id"]
+        self.copy_link.url = router.href("studio", "copy", b["hero"]["id"])
         self._share_label()
         self.cta.visible = not mine
         self.cta.hero = b["hero"]

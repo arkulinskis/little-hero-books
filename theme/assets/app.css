@@ -865,3 +865,9 @@ anvil-dropzone { display: contents; }
 }
 .sh-hero .ui-row { flex-wrap: nowrap; }
 .pf-pw { margin-top: 22px !important; }
+/* Toast colours win over the plain rule above on both runtimes (hosted: anvil-role-ok/error; App Server 1.18: alert-success/danger). */
+:is(.anvil-notification, [data-notify="container"]):is(.anvil-role-ok, .anvil-alert-success) { background: var(--c-good); color: #fff; }
+:is(.anvil-notification, [data-notify="container"]):is(.anvil-role-error, .anvil-alert-danger) { background: var(--c-bad); color: #fff; }
+/* Our dialogs: Anvil's normal alert is a 300 px "small" modal; give them the old modal's width. */
+.anvil-modal-dialog.anvil-role-lh-dialog.anvil-modal-sm, .anvil-modal-dialog.anvil-role-lh-dialog:not(.anvil-modal-lg) { width: min(calc(100vw - 24px), 540px); max-width: none; }
+.anvil-modal-dialog.anvil-role-lh-dialog.anvil-modal-lg { width: min(calc(100vw - 24px), 780px); max-width: none; }

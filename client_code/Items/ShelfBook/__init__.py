@@ -1,7 +1,7 @@
 from anvil import *
 
 from ._anvil_designer import ShelfBookTemplate
-from ... import state
+from ... import router, state
 
 
 class ShelfBook(ShelfBookTemplate):
@@ -11,7 +11,7 @@ class ShelfBook(ShelfBookTemplate):
     def __init__(self, **properties):
         super().__init__(**properties)
         b = self.item
-        state.set_attr(self, "href", "#book/" + b["id"])
+        state.set_attr(self, "href", router.href("book", b["id"]))
         self.who.text = (b["hero"]["name"] + "’s book") if b.get("show_owner") else state.short_date(b.get("created"))
         n = min(5, b.get("times_read") or 0)
         self.stars.text = "★" * n if n else "new"

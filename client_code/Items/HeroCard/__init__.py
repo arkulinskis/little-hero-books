@@ -1,7 +1,7 @@
 from anvil import *
 
 from ._anvil_designer import HeroCardTemplate
-from ... import state
+from ... import router, state
 
 
 class HeroCard(HeroCardTemplate):
@@ -14,7 +14,7 @@ class HeroCard(HeroCardTemplate):
         self.face_ring.style["--hb"] = h.get("colour") or "#ffc93c"
         n = h.get("books") or 0
         self.books_label.text = ("Stars in " + state.plural(n, "book")) if n else "No books yet"
-        state.set_attr(self.edit_link, "href", "#studio/" + h["id"])
+        state.set_attr(self.edit_link, "href", router.href("studio", h["id"]))
 
     @handle("book_button", "click")
     def book_button_click(self, **event_args):
