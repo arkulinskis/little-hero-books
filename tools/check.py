@@ -9,7 +9,7 @@
   2. node --check on the JavaScript engines in theme/assets.
   3. Asset hashes in anvil.yaml are current (tools/assets.py).
   4. Server tests (tools/testing/test_server.py, strict Anvil mock).
-The CLI: `npm install -g @anvil-works/anvil-cli` once (or set ANVIL_CLI to its path).
+The CLI: APP_MAKER/vendor/anvil-cli (found automatically), `anvil` on PATH, or ANVIL_CLI=<path>.
 """
 import os
 import pathlib
@@ -32,8 +32,11 @@ def step(name, good, detail=""):
         problems.append(name)
 
 
+VENDOR_CLI = pathlib.Path(r"C:\Users\arkvi\Documents\CLAUDE\APP_MAKER\vendor\anvil-cli\node_modules\.bin\anvil.cmd")
+
+
 def anvil_cli():
-    exe = os.environ.get("ANVIL_CLI") or shutil.which("anvil")
+    exe = os.environ.get("ANVIL_CLI") or shutil.which("anvil") or (str(VENDOR_CLI) if VENDOR_CLI.exists() else None)
     if exe:
         return [exe]
     npx = shutil.which("npx")
@@ -41,6 +44,7 @@ def anvil_cli():
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # the validator prints symbols the Windows console lacks
     cli = anvil_cli()
     if not cli:
         step("anvil validate", False, "  Install the Anvil CLI: npm install -g @anvil-works/anvil-cli")

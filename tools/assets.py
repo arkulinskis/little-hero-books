@@ -18,6 +18,25 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "theme" / "assets"
 
 
+class _Dumper(yaml.SafeDumper):
+    pass
+
+
+def _str(dumper, data):
+    """Multi-line strings (head_html) as readable | blocks: easier diffs, and the legal/SEO kits patch that shape."""
+    if "\n" in data:
+        data = "\n".join(line.rstrip() for line in data.split("\n"))  # trailing spaces would force the quoted style
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+_Dumper.add_representer(str, _str)
+
+
+def dump(meta):
+    return yaml.dump(meta, Dumper=_Dumper, sort_keys=True, allow_unicode=True, width=120)
+
+
 def main():
     subprocess.run([sys.executable, "-I", str(ROOT / "tools" / "build_icons.py")], check=True)
     path = ROOT / "anvil.yaml"
@@ -31,9 +50,10 @@ def main():
         return "_/theme/%s?v=%s" % (m.group(1), hashlib.sha1(f.read_bytes()).hexdigest()[:10])
 
     new = re.sub(r"_/theme/([\w.\-/]+)\?v=[0-9a-f]+", fresh, head)
-    if new != head:
+    block = "head_html: |" in path.read_text(encoding="utf-8")
+    if new != head or not block:
         meta["native_deps"]["head_html"] = new
-        path.write_text(yaml.safe_dump(meta, sort_keys=True, allow_unicode=True, width=120), encoding="utf-8", newline="\n")
+        path.write_text(dump(meta), encoding="utf-8", newline="\n")
         print("anvil.yaml: asset hashes updated")
     else:
         print("anvil.yaml: asset hashes already current")
