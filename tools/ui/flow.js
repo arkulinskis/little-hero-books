@@ -40,6 +40,10 @@
     $$('.lp-pal')[2].click();
     await until(() => $('.lpx-sticker.s1') && /Amara/.test($('.lpx-sticker.s1').textContent), 'landing switches hero');
     ok(true, 'landing: tapping a kid redraws the shelf');
+    ok($('.ytf .ytf-cover') && !$('.ytf iframe'), 'landing: the Watch section shows the video cover, no YouTube player yet');
+    $('.ytf .ytf-cover').click();
+    await until(() => $('.ytf iframe[src*="youtube-nocookie.com/embed/lpY_f2LUTdI"]'), 'video player');
+    ok(true, 'landing: pressing play loads the YouTube player');
 
     // ---- library as a guest
     await page('#library', () => $$('.lb-card').length === 12, 'library');

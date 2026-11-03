@@ -19,6 +19,8 @@ STORIES = [("bears", "{name} and the Three Bears", "#ef5a36"), ("beanstalk", "{n
            ("elves", "{name} and the Elves", "#2fa39b"), ("pea", "{name} and the Pea", "#5b8def"),
            ("gingerbread", "{name} and the Gingerbread Man", "#d9823b"), ("duckling", "{name} and the Ugly Duckling", "#5fb8e0"),
            ("goats", "{name} and the Billy Goats Gruff", "#8cc04b"), ("tortoise", "{name} and the Great Race", "#e9a23b")]
+# The app's video on the Addanapp YouTube channel (APP_MAKER/youtube/manifest.json), shown in the Watch section.
+YT_VIDEO = "lpY_f2LUTdI"
 PAGE = ("{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too cold!” Then the wee bowl. “Just right!” "
         "said {name}, and before {he} knew it, the little bowl was empty. Oops!")
 
@@ -40,7 +42,15 @@ class Landing(LandingTemplate):
         self.pals_panel.add_event_handler("x-pick", self._pick)
         if window.UI.reducedMotion():
             self.pal_timer.interval = 0
+        self.dom_nodes["yt_cover"].addEventListener("click", self._play)
         self._show(0)
+
+    def _play(self, event):
+        """Swap the video's cover for YouTube's player (privacy-enhanced); nothing loads from YouTube before this click."""
+        self.dom_nodes["yt_frame"].innerHTML = (
+            '<iframe src="https://www.youtube-nocookie.com/embed/' + YT_VIDEO + '?autoplay=1&rel=0&playsinline=1" '
+            'title="Little Hero Books video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen '
+            'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
 
     def _show(self, i):
         self._at = i % len(PALS)
