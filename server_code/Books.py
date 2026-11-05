@@ -2,6 +2,7 @@
 
 The shelf, the library and the reader load through here. A book is private to its maker unless they
 turn on a family link (share_key): anyone with that link can read it (#read/<key>), nothing else.
+The owner can record their voice reading it (Voice.py); the family link plays those recordings.
 The PDF is made in the browser (web/pages/_book.html), so nothing here sends files.
 """
 import secrets
@@ -11,7 +12,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import DemoData, Heroes, Stories
+from . import DemoData, Heroes, Stories, Voice
 
 MAX_BOOKS = 200
 
@@ -73,7 +74,9 @@ def get_book(book_id):
     s = Stories.BY_KEY.get(r["story"])
     if s is None or r["hero"] is None:
         return C.fail("That book can't be opened any more.")
-    return C.ok(book=book_dict(r, me), story=Stories.full(s))
+    b = book_dict(r, me)
+    b["voice"] = Voice.voice_for(r) if b["mine"] else {}
+    return C.ok(book=b, story=Stories.full(s))
 
 
 @anvil.server.callable(require_user=True)
@@ -122,6 +125,7 @@ def delete_book(book_id):
         return C.ok()
     if r["owner"] != me or r["is_demo"]:
         return C.fail("You can only remove your own books.")
+    Voice.delete_for(r)
     r.delete()
     return C.ok()
 
@@ -134,12 +138,14 @@ def share_book(book_id, on):
     if r is None:
         return C.fail("You can only share your own books.")
     r["share_key"] = secrets.token_urlsafe(9) if on else None
+    Voice.new_keys(r)  # audio addresses someone kept from the old link stop working too
     return C.ok(book=book_dict(r, me))
 
 
 @anvil.server.callable
 def get_shared_book(key):
-    """A book opened from a family link: the story, the hero and the dedication. Nothing about the parent."""
+    """A book opened from a family link: the story, the hero, the dedication and the parent's recorded voice (if any).
+    Nothing about the parent."""
     if not isinstance(key, str) or len(key) < 8 or len(key) > 40:
         return C.fail("This link doesn't work. Ask for a new one.")
     r = app_tables.books.get(share_key=key)
@@ -147,6 +153,7 @@ def get_shared_book(key):
         return C.fail("This link doesn't work any more. Ask for a new one.")
     b = book_dict(r)
     b["hero"].pop("id", None)
+    b["voice"] = Voice.voice_for(r)
     return C.ok(book=b, story=Stories.full(Stories.BY_KEY[r["story"]]))
 
 

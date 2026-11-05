@@ -32,12 +32,13 @@ client_code/
   legal.py                       legal kit (installed from APP_MAKER/legal-kit; don't edit)
   Layouts/Shell                  header, account menu, footer, phone tab bar; slot "content"; property `active`
   Pages/  Landing Auth Shelf(#home) Library Studio Book Story Read Profile Admin
-  Components/  Avatar Cover Scene (pictures)  Reader (container: buttons go in its "tools" dropzone)
+  Components/  Avatar Cover Scene (pictures)  Reader (container: buttons go in its "tools" dropzone; record=True adds
+               "Record my voice" and saves pages through save_voice/delete_voice; event `voice`)
                HeroPick (chip)  MakeYours (the "make one starring your child" card)
   Items/   RepeatingPanel item templates: ShelfCover PalButton FaceBubble HeroCard ShelfRow ShelfBook NextStory
            PickChip StoryCard OptionGroup OptionTile Swatch IdeaChip StoryStatRow UserRow FeedbackRow
   Dialogs/ MakeBook FamilyLink Dedication Pdf PdfProgress   (alert(Form(...), buttons=[]); close with x-close-alert)
-server_code/                     same as master (dict-returning callables, C.ok / C.fail)
+server_code/                     dict-returning callables (C.ok / C.fail); Voice.py = recorded pages (below)
 theme/assets/
   lh-kit.js                      UI.esc/icon/store/theme for the engines (+ light/dark before first paint)
   lh-avatar.js lh-scenes.js lh-book.js ark-music.js   the engines (were web/pages/_*.html)
@@ -53,9 +54,9 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
 2. `python tools/check.py` (no -I) -> ALL CHECKS PASSED. Needs the Anvil CLI (`npm install -g @anvil-works/anvil-cli`,
    or ANVIL_CLI=path). It type-checks Python against Anvil's stubs: it catches real bugs (None subscripts, wrong
    component properties, missing imports).
-3. `python -I tools/ui_test.py` (Docker Desktop running) -> ALL UI TESTS PASSED. Runs the folder as-is in
-   anvilworks/anvil-app-server:1.18.0 on http://localhost:3031 (container lhb-dev, volume lhb-data). Client changes
-   show on reload; server changes need `--restart`. `--shots DIR` = every page, desktop + true 390 px phone,
+3. `python -I tools/ui_test.py` (Docker Desktop running) -> ALL UI TESTS PASSED. Copies the app into
+   anvilworks/anvil-app-server:1.18.0 on http://localhost:3031 (container lhb-dev, volumes lhb-app + lhb-data,
+   `--auto-migrate`). Client changes apply on the next run; server changes need `--restart`. `--shots DIR` = every page, desktop + true 390 px phone,
    light + dark, guest + signed in (tools/ui/seed.js makes an account, a hero and a book). Read the PNGs.
 4. `git pull --ff-only` first (Anvil commits IDE edits). Commit only your files as arkulinskis with the Co-Authored-By
    line, `git push origin master`. Risky change: push a branch and ask the user for a debug link of it.
@@ -86,7 +87,35 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
 - **Server calls** = `state.call("fn", ...)`: expected problems come back as `{"ok": False, "error"}` -> toast + None.
   Pages that show a friendly state instead (private book, broken family link) call anvil.server.call and check ok.
 
+## Record my voice (Prepsto idea, 2026-11-05)
+
+- **Table `voice_pages`**: book (link), page (0 cover, 1 dedication, 2-10 story, 11 The End), audio (media), seconds,
+  key (random, 24 chars), created. One row per recorded page; Redo replaces the row (new key).
+- **Server (Voice.py)**: `save_voice(book_id, page, media, seconds)` (owner only, audio/* or video/webm, 200 B-4 MB,
+  stored without the codecs part of the type), `delete_voice(book_id, page=None)` (None = all). `get_book` (owner) and
+  `get_shared_book` add `voice: {"<page>": {key, seconds}}`. `delete_book`, `delete_hero` remove recordings;
+  `share_book` (on or off) calls `Voice.new_keys`, so old audio addresses die with the old link.
+- **Audio endpoint** `/_/api/voice/:key`: byte ranges (206, Safari/iPhone need them), `Cache-Control: private,
+  no-cache` + ETag = key (304s), so a deleted recording stops playing at once (with max-age the browser kept playing a
+  deleted page from its cache: the flow test caught it).
+- **Engine (lh-book.js)**: the record panel `[data-rd-rec]` above the page (like the crayons), states empty / starting /
+  recording / saving / saved / error, buttons `[data-rec=start|stop|play|redo|delete|next|clear]`. The mic stream is
+  kept while record mode is on (one permission prompt) and released when it closes. Turning the page while recording
+  stops and saves it. A fresh recording plays from a blob URL; after a reload from the server. Pages without a
+  recording use speech synthesis. Python callbacks return JSON strings (`onVoiceSave`, `onVoiceDelete`).
+- **Tests**: server tests cover every rule above; flow.js records with Chrome's fake microphone (drive.mjs passes
+  `--use-fake-device-for-media-stream` etc.; `FAKE_AUDIO=<wav>` for real speech), plays back, redoes, checks the 206,
+  reloads, plays via Read to me, checks the family link, deletes one page and all. The reader's controller is
+  `document.querySelector('.rd').parentNode.lhReader` (voice(), audio(), playing(), at()).
+- Not verified here: a real iPhone/Safari recording and playback (MediaRecorder MP4/AAC is expected there).
+
 ## Gotchas found building it (Nov 2026)
+
+- **A remounted reader must drop its click listener.** The Reader component remounts into the same DOM node (e.g. after
+  the dedication changes); before 2026-11-05 the old instance's `click` listener stayed, so every later click ran the
+  old reader too (old onPage/onFinish, and a crash on Play). `destroy()` now removes it.
+- ui_test.py copies the app into the Docker volume `lhb-app` and runs `--auto-migrate` (since 2026-11-05: new tables
+  apply locally; `remembered_logins` is listed in anvil.yaml's users table, so no `--ignore-invalid-schema`).
 
 - App Server 1.18 (local) lags hosted Anvil: no `HtmlComponent.attrs`, `Notification(role=)` raises TypeError
   (state.toast falls back to `style=`), notifications are `.anvil-alert[data-notify]` instead of `.anvil-notification`,

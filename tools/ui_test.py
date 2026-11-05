@@ -4,15 +4,19 @@
     python -I tools/ui_test.py --shots DIR     also screenshots of every page (desktop + phone, light + dark) into DIR
     python -I tools/ui_test.py --stop          stop the local server afterwards
 
-The server runs this folder as it is (no build step): container "lhb-dev" on http://localhost:3031, data in the
-Docker volume "lhb-data" (users and books made by tests stay there; `docker volume rm lhb-data` to start clean).
-Edits to client code show up on the next page load; server-code edits need the container restarted (--restart).
+The server runs a copy of this folder: container "lhb-dev" on http://localhost:3031, the app files COPIED into the
+Docker volume "lhb-app" on every run (a mounted Windows folder is slow and blocks --auto-migrate), data in the volume
+"lhb-data" (users and books made by tests stay there; `docker volume rm lhb-data` to start clean). New tables and
+columns in anvil.yaml are applied to the local database (--auto-migrate). Client edits apply on the next run;
+server-code edits need the container restarted (--restart).
 Needs Docker Desktop running and Chrome installed.
 """
+import io
 import json
 import pathlib
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import urllib.request
@@ -31,15 +35,33 @@ def running():
     return r.stdout.strip().startswith("Up")
 
 
+APP_PARTS = ("anvil.yaml", ".anvil_editor.yaml", "__init__.py", "client_code", "server_code", "theme")
+
+
+def copy_app():
+    """Copy the files the App Server needs into the container's /apps/MainApp (the "lhb-app" volume)."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w") as tar:
+        for part in APP_PARTS:
+            if (ROOT / part).exists():
+                tar.add(str(ROOT / part), arcname=part, filter=lambda t: None if "__pycache__" in t.name else t)
+    subprocess.run(["docker", "cp", "-", NAME + ":/apps/MainApp/"], input=buf.getvalue(), capture_output=True, check=True)
+
+
 def start(restart=False):
     if restart:
         sh("docker", "rm", "-f", NAME, check=False)
     if not running():
         sh("docker", "rm", "-f", NAME, check=False)
-        sh("docker", "run", "-d", "--name", NAME, "-p", "%d:%d" % (PORT, PORT), "-v", "%s:/apps/MainApp" % ROOT.as_posix(),
+        sh("docker", "volume", "rm", "lhb-app", check=False)  # fresh copy: no files left over from old versions
+        sh("docker", "create", "--name", NAME, "-p", "%d:%d" % (PORT, PORT), "-v", "lhb-app:/apps/MainApp",
            "-v", "lhb-data:/anvil-data", IMAGE, "--app", "MainApp", "--origin", URL,
-           "--ignore-invalid-schema")  # the Users service adds remembered_logins, which anvil.yaml doesn't list
+           "--auto-migrate")  # new tables/columns apply to the local database (--ignore-invalid-schema would block that)
+        copy_app()
+        sh("docker", "start", NAME)
         print("starting the App Server ...")
+    else:
+        copy_app()  # client edits since the last run
     for _ in range(300):
         logs = sh("docker", "logs", NAME, check=False)
         if "Downlink client connected" in logs.stdout + logs.stderr:

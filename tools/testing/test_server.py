@@ -212,15 +212,89 @@ ok(call("share_book", b["id"], False))
 as_user(None)
 bad(call("get_shared_book", key), "a link that was turned off stops working")
 
+# ---------------------------------------------------------------------------------- recorded voice (Voice.py)
+import anvil  # noqa: E402
+V = M["Voice"]
+snd = lambda n=3000, t="audio/webm;codecs=opus": anvil.BlobMedia(t, (bytes(range(256)) * (n // 256 + 1))[:n], name="rec")
+as_user(ana)
+assert call("get_book", b["id"])["book"]["voice"] == {}
+r = ok(call("save_voice", b["id"], 2, snd(), 4.26))
+assert r["page"] == 2 and list(r["voice"]) == ["2"] and r["voice"]["2"]["seconds"] == 4.3
+k1 = r["voice"]["2"]["key"]
+row = T.voice_pages.get(key=k1)
+assert row["audio"].content_type == "audio/webm", "codecs are dropped from the stored type"
+r = ok(call("save_voice", b["id"], 2, snd(5000, "audio/mp4"), 6))
+assert len(T.voice_pages.search(book=T.books.get_by_id(b["id"]), page=2)) == 1 and r["voice"]["2"]["key"] != k1, "redo replaces the page"
+k2 = r["voice"]["2"]["key"]
+ok(call("save_voice", b["id"], 0, snd(), 2))
+ok(call("save_voice", b["id"], 11, snd(), 2))
+bad(call("save_voice", b["id"], 12, snd(), 2), "past The End")
+bad(call("save_voice", b["id"], -1, snd(), 2))
+bad(call("save_voice", b["id"], 2.5, snd(), 2))
+bad(call("save_voice", b["id"], True, snd(), 2))
+bad(call("save_voice", b["id"], "2", snd(), 2))
+bad(call("save_voice", b["id"], 3, "not media", 2))
+bad(call("save_voice", b["id"], 3, anvil.BlobMedia("image/png", b"x" * 3000), 2), "only sound")
+bad(call("save_voice", b["id"], 3, snd(50), 2), "empty recording")
+bad(call("save_voice", b["id"], 3, snd(V.MAX_BYTES + 10), 2), "too big")
+assert ok(call("save_voice", b["id"], 3, snd(), "x"))["voice"]["3"]["seconds"] == 0
+assert ok(call("save_voice", b["id"], 4, snd(3000, "video/webm"), 9999))["voice"]["4"]["seconds"] == V.MAX_SECONDS
+assert T.voice_pages.get(key=call("get_book", b["id"])["book"]["voice"]["4"]["key"])["audio"].content_type == "audio/webm"
+assert sorted(call("get_book", b["id"])["book"]["voice"]) == ["0", "11", "2", "3", "4"]
+ok(call("delete_voice", b["id"], 3))
+ok(call("delete_voice", b["id"], 4))
+bad(call("delete_voice", b["id"], 40))
+assert sorted(ok(call("delete_voice", b["id"], 0))["voice"]) == ["11", "2"]
+# the audio endpoint: whole file, byte ranges (Safari), unknown keys
+ep = anvil.server.ENDPOINTS["/voice/:key"]
+anvil.server.request.headers = {}
+res = ep(key=k2)
+assert res.status == 200 and res.headers["Content-Type"] == "audio/mp4" and res.body.length == T.voice_pages.get(key=k2)["audio"].length
+anvil.server.request.headers = {"range": "bytes=0-99"}
+res = ep(key=k2)
+assert res.status == 206 and res.body.length == 100 and res.headers["Content-Range"].startswith("bytes 0-99/")
+anvil.server.request.headers = {"range": "bytes=-10"}
+assert ep(key=k2).body.length == 10
+anvil.server.request.headers = {"range": "bytes=999999-"}
+assert ep(key=k2).status == 416
+anvil.server.request.headers = {"if-none-match": '"%s"' % k2}
+assert ep(key=k2).status == 304, "the browser's copy is still good"
+anvil.server.request.headers = {}
+assert ep(key=k2).headers["Cache-Control"] == "private, no-cache"
+assert ep(key=k1).status == 404, "a replaced recording's address is gone"
+assert ep(key="short").status == 404 and ep(key="../../etc/passwd-xxxxxxxxxxxxxxx").status == 404
+# family link: the visitor gets the voice; turning the link off (or a new link) changes the audio addresses
+sh2 = ok(call("share_book", b["id"], True))["book"]
+as_user(None)
+fam = ok(call("get_shared_book", sh2["share_key"]))["book"]["voice"]
+assert sorted(fam) == ["11", "2"] and fam["2"]["key"] != k2, "a new family link means new audio addresses"
+assert ep(key=k2).status == 404 and ep(key=fam["2"]["key"]).status == 200
+assert denied("save_voice", b["id"], 2, snd(), 2) and denied("delete_voice", b["id"], 2)
+as_user(bob)
+bad(call("save_voice", b["id"], 2, snd(), 2), "someone else's book")
+bad(call("delete_voice", b["id"], 2))
+bad(call("delete_voice", b["id"]))
+assert len(T.voice_pages.search()) == 2
+as_user(ana)
+ok(call("share_book", b["id"], False))
+assert ep(key=fam["2"]["key"]).status == 404, "turning the family link off stops the old audio addresses"
+demo_book = T.books.search(is_demo=True)[0]
+bad(call("save_voice", demo_book.get_id(), 2, snd(), 2), "example books can't be recorded")
+assert ok(call("delete_voice", b["id"]))["voice"] == {} and not T.voice_pages.search(), "delete all"
+ok(call("save_voice", b["id"], 5, snd(), 3))  # removed with the hero below
+
 # limits, and removing a hero removes their books
 as_user(ana)
 for i in range(11):
     ok(call("save_hero", None, "Kid %d" % i, "they", {"hair": "crop"}))
 bad(call("save_hero", None, "One too many", "they", {"hair": "crop"}))
 assert ok(call("delete_hero", mila["id"]))["removed_books"] == 2
+assert not T.voice_pages.search(), "removing a hero removes the recordings of their books"
 assert call("get_shelf")["books"] == [] and not T.books.search(owner=ana)
 pea = ok(call("make_book", T.heroes.search(owner=ana)[0].get_id(), "pea"))["book"]
+ok(call("save_voice", pea["id"], 1, snd(), 3))
 ok(call("delete_book", pea["id"]))
+assert not T.voice_pages.search(), "removing a book removes its recordings"
 ok(call("delete_book", pea["id"]), "deleting twice is fine")
 
 # ---------------------------------------------------------------------------------- admin: library + demo data

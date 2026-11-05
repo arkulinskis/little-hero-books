@@ -1,4 +1,4 @@
-/* lh-book.js: books: LH.bookPages, LH.pageHtml, LH.reader (page turns, read aloud, colour me in),
+/* lh-book.js: books: LH.bookPages, LH.pageHtml, LH.reader (page turns, read aloud, colour me in, record my voice),
    LH.makePdf + LH.writePdf (the PDF made in the browser), LH.coverHtml, LH.confetti.
    The PDF options dialog and its progress window are Python forms (Dialogs.Pdf, Dialogs.PdfProgress). */
 (function () {
@@ -103,6 +103,34 @@
     return group;
   }
 
+  /* ------------------------------------------------------------------ recorded voice
+     A parent reads each page aloud and it is recorded in the browser (MediaRecorder). The recording goes to the
+     server through opts.onVoiceSave(page, blob, seconds), which answers JSON {ok, voice, error}; "Read to me" then
+     plays it, and pages without a recording fall back to the speech voice. book.voice = {"<page>": {key, seconds}};
+     opts.voiceBase + key is the audio's address (Voice.py serves it with byte ranges). */
+  LH.VOICE_MAX = 180;  // seconds per page (the server's limit too)
+  LH.canRecord = function () { return !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia); };
+  /* MP4/AAC first (it plays everywhere, iPhones included), then WebM/Opus (Firefox, older Chrome). */
+  LH.recordType = function () {
+    var types = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+    for (var i = 0; i < types.length; i++) { try { if (MediaRecorder.isTypeSupported(types[i])) return types[i]; } catch (e) {} }
+    return '';
+  };
+  function clock(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function pageName(p) {
+    if (p.kind === 'cover') return 'The cover';
+    if (p.kind === 'dedication') return 'The dedication page';
+    if (p.kind === 'end') return 'The End';
+    return 'Page ' + (p.i + 1);
+  }
+  function micError(err) {
+    var n = err && err.name;
+    if (n === 'NotAllowedError' || n === 'SecurityError') return 'The browser didn’t allow the microphone. Allow it for this site (the icon next to the address) and press Record again.';
+    if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No microphone was found. Plug one in, or use a phone or laptop with a microphone.';
+    if (n === 'NotReadableError') return 'Another app is using the microphone. Close it and press Record again.';
+    return 'The microphone couldn’t start. Please try again.';
+  }
+
   /* ------------------------------------------------------------------ the reader */
   /* Story-time music: gentle tracks streamed by ArkMusic (web/pages/_arkmusic.html). Off until someone presses
      Music in the reader (remembered in this browser); it dips while "Read to me" reads. */
@@ -115,22 +143,35 @@
     stop: function () { if (window.ArkMusic) ArkMusic.stop(1.2); },
     duck: function (v) { if (window.ArkMusic) ArkMusic.duck(v ? 0.4 : 1, v ? 0.3 : 1); }
   };
+  /* opts: start, colour (false hides Colour me in), onFinish(), onPage(i, page),
+     record (true: the "Record my voice" button, for the book's owner), onVoiceSave(page, blob, seconds) and
+     onVoiceDelete(page or -1 for all) -> JSON {ok, voice, error} (or null when cancelled), voiceBase. */
   LH.reader = function (el, book, opts) {
     opts = opts || {};
     var pages = LH.bookPages(book), at = Math.min(opts.start || 0, pages.length - 1), seen = {}, reading = false, finished = false;
     var colouring = false, crayon = LH.CRAYONS[0], painted = {};
-    el.innerHTML = '<div class="rd"><div data-rd-crayons></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
+    var voice = {}, localUrl = {}, recMode = false, rec = null, stream = null, recState = {}, audio = null, playing = null, recFocus = false, alive = true;
+    setVoice(book.voice || {});
+    var canRec = !!opts.record && LH.canRecord() && !!opts.onVoiceSave;
+    var canSpeak = 'speechSynthesis' in window;
+    el.innerHTML = '<div class="rd"><div data-rd-crayons></div><div data-rd-rec></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
       '<div class="rd-book" data-rd-book></div><button class="rd-nav next" data-rd="next" aria-label="Next page">' + UI.icon('arrow') + '</button></div>' +
       '<div class="rd-bar"><div class="rd-dots" data-rd-dots></div><div class="rd-tools">' +
-      ('speechSynthesis' in window ? '<button class="ui-btn sm" data-rd="speak">' + UI.icon('chat') + '<span>Read to me</span></button>' : '') +
+      (canSpeak || canRec || Object.keys(voice).length ? '<button class="ui-btn sm" data-rd="speak">' + UI.icon('chat') + '<span>Read to me</span></button>' : '') +
+      (canRec ? '<button class="ui-btn sm" data-rd="rec" aria-pressed="false">' + UI.icon('mic') + '<span>Record my voice</span></button>' : '') +
       (window.ArkMusic ? '<button class="ui-btn sm' + (LH.music.on() ? ' on' : '') + '" data-rd="music" aria-pressed="' + LH.music.on() + '">' + UI.icon('music') + '<span>Music</span></button>' : '') +
       (opts.colour === false ? '' : '<button class="ui-btn sm" data-rd="colour">' + UI.icon('brush') + '<span>Colour me in</span></button>') +
       (opts.tools || '') + '</div></div></div>';
-    var bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]');
+    var bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]'), recEl = el.querySelector('[data-rd-rec]');
     function drawCrayons() {
       crayEl.innerHTML = colouring ? '<div class="rd-crayons"><div class="hint">Pick a crayon, then tap the picture</div>' + LH.CRAYONS.map(function (c) {
         return '<button type="button" data-crayon="' + c + '" style="--cr:' + c + '" class="' + (c === crayon ? 'on' : '') + '" aria-label="Crayon ' + c + '"></button>';
       }).join('') + '<button type="button" data-crayon="#FFFFFF" style="--cr:#fff" class="' + (crayon === '#FFFFFF' ? 'on' : '') + '" aria-label="Rubber" title="Rubber">' + UI.icon('x') + '</button></div>' : '';
+    }
+    function drawDots() {
+      dots.innerHTML = pages.map(function (p, i) {
+        return '<button data-rd-go="' + i + '" class="' + (i === at ? 'on' : seen[i] ? 'seen' : '') + (voice[i] ? ' vo' : '') + '" aria-label="Page ' + (i + 1) + (voice[i] ? ', recorded' : '') + '"' + (i === at ? ' aria-current="page"' : '') + '></button>';
+      }).join('');
     }
     function draw(dir) {
       seen[at] = true;
@@ -142,7 +183,8 @@
       }
       el.querySelector('[data-rd=prev]').disabled = at === 0;
       el.querySelector('[data-rd=next]').disabled = at === pages.length - 1;
-      dots.innerHTML = pages.map(function (p, i) { return '<button data-rd-go="' + i + '" class="' + (i === at ? 'on' : seen[i] ? 'seen' : '') + '" aria-label="Page ' + (i + 1) + '"></button>'; }).join('');
+      drawDots();
+      drawRec();
       if (at === pages.length - 1 && !finished) { finished = true; LH.confetti(); if (opts.onFinish) opts.onFinish(); }
       if (opts.onPage) opts.onPage(at, pages[at]);
       if (reading) speak();
@@ -150,28 +192,201 @@
     function go(n) {
       var to = Math.max(0, Math.min(pages.length - 1, n));
       if (to === at) return;
+      if (rec) recStop();  // turning the page finishes (and saves) the recording of the page being read
+      stopAudio();
       var dir = to > at ? 1 : -1;
       at = to;
       draw(dir);
     }
+
+    /* ---- reading aloud: the recorded voice where there is one, the speech voice elsewhere */
     function speak() {
+      var mine = at;
+      stopAudio();
+      try { speechSynthesis.cancel(); } catch (e) {}
+      LH.music.duck(true);
+      var next = function () { if (reading && mine === at) { if (at < pages.length - 1) setTimeout(function () { if (reading && mine === at) go(at + 1); }, 900); else stopSpeak(); } };
+      if (voice[at]) playVoice(at, next, function () { if (reading && mine === at) synth(mine, next); });
+      else synth(at, next);
+    }
+    function synth(p, next) {
+      if (!canSpeak) { setTimeout(next, 1500); return; }
       try {
-        speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance(LH.pageSpeech(book, pages[at]));
+        var u = new SpeechSynthesisUtterance(LH.pageSpeech(book, pages[p]));
         u.rate = .9; u.pitch = 1.08;
-        LH.music.duck(true);
-        var mine = at;
-        u.onend = function () { if (reading && mine === at) { if (at < pages.length - 1) setTimeout(function () { if (reading && mine === at) go(at + 1); }, 900); else stopSpeak(); } };
+        u.onend = next;
         speechSynthesis.speak(u);
       } catch (e) { stopSpeak(); }
     }
     function stopSpeak() {
       reading = false;
       try { speechSynthesis.cancel(); } catch (e) {}
+      stopAudio();
       LH.music.duck(false);
       var b = el.querySelector('[data-rd=speak]');
       if (b) { b.classList.remove('on'); b.querySelector('span').textContent = 'Read to me'; }
     }
+    function voiceSrc(p) { return localUrl[p] && localUrl[p].key === voice[p].key ? localUrl[p].url : (opts.voiceBase || '') + voice[p].key; }
+    function playVoice(p, onEnd, onFail) {
+      stopAudio();
+      if (!audio) { audio = new Audio(); audio.preload = 'auto'; }
+      audio.onended = function () { playing = null; if (recMode) drawRec(); if (onEnd) onEnd(); };
+      audio.onerror = function () { playing = null; if (onFail) onFail(); };
+      audio.src = voiceSrc(p);
+      playing = p;
+      var pr = audio.play();
+      if (pr && pr.catch) pr.catch(function (e) { if (e && e.name === 'AbortError') return; playing = null; if (onFail) onFail(); });
+    }
+    function stopAudio() {
+      if (audio) { audio.onended = audio.onerror = null; try { audio.pause(); } catch (e) {} }
+      playing = null;
+    }
+
+    /* ---- recording ("Record my voice", the owner only) */
+    function setVoice(v) {
+      var next = {};
+      Object.keys(v || {}).forEach(function (k) { if (v[k] && v[k].key) next[k] = { key: v[k].key, seconds: +v[k].seconds || 0 }; });
+      Object.keys(localUrl).forEach(function (k) { if (!next[k] || next[k].key !== localUrl[k].key) { URL.revokeObjectURL(localUrl[k].url); delete localUrl[k]; } });
+      voice = next;
+      book.voice = next;
+    }
+    function getStream() {
+      if (stream && stream.active) return Promise.resolve(stream);
+      return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }).then(function (s) {
+        if (!alive || !recMode) { s.getTracks().forEach(function (t) { t.stop(); }); throw { name: 'Closed' }; }
+        stream = s;
+        return s;
+      });
+    }
+    function releaseStream() {
+      if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+      stream = null;
+    }
+    function recStart() {
+      if (rec) return;
+      var page = at;
+      stopSpeak(); stopAudio();
+      recState[page] = { s: 'starting' };
+      drawRec();
+      getStream().then(function (s) {
+        if (!recMode || at !== page || rec) { delete recState[page]; drawRec(); return; }
+        var type = LH.recordType(), mr;
+        try { mr = new MediaRecorder(s, type ? { mimeType: type, audioBitsPerSecond: 64000 } : { audioBitsPerSecond: 64000 }); } catch (e) { mr = new MediaRecorder(s); }
+        var r = rec = { mr: mr, page: page, t0: Date.now(), chunks: [], type: mr.mimeType || type || 'audio/webm' };
+        mr.ondataavailable = function (e) { if (e.data && e.data.size) r.chunks.push(e.data); };
+        mr.onstop = function () { recDone(r); };
+        mr.start(1000);
+        r.timer = setInterval(function () {
+          var secs = (Date.now() - r.t0) / 1000, t = el.querySelector('[data-rec-time]');
+          if (t) t.textContent = clock(secs);
+          if (secs >= LH.VOICE_MAX) recStop();
+        }, 250);
+        recState[page] = { s: 'recording' };
+        drawRec();
+      }, function (err) {
+        if (err && err.name === 'Closed') { delete recState[page]; return; }
+        recState[page] = { s: 'error', msg: micError(err) };
+        drawRec();
+      });
+    }
+    function recStop(discard) {
+      var r = rec;
+      if (!r) return;
+      rec = null;
+      clearInterval(r.timer);
+      r.secs = (Date.now() - r.t0) / 1000;
+      r.discard = !!discard;
+      if (!discard) recState[r.page] = { s: 'saving' };
+      try { r.mr.stop(); } catch (e) { recDone(r); }
+      drawRec();
+    }
+    function recDone(r) {
+      if (r.discard || !alive) return;
+      var p = r.page;
+      if (r.secs < 0.8 || !r.chunks.length) { recState[p] = { s: 'error', msg: 'That was very short. Press Record, then read the page aloud.' }; drawRec(); return; }
+      var blob = new Blob(r.chunks, { type: r.type });
+      var fail = function (msg) { recState[p] = { s: 'error', msg: msg || 'The recording couldn’t be saved. Check your connection and try again.' }; drawRec(); };
+      Promise.resolve(opts.onVoiceSave(p, blob, Math.round(r.secs * 10) / 10)).then(function (json) {
+        var res = JSON.parse(json || 'null');
+        if (!res || !res.ok) return fail(res && res.error);
+        setVoice(res.voice);
+        if (voice[p]) localUrl[p] = { url: URL.createObjectURL(blob), key: voice[p].key };  // plays back from memory
+        recState[p] = { s: 'saved' };
+        drawRec(); drawDots();
+      }, function () { fail(); });
+    }
+    function voiceDelete(p) {
+      stopAudio();
+      Promise.resolve(opts.onVoiceDelete(p)).then(function (json) {
+        var res = JSON.parse(json || 'null');
+        if (!res) return;  // cancelled
+        if (!res.ok) { recState[at] = { s: 'error', msg: res.error }; drawRec(); return; }
+        if (p < 0) recState = {}; else delete recState[p];
+        setVoice(res.voice);
+        recFocus = true;
+        drawRec(); drawDots();
+      });
+    }
+    function setRec(on) {
+      if (on === recMode) return;
+      recMode = on;
+      var b = el.querySelector('[data-rd=rec]');
+      if (on) {
+        if (colouring) setColour(false);
+        stopSpeak();
+        LH.music.stop();  // never play music while the microphone listens
+      } else {
+        recStop(); stopAudio(); releaseStream();
+        if (LH.music.on()) LH.music.play();
+      }
+      if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('span').textContent = on ? 'Done recording' : 'Record my voice'; }
+      drawRec();
+      if (on && recEl.scrollIntoView) recEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    function setColour(on) {
+      if (on === colouring) return;
+      if (on && recMode) setRec(false);
+      colouring = on;
+      var b = el.querySelector('[data-rd=colour]');
+      if (b) { b.classList.toggle('on', colouring); b.querySelector('span').textContent = colouring ? 'Back to colour' : 'Colour me in'; }
+      drawCrayons(); draw(1);
+    }
+    function recBtn(act, icon, label, cls) {
+      return '<button type="button" class="ui-btn sm' + (cls ? ' ' + cls : '') + '" data-rec="' + act + '">' + UI.icon(icon) + '<span>' + label + '</span></button>';
+    }
+    function drawRec() {
+      if (!recEl) return;
+      if (!recMode) { recEl.innerHTML = ''; return; }
+      var had = recFocus || (document.activeElement && recEl.contains(document.activeElement));
+      recFocus = false;
+      var p = at, name = pageName(pages[p]), st = rec && rec.page === p ? 'recording' : (recState[p] && recState[p].s) || 'idle';
+      if (st === 'saved' || st === 'idle') st = voice[p] ? 'saved' : 'empty';
+      var msg, btns = '';
+      if (st === 'recording') {
+        msg = '<b>Recording ' + esc(name.charAt(0).toLowerCase() + name.slice(1)) + '.</b> Read it aloud, then press Stop.';
+        btns = recBtn('stop', 'stop', 'Stop', 'primary') + '<span class="rd-rec-time" data-rec-time aria-hidden="true">' + clock((Date.now() - rec.t0) / 1000) + '</span>';
+      } else if (st === 'starting') {
+        msg = 'Starting the microphone…';
+      } else if (st === 'saving') {
+        msg = 'Saving ' + esc(name.charAt(0).toLowerCase() + name.slice(1)) + '…';
+      } else if (st === 'saved') {
+        msg = '<b>' + esc(name) + '</b>: recorded (' + clock(voice[p].seconds) + ').';
+        btns = recBtn('play', playing === p ? 'stop' : 'play', playing === p ? 'Stop playing' : 'Play', playing === p ? 'on' : '') + recBtn('redo', 'redo', 'Redo') +
+          recBtn('delete', 'trash', 'Delete', 'ghost danger') + (p < pages.length - 1 ? recBtn('next', 'arrow', 'Next page', 'primary') : '');
+      } else {
+        msg = st === 'error' ? '<span class="rd-rec-bad">' + esc(recState[p].msg) + '</span>' : '<b>' + esc(name) + '</b>: not recorded yet. Press Record, then read it aloud.';
+        btns = recBtn('start', 'mic', 'Record', 'primary') + (voice[p] ? recBtn('play', 'play', 'Play') : '');
+      }
+      var n = Object.keys(voice).length;
+      recEl.innerHTML = '<div class="rd-rec" data-state="' + st + '" role="region" aria-label="Record your voice">' +
+        '<div class="rd-rec-say"><span class="rd-rec-dot" aria-hidden="true"></span><span role="status">' + msg + '</span></div>' +
+        (btns ? '<div class="rd-rec-btns">' + btns + '</div>' : '') +
+        '<p class="rd-rec-note">' + (n ? n + ' of ' + pages.length + ' pages recorded. ' : '') +
+        'Recordings are saved with this book, and anyone with its family link can hear them.' +
+        (n ? ' <button type="button" class="rd-rec-clear" data-rec="clear">Delete all recordings</button>' : '') + '</p></div>';
+      if (had) { var f = recEl.querySelector('.rd-rec-btns button'); if (f) f.focus(); else recFocus = true; }
+    }
+
     function paint(t) {
       var list = Array.prototype.slice.call(bookEl.querySelectorAll(SHAPES));
       puff(t).forEach(function (s) {
@@ -181,28 +396,43 @@
         (painted[at] = painted[at] || {})[list.indexOf(s)] = [how, crayon];
       });
     }
-    el.addEventListener('click', function (e) {
+    function onClick(e) {
       var c = e.target.closest('[data-crayon]');
       if (c) { crayon = c.getAttribute('data-crayon'); drawCrayons(); return; }
       if (colouring && e.target.closest('[data-rd-book] svg') && /^(path|circle|ellipse|rect|text)$/i.test(e.target.tagName)) { paint(e.target); return; }
+      var rb = e.target.closest('[data-rec]');
+      if (rb) {
+        var a = rb.getAttribute('data-rec');
+        recFocus = true;
+        if (a === 'start' || a === 'redo') recStart();
+        else if (a === 'stop') recStop();
+        else if (a === 'play') {
+          if (playing === at) stopAudio();
+          else playVoice(at, null, function () { recState[at] = { s: 'error', msg: 'This recording couldn’t be played. Try Redo.' }; drawRec(); });
+          drawRec();
+        } else if (a === 'delete') voiceDelete(at);
+        else if (a === 'clear') voiceDelete(-1);
+        else if (a === 'next') go(at + 1);
+        return;
+      }
       var b = e.target.closest('[data-rd],[data-rd-go]');
       if (!b) return;
       if (b.hasAttribute('data-rd-go')) return go(+b.getAttribute('data-rd-go'));
       var k = b.getAttribute('data-rd');
       if (k === 'prev') go(at - 1);
       else if (k === 'next') go(at + 1);
-      else if (k === 'colour') {
-        colouring = !colouring;
-        b.classList.toggle('on', colouring); b.querySelector('span').textContent = colouring ? 'Back to colour' : 'Colour me in';
-        drawCrayons(); draw(1);
-      } else if (k === 'speak') {
+      else if (k === 'colour') setColour(!colouring);
+      else if (k === 'rec') setRec(!recMode);
+      else if (k === 'speak') {
         if (reading) return stopSpeak();
+        if (recMode) setRec(false);
         reading = true; b.classList.add('on'); b.querySelector('span').textContent = 'Stop reading'; speak();
       } else if (k === 'music') {
         var mOn = !LH.music.on();
         LH.music.set(mOn); b.classList.toggle('on', mOn); b.setAttribute('aria-pressed', String(mOn));
       }
-    });
+    }
+    el.addEventListener('click', onClick);  // removed in destroy(): a remounted reader reuses the same element
     function key(e) {
       if (e.target.closest && e.target.closest('input, textarea, select') || document.querySelector('.ui-modal-wrap, .anvil-modal-content')) return;
       if (e.key === 'ArrowRight') go(at + 1);
@@ -218,10 +448,21 @@
     });
     draw(1);
     if (LH.music.on()) LH.music.play();
-    return {
+    var api = {
       go: go, at: function () { return at; }, count: pages.length, colouring: function () { return colouring; },
-      destroy: function () { document.removeEventListener('keydown', key); stopSpeak(); LH.music.stop(); }
+      recording: function () { return recMode; }, voice: function () { return voice; }, audio: function () { return audio; },
+      playing: function () { return playing; },
+      destroy: function () {
+        alive = false;
+        document.removeEventListener('keydown', key);
+        el.removeEventListener('click', onClick);
+        recStop(true); stopSpeak(); releaseStream();
+        Object.keys(localUrl).forEach(function (k) { URL.revokeObjectURL(localUrl[k].url); });
+        LH.music.stop();
+      }
     };
+    el.lhReader = api;  // for the UI tests
+    return api;
   };
 
   /* ------------------------------------------------------------------ PDF

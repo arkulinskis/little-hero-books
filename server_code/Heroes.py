@@ -11,6 +11,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
+from . import Voice
 
 LOOK_KEYS = {"size", "skin", "face", "hair", "hairColor", "eyes", "eyeColor", "brows", "nose", "mouth", "cheeks",
              "freckles", "mark", "glasses", "outfit", "outfitColor", "hat"}
@@ -98,6 +99,7 @@ def delete_hero(hero_id):
         return C.fail("You can only remove your own heroes.")
     books = list(app_tables.books.search(hero=r))
     for b in books:
+        Voice.delete_for(b)
         b.delete()
     r.delete()
     return C.ok(removed_books=len(books))

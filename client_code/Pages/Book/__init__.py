@@ -7,7 +7,7 @@ from ... import books, lh, router, state
 
 class Book(BookTemplate):
     """#book/<id>: a book on your shelf (or an example book) in the reader. Yours: PDF, family link, dedication,
-    remove. Someone else's example: PDF (signed in) and "Make one like this". Otherwise a friendly "private" page."""
+    Record my voice (in the reader), remove. Someone else's example: PDF (signed in) and "Make one like this". Otherwise a friendly "private" page."""
 
     def __init__(self, args=(), **properties):
         super().__init__(**properties)
@@ -25,7 +25,7 @@ class Book(BookTemplate):
         b = r["book"]
         self._data = b
         self.book = books.as_book(r["story"], b["hero"], id=b["id"], dedication=b["dedication"], created=b["created"],
-                                  share_key=b.get("share_key"), shared=b.get("shared"))
+                                  share_key=b.get("share_key"), shared=b.get("shared"), voice=b.get("voice") or {})
         mine = b["mine"]
         self.back_shelf.visible = bool(me)
         self.back_library.visible = not me
@@ -43,7 +43,18 @@ class Book(BookTemplate):
         self._share_label()
         self.cta.visible = not mine
         self.cta.hero = b["hero"]
+        self.reader.record = mine
         self.reader.book = self.book
+        self._voice_badge()
+
+    def _voice_badge(self):
+        n = len(self.book.get("voice") or {})
+        self.voice_badge.visible = n > 0
+        self.voice_badge.text = "Your voice on " + state.plural(n, "page")
+
+    @handle("reader", "voice")
+    def reader_voice(self, **event_args):
+        self._voice_badge()
 
     def _share_label(self):
         self.share_button.text = "Family link: on" if self.book.get("share_key") else "Family link"

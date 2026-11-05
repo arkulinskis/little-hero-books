@@ -10,17 +10,26 @@ properties:
     type: boolean
     default_value: true
     description: Show the "Colour me in" button
+  - name: record
+    type: boolean
+    default_value: false
+    description: Show "Record my voice" (the book's owner only; the book needs an id)
 events:
   - name: finish
     description: The last page was reached (once per visit)
   - name: page
     parameters:
       - name: index
+  - name: voice
+    description: A recording was saved or deleted (book["voice"] is already updated)
+    parameters:
+      - name: voice
 toolbox_item:
   title: Book reader
   group: Little Hero Books
 help_text: |
-  The page-turning reader (theme/assets/lh-book.js): arrows, swipe, keys, Read to me, Music, Colour me in.
+  The page-turning reader (theme/assets/lh-book.js): arrows, swipe, keys, Read to me, Music, Colour me in,
+  and (record=True) Record my voice: each page read aloud is saved with the book and Read to me plays it.
   Drop Buttons or Links into it: they appear in its toolbar, after the built-in buttons.
 ---
 <div class="lh-reader">

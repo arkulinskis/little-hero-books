@@ -32,6 +32,9 @@
     await sleep(300);
   }
   const ok = (cond, msg) => { if (!cond) throw new Error('FAILED: ' + msg); say('ok   ' + msg); };
+  const rdr = () => { const r = $('.rd'); return r && r.parentNode.lhReader; };  // the reader's controller (lh-book.js)
+  const playing = (part) => { const a = rdr() && rdr().audio(); return a && !a.paused && a.currentTime > 0.15 && a.src.indexOf(part) >= 0; };
+  const voiceUrl = (key) => location.origin + '/_/api/voice/' + key;
 
   try {
     // ---- landing
@@ -112,6 +115,65 @@
     await until(() => $('.rd-ded') && /from the flow test/.test($('.rd-ded').textContent), 'dedication page shows it');
     ok(true, 'dedication: saved and shown on page 2');
 
+    // ---- record my voice (drive.mjs gives Chrome a fake microphone that beeps)
+    await click('[data-rd=rec]');
+    await until(() => $('.rd-rec'), 'record panel');
+    ok(/anyone with its family link can hear them/.test($('.rd-rec').textContent) && $('[data-rd=rec]').getAttribute('aria-pressed') === 'true',
+      'record: the panel opens and says who can hear the recordings');
+    $$('.rd-dots button')[2].click();
+    await until(() => rdr().at() === 2 && /Page 1: not recorded yet/.test($('.rd-rec').textContent), 'page 1, not recorded');
+    await click('[data-rec=start]');
+    await until(() => $('.rd-rec[data-state=recording]') && $('[data-rec=stop]'), 'recording', 20000);
+    await sleep(1800);
+    await click('[data-rec=stop]');
+    await until(() => $('.rd-rec[data-state=saved]'), 'saved', 30000);
+    const v1 = rdr().voice()['2'];
+    ok(v1 && v1.key && v1.seconds >= 1 && $$('.rd-dots button.vo').length === 1 && /Your voice on 1 page/.test($('.bk-head').innerText),
+      'record: page 1 recorded and saved (marked dot, "Your voice" badge)');
+    await click('[data-rec=play]');
+    await until(() => playing('blob:'), 'plays back from memory', 15000);
+    ok(true, 'record: Play plays the new recording straight away');
+    await click('[data-rec=redo]');
+    await until(() => $('.rd-rec[data-state=recording]'), 'recording again', 20000);
+    await sleep(1300);
+    await click('[data-rec=stop]');
+    await until(() => $('.rd-rec[data-state=saved]') && rdr().voice()['2'].key !== v1.key, 'redo saved', 30000);
+    const key2 = rdr().voice()['2'].key;
+    ok($$('.rd-dots button.vo').length === 1, 'record: Redo replaces the page recording');
+    await click('[data-rec=next]');
+    await until(() => rdr().at() === 3 && $('[data-rec=start]'), 'next page');
+    await click('[data-rec=start]');
+    await until(() => $('.rd-rec[data-state=recording]'), 'recording page 2', 20000);
+    await sleep(1300);
+    $('.rd-nav.next').click();
+    await until(() => rdr().voice()['3'], 'saved on page turn', 30000);
+    ok(rdr().at() === 4 && $$('.rd-dots button.vo').length === 2 && /Your voice on 2 pages/.test($('.bk-head').innerText),
+      'record: turning the page while recording saves it');
+    let res = await fetch(voiceUrl(key2), { headers: { Range: 'bytes=0-99' } });
+    const ctype = res.headers.get('content-type') || '';
+    ok(res.status === 206 && /^audio\//.test(ctype) && (await res.arrayBuffer()).byteLength === 100 && /^bytes 0-99\//.test(res.headers.get('content-range') || ''),
+      'voice address: answers a byte range with 206 (' + ctype + ')');
+    res = await fetch(voiceUrl(key2));
+    ok(res.status === 200 && (await res.arrayBuffer()).byteLength > 1000, 'voice address: the whole recording');
+    ok((await fetch(voiceUrl(v1.key))).status === 404, 'voice address: a replaced recording is gone');
+    await click('[data-rd=rec]');
+    await until(() => !$('.rd-rec'), 'panel closes');
+    ok($('[data-rd=rec]').textContent.trim() === 'Record my voice', 'record: Done recording closes the panel');
+
+    // ---- reload: the recordings come from the server and Read to me plays them
+    await page('#library', () => $$('.lb-card').length === 12, 'library');
+    await page(bookHash, () => $('.rd-book') && rdr(), 'book reloaded');
+    ok(Object.keys(rdr().voice()).sort().join() === '2,3' && $$('.rd-dots button.vo').length === 2, 'reload: the recorded pages are back');
+    $$('.rd-dots button')[2].click();
+    await until(() => rdr().at() === 2, 'page 1');
+    await click('[data-rd=speak]');
+    await until(() => playing('/_/api/voice/' + key2), 'Read to me plays the recorded voice', 20000);
+    ok(true, 'Read to me: plays the recorded voice from the server');
+    await until(() => rdr().at() === 3 && playing('/_/api/voice/'), 'turns the page and plays the next recording', 20000);
+    ok(true, 'Read to me: turns the page by itself and plays the next one');
+    await click('[data-rd=speak]');
+    await until(() => !rdr().playing(), 'stops');
+
     // ---- PDF (drawn in the browser)
     window.LH_LAST_PDF = null;
     await click('.anvil-role-ic-download button');
@@ -125,6 +187,14 @@
     // ---- the family link as a visitor would see it (same browser, but the page is public)
     await page('#' + link.split('#')[1], () => $('.rd-book'), 'shared book');
     ok(/A book made for Mila/.test(document.body.textContent), 'family link page: opens the book');
+    ok(/recorded themselves reading it/.test(document.body.textContent) && $$('.rd-dots button.vo').length === 2 && !$('[data-rd=rec]'),
+      'family link page: the recorded pages are there, no Record button');
+    $$('.rd-dots button')[3].click();
+    await until(() => rdr().at() === 3, 'page 2');
+    await click('[data-rd=speak]');
+    await until(() => playing('/_/api/voice/'), 'family hears the voice', 20000);
+    await click('[data-rd=speak]');
+    ok(true, 'family link page: Read to me plays the recorded voice');
 
     // ---- story preview with the blank book
     await page('#story/goats/blank', () => $('.rd-book'), 'story preview');
@@ -140,7 +210,24 @@
     // ---- back to the book: shelf shows it, then remove it
     await page('#home', () => $$('.sh-book').length >= 1, 'book on the shelf');
     ok(true, 'shelf: the new book is on it');
-    await page(bookHash, () => $('.rd-book'), 'book again');
+    await page(bookHash, () => $('.rd-book') && rdr(), 'book again');
+
+    // ---- delete recordings: one page, then all (asks first)
+    await click('[data-rd=rec]');
+    $$('.rd-dots button')[2].click();
+    await until(() => rdr().at() === 2 && $('[data-rec=delete]'), 'delete button');
+    const gone = rdr().voice()['2'].key;
+    await click('[data-rec=delete]');
+    await until(() => !rdr().voice()['2'] && $('[data-rec=start]'), 'page deleted', 20000);
+    const goneStatus = (await fetch(voiceUrl(gone))).status;
+    ok($$('.rd-dots button.vo').length === 1 && goneStatus === 404, 'record: Delete removes that page and its audio (' + goneStatus + ')');
+    const last = rdr().voice()['3'].key;
+    await click('[data-rec=clear]');
+    const yes = await until(() => $$('.anvil-modal button, .modal button').find((b) => b.textContent.trim() === 'Delete all' && b.offsetParent), 'confirm');
+    yes.click();
+    await until(() => Object.keys(rdr().voice()).length === 0 && !$('.rd-rec-clear'), 'all deleted', 20000);
+    ok(!/Your voice on/.test($('.bk-head').innerText) && (await fetch(voiceUrl(last))).status === 404 && !$$('.rd-dots button.vo').length,
+      'record: Delete all recordings (after asking) removes every page');
 
     say('PASSED');
     return { ok: true, log: log };

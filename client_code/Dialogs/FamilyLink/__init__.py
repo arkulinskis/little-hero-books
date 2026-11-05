@@ -14,6 +14,10 @@ class FamilyLink(FamilyLinkTemplate):
         self.intro.text = ("Send grandparents, aunts and uncles a link to %s. They can read it and download the PDF "
                            "without an account. They see %s’s name and cartoon, never your email."
                            % (lh.title(book["story"], book["hero"]), book["hero"]["name"]))
+        if book.get("voice"):
+            self.intro.text += " They can also hear the pages you recorded, in your voice."
+        else:
+            self.intro.text += " Tip: press Record my voice in the reader, and they hear you read it."
         self._draw()
 
     def _draw(self):
