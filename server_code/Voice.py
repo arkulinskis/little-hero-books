@@ -25,6 +25,15 @@ def _key():
     return secrets.token_urlsafe(18)
 
 
+def _rows(book_row):
+    """This book's recordings. Until the owner accepts the Schema Mismatch after a deploy, the live database has no
+    voice_pages table yet: books and family links then keep working, just without recordings."""
+    try:
+        return list(app_tables.voice_pages.search(book=book_row))
+    except Exception:
+        return []
+
+
 def page_count(book_row):
     s = Stories.BY_KEY.get(book_row["story"])
     return (len(s["pages"]) + 3) if s else 0  # cover + dedication + story pages + The End
@@ -33,20 +42,20 @@ def page_count(book_row):
 def voice_for(book_row):
     """{"<page>": {"key", "seconds"}} for one book (JSON keys are strings)."""
     out = {}
-    for r in app_tables.voice_pages.search(book=book_row):
+    for r in _rows(book_row):
         out[str(int(r["page"]))] = {"key": r["key"], "seconds": round(float(r["seconds"] or 0), 1)}
     return out
 
 
 def delete_for(book_row):
     """Removes every recording of a book (used when the book or its hero is removed)."""
-    for r in app_tables.voice_pages.search(book=book_row):
+    for r in _rows(book_row):
         r.delete()
 
 
 def new_keys(book_row):
     """Fresh keys for every recording of a book: old audio addresses stop working."""
-    for r in app_tables.voice_pages.search(book=book_row):
+    for r in _rows(book_row):
         r["key"] = _key()
 
 
