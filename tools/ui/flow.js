@@ -115,6 +115,18 @@
     await until(() => $('.rd-ded') && /from the flow test/.test($('.rd-ded').textContent), 'dedication page shows it');
     ok(true, 'dedication: saved and shown on page 2');
 
+    // ---- painted edition: the dialog (sending is tested end to end by paint.js with a real Image Enhancer)
+    await click('.rd-tools .anvil-role-ic-palette button');
+    await until(() => $$('.pt-style').length === 6, 'paint dialog styles');
+    const start = byText('.anvil-modal-content .anvil-role-btn-primary button', 'Paint my book');
+    const closed = /isn.t open yet/.test($('.anvil-role-pt-queue-text').textContent);
+    ok(start && (closed ? start.disabled : !start.disabled), 'paint: dialog with 6 styles; ' + (closed ? 'studio not set up here, so Paint my book is off' : 'studio set up, Paint my book is on'));
+    $$('.pt-style')[3].click();
+    await until(() => $$('.pt-style')[3].classList.contains('on'), 'style picked');
+    await click('.anvil-modal-content button', 'Close');
+    await until(() => !$('.anvil-modal-content'), 'paint dialog closes');
+    ok(!$('.bk-paint') || $('.bk-paint').offsetParent === null, 'paint: picking a style and closing sends nothing');
+
     // ---- record my voice (drive.mjs gives Chrome a fake microphone that beeps)
     await click('[data-rd=rec]');
     await until(() => $('.rd-rec'), 'record panel');

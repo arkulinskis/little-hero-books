@@ -2,7 +2,8 @@
 
 The shelf, the library and the reader load through here. A book is private to its maker unless they
 turn on a family link (share_key): anyone with that link can read it (#read/<key>), nothing else.
-The owner can record their voice reading it (Voice.py); the family link plays those recordings.
+The owner can record their voice reading it (Voice.py) and have its pictures painted (Painting.py); the family
+link plays those recordings and shows the painted pictures.
 The PDF is made in the browser (web/pages/_book.html), so nothing here sends files.
 """
 import secrets
@@ -12,7 +13,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import DemoData, Heroes, Stories, Voice
+from . import DemoData, Heroes, Painting, Stories, Voice
 
 MAX_BOOKS = 200
 
@@ -76,6 +77,9 @@ def get_book(book_id):
         return C.fail("That book can't be opened any more.")
     b = book_dict(r, me)
     b["voice"] = Voice.voice_for(r) if b["mine"] else {}
+    rows = Painting._rows(r) if b["mine"] else []
+    b["paint"] = Painting.paint_for(r, rows)
+    b["paint_state"] = Painting.state_for(r, rows)
     return C.ok(book=b, story=Stories.full(s))
 
 
@@ -126,6 +130,7 @@ def delete_book(book_id):
     if r["owner"] != me or r["is_demo"]:
         return C.fail("You can only remove your own books.")
     Voice.delete_for(r)
+    Painting.delete_for(r)
     r.delete()
     return C.ok()
 
@@ -139,6 +144,7 @@ def share_book(book_id, on):
         return C.fail("You can only share your own books.")
     r["share_key"] = secrets.token_urlsafe(9) if on else None
     Voice.new_keys(r)  # audio addresses someone kept from the old link stop working too
+    Painting.new_keys(r)  # and so do painted-picture addresses
     return C.ok(book=book_dict(r, me))
 
 
@@ -154,6 +160,7 @@ def get_shared_book(key):
     b = book_dict(r)
     b["hero"].pop("id", None)
     b["voice"] = Voice.voice_for(r)
+    b["paint"] = Painting.paint_for(r)
     return C.ok(book=b, story=Stories.full(Stories.BY_KEY[r["story"]]))
 
 

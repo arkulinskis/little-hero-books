@@ -49,6 +49,60 @@
     color-scheme: dark;
 }
 
+/* design-kit:start */
+:root {
+  /* easing: never ease-in on UI */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);      /* entering, exiting, most UI */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);  /* moving across the screen */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);   /* sheets, drawers */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);      /* one authored entrance */
+  /* durations: UI stays under 300ms, exits faster than entrances */
+  --dur-press: 140ms; --dur-fast: 180ms; --dur-base: 220ms; --dur-slow: 320ms; --dur-hero: 640ms;
+  /* 4px spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+  --measure: 65ch;
+}
+
+/* browser surfaces: the parts nobody draws */
+::selection { background: color-mix(in srgb, var(--c-brand) 26%, transparent); color: inherit; }
+html {
+  accent-color: var(--c-brand); caret-color: var(--c-brand);
+  scrollbar-color: color-mix(in srgb, var(--c-ink) 26%, transparent) transparent;
+  -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+a { text-underline-offset: .2em; text-decoration-thickness: from-font; }
+h1, h2, h3, h4, [role="heading"], .anvil-role-page-title { text-wrap: balance; }
+p, li, dd, blockquote, figcaption { text-wrap: pretty; }
+td, th, time, output, progress, .num, .tabular, [data-num] { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--c-brand) 60%, transparent); outline-offset: 2px; }
+
+/* press feedback: pressable things answer the moment they're pressed */
+:is(.ui-btn, .anvil-role-btn > button, a.anvil-role-btn, .kit-press) {
+  transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) ease,
+              border-color var(--dur-fast) ease, color var(--dur-fast) ease, opacity var(--dur-fast) ease,
+              box-shadow var(--dur-fast) ease;
+}
+:is(.ui-btn, .anvil-role-btn > button, a.anvil-role-btn, .kit-press):active:not(:disabled) { transform: scale(.97); }
+
+/* entrances: content is visible by default; these only add the arrival */
+@keyframes kit-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes kit-pop { from { opacity: 0; transform: scale(.96); } }
+@keyframes kit-fade { from { opacity: 0; } }
+.kit-in { animation: kit-in var(--dur-slow) var(--ease-out) both; }
+.kit-stagger > * { animation: kit-in var(--dur-slow) var(--ease-out) both; }
+.kit-stagger > :nth-child(2) { animation-delay: 40ms; } .kit-stagger > :nth-child(3) { animation-delay: 80ms; }
+.kit-stagger > :nth-child(4) { animation-delay: 120ms; } .kit-stagger > :nth-child(5) { animation-delay: 160ms; }
+.kit-stagger > :nth-child(n+6) { animation-delay: 200ms; }
+
+/* reduced motion = fewer and gentler, not none: movement goes, short fades that confirm a state stay */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .kit-in, .kit-stagger > * { animation-name: kit-fade; animation-delay: 0ms !important; }
+  :is(.ui-btn, .anvil-role-btn > button, a.anvil-role-btn, .kit-press):active:not(:disabled) { transform: none; }
+}
+/* design-kit:end */
+
 /* The app owns the page (not Anvil's theme). */
 html, body { background: var(--c-bg) !important; color: var(--c-ink); }
 body { margin: 0; font: 16px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
@@ -244,7 +298,9 @@ html.ui-modal-open { overflow: hidden; }
   .ui-header-right .ui-btn.ghost { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ui *, .ui-toast, .ui-modal, .ui-menu { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  /* movement goes; short fades that confirm a state stay (design kit) */
+  .ui *:hover, .anvil-role-btn > button:hover, a.anvil-role-btn:hover { transform: none !important; }
+  .ui-toast, .ui-modal, .ui-menu { animation-name: kit-fade !important; }
 }
 
 /* ===================================================================== Crayon Classroom skin
@@ -911,3 +967,65 @@ anvil-dropzone { display: contents; }
 .ytf .ytf-note { font-size: .8rem; color: var(--c-muted); margin: 10px 2px 0; }
 @media (max-width: 800px) { .ytf .ytf-in { grid-template-columns: minmax(0, 1fr); gap: 22px; } }
 @media (max-width: 480px) { .ytf .ytf-play svg { width: 56px; height: 40px; } }
+
+/* ===================================================================== Painted edition (server_code/Painting.py)
+   Painted pictures in the reader, the progress strip on the book page, the Paint dialog, Admin -> Painting. */
+.rd-painted { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--c-surface-2); animation: kit-fade var(--dur-slow) var(--ease-out); }
+.rd-pic .rd-painted { aspect-ratio: 10 / 7; height: auto; }
+.rd-end .fig.pp { width: min(52%, 260px); aspect-ratio: 1; border: 7px solid #fff; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 6px 18px rgba(74, 63, 107, .18); }
+.rd-page.still { animation: none; }
+.rd-tools [hidden] { display: none !important; }
+
+.anvil-role-badge-paint { background: #e2f4ea; color: #17633f; }
+:root[data-theme="dark"] .anvil-role-badge-paint { background: #173528; color: #b9ecd0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .anvil-role-badge-paint { background: #173528; color: #b9ecd0; } }
+
+.lh-bar { height: 12px; border: 2px solid var(--c-edge); border-radius: 999px; overflow: hidden; background: var(--c-surface-2); }
+.lh-bar i { display: block; width: 100%; height: 100%; background: var(--c-grass); transform: scaleX(0); transform-origin: left center; transition: transform var(--dur-slow) var(--ease-out); }
+
+.bk-paint { display: flex; align-items: center; gap: 14px; margin: -8px 0 22px; padding: 14px 16px; background: var(--c-surface); border: 2px solid var(--c-edge); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); }
+.bk-paint-ic.ic { flex: none; width: 34px; height: 34px; padding: 6px; border-radius: 50%; background: var(--c-good-soft); color: var(--c-good); }
+.bk-paint-body { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.anvil-role-bk-paint-head { font: 800 1.05rem/1.25 var(--font-display); color: var(--c-ink); }
+.anvil-role-bk-paint-note { margin: 0; max-width: 62ch; }
+.bk-paint.bad .bk-paint-ic.ic { background: var(--c-warn-soft); color: var(--c-warn); }
+.bk-paint.bad .lh-bar i { background: var(--c-warn); }
+@media (max-width: 560px) { .bk-paint { flex-wrap: wrap; } .bk-paint-ic.ic { display: none; } }
+
+.anvil-role-pt-intro { color: var(--c-muted); max-width: 60ch; margin: 0 0 14px; }
+.pt-label { margin: 0 0 8px; }
+.anvil-role-pt-styles > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.pt-style { font: inherit; color: var(--c-ink); text-align: left; width: 100%; height: 100%; display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 16px; border: 2px solid var(--c-line); background: var(--c-surface); cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .pt-style:hover { border-color: color-mix(in srgb, var(--c-brand) 45%, var(--c-line)); } }
+.pt-style:active { transform: scale(.98); }
+.pt-style:focus-visible { outline: 3px solid color-mix(in srgb, var(--c-brand) 55%, transparent); outline-offset: 2px; }
+.pt-style.on { border-color: var(--c-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-brand) 22%, transparent); }
+.pt-words { display: grid; gap: 2px; min-width: 0; }
+.anvil-role-pt-name { font-weight: 800; }
+.anvil-role-pt-note { color: var(--c-muted); font-size: .85rem; line-height: 1.35; }
+.pt-sw { flex: none; display: grid; grid-template-columns: 1fr 1fr; width: 34px; height: 34px; border-radius: 10px; overflow: hidden; border: 2px solid var(--c-edge); margin-top: 2px; }
+.pt-sw i:first-child { grid-row: span 2; }
+.pt-sw-kids_book i:nth-child(1) { background: #e9a066; } .pt-sw-kids_book i:nth-child(2) { background: #8fbf7a; } .pt-sw-kids_book i:nth-child(3) { background: #f4dca6; }
+.pt-sw-watercolor i:nth-child(1) { background: #8cc3e8; } .pt-sw-watercolor i:nth-child(2) { background: #f2b8c6; } .pt-sw-watercolor i:nth-child(3) { background: #f6efe2; }
+.pt-sw-cartoon_3d i:nth-child(1) { background: #4ea8f5; } .pt-sw-cartoon_3d i:nth-child(2) { background: #ffc93c; } .pt-sw-cartoon_3d i:nth-child(3) { background: #ff8a68; }
+.pt-sw-claymation i:nth-child(1) { background: #d9784f; } .pt-sw-claymation i:nth-child(2) { background: #7cb07a; } .pt-sw-claymation i:nth-child(3) { background: #e8c39a; }
+.pt-sw-comic i:nth-child(1) { background: #e8433a; } .pt-sw-comic i:nth-child(2) { background: #2b2350; } .pt-sw-comic i:nth-child(3) { background: #ffe14d; }
+.pt-sw-fantasy i:nth-child(1) { background: #2f5d8a; } .pt-sw-fantasy i:nth-child(2) { background: #d9a441; } .pt-sw-fantasy i:nth-child(3) { background: #3f7d5a; }
+.pt-queue { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--c-surface-2); }
+.pt-queue .ic { flex: none; width: 20px; height: 20px; margin-top: 2px; color: var(--c-muted); }
+.anvil-role-pt-queue-text { font-size: .92rem; line-height: 1.45; }
+.pt-send { display: grid; gap: 8px; }
+.anvil-role-pt-send-text { font-weight: 700; }
+.anvil-role-pt-error { background: var(--c-bad-soft); color: var(--c-bad); border-radius: var(--radius-sm); padding: 10px 14px; font-size: .92rem; }
+.pt-note { margin: 0; max-width: 64ch; font-size: .85rem; line-height: 1.45; color: var(--c-muted); }
+.pt-actions { flex-wrap: wrap; }
+.pt-actions .pt-gap { flex: 1; }
+@media (max-width: 560px) { .pt-actions .pt-gap { display: none; } }
+
+.ad-paint code { font-size: .85em; background: var(--c-surface-2); padding: 1px 6px; border-radius: 6px; }
+.ad-checks { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
+.anvil-role-ad-ok { color: var(--c-good); font-weight: 700; }
+.anvil-role-ad-bad { color: var(--c-bad); font-weight: 700; }
+.anvil-role-ad-warn { color: var(--c-warn); font-weight: 700; }
+.anvil-role-ad-check-line { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--c-surface-2); }

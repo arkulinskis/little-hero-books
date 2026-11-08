@@ -7,6 +7,7 @@
         <a href="#admin/library" anvil:name="tab_library"><i class="ic ic-book"></i>Library</a>
         <a href="#admin/feedback" anvil:name="tab_feedback"><i class="ic ic-inbox"></i>Feedback</a>
         <a href="#admin/users" anvil:name="tab_users"><i class="ic ic-users"></i>Users</a>
+        <a href="#admin/painting" anvil:name="tab_painting"><i class="ic ic-palette"></i>Painting</a>
         <a href="#admin/demo" anvil:name="tab_demo"><i class="ic ic-database"></i>Demo data</a>
       </nav>
 
@@ -53,6 +54,27 @@
         </div>
         <div class="ad-table ad-users-head"><b>Name</b><b>Email</b><b>Joined</b><b>Admin</b><b>Active</b></div>
         <anvil-component type="RepeatingPanel" name="users_panel" prop:item_template="Little_Hero_Books.Items.UserRow"></anvil-component>
+      </div>
+
+      <div anvil:name="painting_part">
+        <div class="ui-card ui-narrow ad-paint">
+          <h3>Painting studio</h3>
+          <p class="muted">“Paint this book” sends each page's picture to Image Enhancer, Arkvital's own image service, which repaints it on the studio PC with an open image model. Little Hero Books needs two App Secrets from Image Enhancer's Apps &amp; keys page: <code>image_enhancer_key</code> and <code>image_enhancer_webhook_secret</code> (Anvil editor: App Secrets).</p>
+          <ul class="ad-checks">
+            <li><anvil-component type="Label" name="key_line"></anvil-component></li>
+            <li><anvil-component type="Label" name="hook_line"></anvil-component></li>
+          </ul>
+          <label class="ui-field"><span>Image Enhancer address</span>
+            <anvil-component type="TextBox" name="api_box" prop:placeholder="https://image-enhancer.anvil.app"></anvil-component>
+          </label>
+          <anvil-component type="Label" name="api_note" prop:role='["fine-print"]'></anvil-component>
+          <div class="ui-row">
+            <anvil-component type="Button" name="api_save_button" prop:text="Save address" prop:role='["btn", "btn-primary", "ic-check"]'></anvil-component>
+            <anvil-component type="Button" name="api_check_button" prop:text="Check the connection" prop:role='["btn", "ic-refresh"]'></anvil-component>
+          </div>
+          <anvil-component type="Label" name="check_line" prop:role='["ad-check-line"]' prop:visible="false"></anvil-component>
+          <anvil-component type="Label" name="paint_stats" prop:role='["fine-print"]'></anvil-component>
+        </div>
       </div>
 
       <div anvil:name="demo_part">

@@ -98,3 +98,12 @@ def make_pdf(book, progress, opts):
 def reader(node, book, opts):
     """Mount the page-turning reader into a DOM node. Returns its controller (go, destroy)."""
     return LH.reader(node, book, opts)
+
+
+def paint_picture(book, index):
+    """One page's picture as a PNG (a JavaScript Blob) for the painting studio. Waits until it is drawn."""
+    return LH.paintPicture(book, index)
+
+
+def has_paint(book):
+    return bool(LH.hasPaint(book))

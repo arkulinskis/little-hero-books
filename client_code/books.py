@@ -1,6 +1,7 @@
 """Book logic shared by several pages: who can star in a story, the studio draft, and the "make this book" and
 "download a PDF" flows (each opens a dialog Form)."""
 from anvil import alert, confirm
+import anvil.server
 
 from . import router, state
 
@@ -72,8 +73,18 @@ def download_pdf(book):
     alert(PdfProgress(book=book, opts=opts), buttons=[], dismissible=False, role="lh-dialog")
 
 
+def api_base(name):
+    """<app>/_/api/<name>/ (get_api_origin() already ends in /_/api): where recordings and paintings are served."""
+    origin = anvil.server.get_api_origin().rstrip("/")
+    if origin.endswith("/_/api"):
+        origin = origin[:-len("/_/api")]
+    return origin + "/_/api/" + name + "/"
+
+
 def as_book(story, hero, **extra):
-    """The book shape the reader and PDF writer want."""
-    book = {"story": story, "hero": hero, "dedication": "", "created": None}
+    """The book shape the reader and PDF writer want. paint = {"<page>": {key, style}} (painted pictures)."""
+    book = {"story": story, "hero": hero, "dedication": "", "created": None, "paint": {}, "paintBase": api_base("painting")}
     book.update(extra)
+    if book.get("paint") is None:
+        book["paint"] = {}
     return book

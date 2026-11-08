@@ -283,6 +283,194 @@ bad(call("save_voice", demo_book.get_id(), 2, snd(), 2), "example books can't be
 assert ok(call("delete_voice", b["id"]))["voice"] == {} and not T.voice_pages.search(), "delete all"
 ok(call("save_voice", b["id"], 5, snd(), 3))  # removed with the hero below
 
+# ---------------------------------------------------------------------------------- painted edition (Painting.py)
+import hashlib  # noqa: E402
+import hmac  # noqa: E402
+import anvil.http as H  # noqa: E402
+import anvil.secrets as S  # noqa: E402
+P = M["Painting"]
+API = P.DEFAULT_API
+P.CHECK_EVERY = 0  # check the studio on every call in the tests
+JOBS = {}
+STUDIO = {"down": False, "n": 0}
+
+
+def fake_studio(url, method, data):
+    """A tiny Image Enhancer: jobs in JOBS, statuses changed by the test."""
+    if STUDIO["down"]:
+        raise H.HttpError(503, json.dumps({"ok": False, "error": "Image Enhancer is restarting."}))
+    path = url[len(API):]
+    if path == "/jobs" and method == "POST":
+        body = json.loads(data)
+        if body["style"] == "nope":
+            raise H.HttpError(400, json.dumps({"ok": False, "error": "Unknown style."}))
+        STUDIO["n"] += 1
+        jid = "job_%04d" % STUDIO["n"]
+        JOBS[jid] = {"id": jid, "status": "queued", "style": body["style"], "fidelity": body["fidelity"],
+                     "ref": body.get("ref"), "callback": body.get("callback_url"), "prompt": body.get("prompt"),
+                     "format": body.get("format"), "size": body.get("size"), "image_len": len(body["image"]),
+                     "eta_at": (now + dt.timedelta(minutes=5)).isoformat(), "error": None}
+        return json.dumps({"ok": True, "job": JOBS[jid]})
+    if path.startswith("/jobs?status=open"):
+        return json.dumps({"ok": True, "jobs": [j for j in JOBS.values() if j["status"] in ("queued", "working")]})
+    if path == "/queue":
+        return json.dumps({"ok": True, "pc_online": True, "paused": False, "queue_length": 2, "average_seconds": 45,
+                           "eta_new_job_seconds": 120})
+    parts = path.split("?")[0].split("/")  # ["", "jobs", id, ...]
+    jid = parts[2] if len(parts) > 2 else ""
+    if jid not in JOBS:
+        raise H.HttpError(404, json.dumps({"ok": False, "error": "No job %s for this key." % jid}))
+    if path.endswith("/result"):
+        return anvil.BlobMedia("image/jpeg", b"\xff\xd8\xff" + jid.encode() * 200, name="result.jpg")
+    if path.endswith("/cancel"):
+        JOBS[jid]["status"] = "cancelled"
+    return json.dumps({"ok": True, "job": JOBS[jid]})
+
+
+H.REPLIES[API] = fake_studio
+png = lambda n=4000, t="image/png": anvil.BlobMedia(t, (b"\x89PNG\r\n\x1a\n" + bytes(range(256)) * (n // 256 + 1))[:n], name="p.png")
+as_user(ana)
+bk = b["id"]
+bk_row = T.books.get_by_id(bk)
+assert call("get_book", bk)["book"]["paint"] == {} and call("get_book", bk)["book"]["paint_state"] is None
+# the studio isn't set up yet: the dialog says so, nothing is sent
+info = ok(call("paint_info", bk))
+assert info["ready"] is False and info["queue"] is None and len(info["styles"]) == 6 and info["pages"] == 12
+bad(call("paint_page", bk, 0, "kids_book", png()), "no key yet")
+S.SECRETS["image_enhancer_key"] = "ie_test_key"
+info = ok(call("paint_info", bk))
+assert info["ready"] and info["queue"]["online"] and info["queue"]["waiting"] == 2 and info["state"] is None
+# bad input and people who aren't allowed
+bad(call("paint_page", bk, 12, "kids_book", png()), "past The End")
+bad(call("paint_page", bk, -1, "kids_book", png()))
+bad(call("paint_page", bk, "1", "kids_book", png()))
+bad(call("paint_page", bk, 1, "realistic", png()), "only the picture-book styles")
+bad(call("paint_page", bk, 1, "kids_book", "not media"))
+bad(call("paint_page", bk, 1, "kids_book", png(t="text/html")), "only pictures")
+bad(call("paint_page", bk, 1, "kids_book", png(100)), "too small")
+bad(call("paint_page", bk, 1, "kids_book", png(P.MAX_BYTES + 10)), "too big")
+bad(call("paint_page", T.books.search(is_demo=True)[0].get_id(), 1, "kids_book", png()), "example books can't be painted")
+as_user(bob)
+for fn, args in (("paint_info", (bk,)), ("paint_page", (bk, 0, "kids_book", png())), ("paint_status", (bk,)), ("paint_remove", (bk,))):
+    bad(call(fn, *args), "someone else's book: " + fn)
+as_user(None)
+assert denied("paint_info", bk) and denied("paint_page", bk, 0, "kids_book", png()) and denied("paint_status", bk)
+assert not T.paintings.search() and not JOBS
+# send every page; no webhook secret yet = no callback address
+as_user(ana)
+for i in range(12):
+    r = ok(call("paint_page", bk, i, "kids_book", png()))
+    assert r["page"] == i and r["status"] == "queued", r
+assert len(JOBS) == 12 and all(j["fidelity"] == "strict" and j["callback"] is None and j["format"] == "jpeg" for j in JOBS.values())
+assert JOBS["job_0001"]["ref"] == "lhb:%s:0" % bk and "children's picture book" in JOBS["job_0001"]["prompt"]
+st = call("get_book", bk)["book"]["paint_state"]
+assert st["status"] == "painting" and st["open"] == 12 and st["done"] == 0 and st["total"] == 12 and st["style_label"] == "Storybook"
+assert 0 < st["seconds_left"] <= 300 and st["page_status"]["11"] == "queued"
+# the studio finishes some: one status call for all open jobs (more than 3 open), then the finished ones
+JOBS["job_0001"]["status"] = "done"
+JOBS["job_0003"]["status"] = "working"
+JOBS["job_0005"].update(status="failed", error="Out of memory on the studio PC.")
+del H.CALLS[:]
+r = ok(call("paint_status", bk))
+assert any("/jobs?status=open" in c["url"] for c in H.CALLS), "one list call when many pages are open"
+assert list(r["paint"]) == ["0"] and r["state"]["done"] == 1 and r["state"]["failed"] == 1 and r["state"]["working"] == 1
+assert r["state"]["error"] == "Out of memory on the studio PC." and r["state"]["page_status"]["4"] == "failed"
+k0 = r["paint"]["0"]["key"]
+row0 = T.paintings.get(key=k0)
+assert row0["picture"].content_type == "image/jpeg" and row0["picture_style"] == "kids_book" and row0["status"] == "done"
+assert call("get_book", bk)["book"]["paint"]["0"]["key"] == k0
+# the picture endpoint
+ep = anvil.server.ENDPOINTS["/painting/:key"]
+anvil.server.request.headers = {}
+res = ep(key=k0)
+assert res.status == 200 and res.headers["Content-Type"] == "image/jpeg" and res.headers["Cache-Control"] == "private, no-cache"
+anvil.server.request.headers = {"if-none-match": '"%s"' % k0}
+assert ep(key=k0).status == 304
+anvil.server.request.headers = {}
+assert ep(key="x" * 24).status == 404 and ep(key="../../secret").status == 404
+# a job the studio forgot is sent again; the studio being down keeps pages waiting
+del JOBS["job_0012"]
+ok(call("paint_status", bk))
+assert T.paintings.get(book=bk_row, page=11)["status"] == "queued" and "job_0013" in JOBS, "sent again after a 404"
+STUDIO["down"] = True
+r = ok(call("paint_page", bk, 3, "kids_book", png()))
+assert r["status"] == "sending", "kept, to be sent again"
+row3 = T.paintings.get(book=bk_row, page=3)
+assert row3["status"] == "sending" and "restarting" in row3["error"]
+ok(call("paint_status", bk))  # still down: nothing breaks
+STUDIO["down"] = False
+ok(call("paint_status", bk))
+assert T.paintings.get(book=bk_row, page=3)["status"] == "queued", "sent once the studio answers"
+# repainting a done page in another style keeps the old picture until the new one is ready
+ok(call("paint_page", bk, 0, "watercolor", png()))
+r = ok(call("paint_status", bk))
+assert r["paint"]["0"]["key"] == k0 and r["paint"]["0"]["style"] == "kids_book" and r["state"]["page_status"]["0"] == "queued"
+new0 = T.paintings.get(book=bk_row, page=0)["job_id"]
+JOBS[new0]["status"] = "done"
+r = ok(call("paint_status", bk))
+assert r["paint"]["0"]["key"] != k0 and r["paint"]["0"]["style"] == "watercolor" and ep(key=k0).status == 404
+# replacing a page that is still waiting cancels its old job
+old5 = T.paintings.get(book=bk_row, page=5)["job_id"]
+ok(call("paint_page", bk, 5, "kids_book", png()))
+assert JOBS[old5]["status"] == "cancelled" and len(T.paintings.search(book=bk_row, page=5)) == 1
+# the webhook: signed with the webhook secret; with the secret set, new pages carry the callback address
+S.SECRETS["image_enhancer_webhook_secret"] = "whsec_test"
+ok(call("paint_page", bk, 4, "kids_book", png()))
+j4 = T.paintings.get(book=bk_row, page=4)["job_id"]
+assert JOBS[j4]["callback"] == "https://app-test.anvil.app/_/api/paint-done"
+hook = anvil.server.ENDPOINTS["/paint-done"]
+JOBS[j4]["status"] = "done"
+body = json.dumps({"event": "job.done", "job": JOBS[j4]}).encode()
+anvil.server.request.body = body
+anvil.server.request.headers = {"X-Enhancer-Signature": "sha256=" + "0" * 64}
+assert hook().status == 403 and T.paintings.get(book=bk_row, page=4)["status"] != "done", "a bad signature changes nothing"
+anvil.server.request.headers = {"X-Enhancer-Signature": "sha256=" + hmac.new(b"whsec_test", body, hashlib.sha256).hexdigest()}
+assert hook().status == 200 and T.paintings.get(book=bk_row, page=4)["status"] == "done", "the webhook saves the picture"
+anvil.server.request.headers, anvil.server.request.body = {}, None
+# the daily limit counts new pages only
+P.PAGES_PER_DAY = len(T.paintings.search())
+ok(call("paint_page", bk, 4, "kids_book", png()), "repainting a page isn't a new page")
+made = ok(call("make_book", mila["id"], "goats"))
+assert made["existed"] is False
+bk2 = made["book"]["id"]
+bad(call("paint_page", bk2, 0, "kids_book", png()), "daily limit")
+P.PAGES_PER_DAY = 150
+# the family link shows the painted pictures; a new link changes their addresses
+done_keys = dict((k, v["key"]) for k, v in call("get_book", bk)["book"]["paint"].items())
+sh = ok(call("share_book", bk, True))["book"]
+as_user(None)
+fam = ok(call("get_shared_book", sh["share_key"]))["book"]
+assert sorted(fam["paint"]) == sorted(done_keys) and "paint_state" not in fam
+assert all(fam["paint"][k]["key"] != done_keys[k] for k in done_keys) and all(ep(key=v).status == 404 for v in done_keys.values())
+as_user(ana)
+ok(call("share_book", bk, False))
+# back to the drawings: rows go, waiting jobs are cancelled
+waiting = [r["job_id"] for r in T.paintings.search(book=bk_row) if r["status"] == "queued"]
+r = ok(call("paint_remove", bk))
+assert r["paint"] == {} and r["state"] is None and not T.paintings.search(book=bk_row)
+assert waiting and all(JOBS[j]["status"] == "cancelled" for j in waiting)
+ok(call("paint_page", bk, 1, "comic", png()))  # removed with the hero below
+ok(call("paint_page", bk2, 1, "comic", png()))
+ok(call("delete_book", bk2))
+assert not T.paintings.search(book=T.books.get_by_id(bk2)) and len(T.paintings.search()) == 1, "removing a book removes its paintings"
+# admin: the studio's address, the secrets, a connection check
+assert denied("admin_painting") and denied("admin_painting_save", "https://x.anvil.app") and denied("admin_painting_check")
+as_user(admin)
+d = call("admin_painting")
+assert d["key"] and d["webhook"] and d["api"] == API and not d["custom"] and d["stats"]["books"] == 1
+bad(call("admin_painting_save", "not a web address"))
+r = ok(call("admin_painting_save", "https://image-enhancer-live.anvil.app/"))
+assert r["api"] == "https://image-enhancer-live.anvil.app/_/api/v1" and call("admin_painting")["custom"]
+assert ok(call("admin_painting_save", "https://image-enhancer-live.anvil.app/_/api"))["api"].endswith(".app/_/api/v1")
+bad(call("admin_painting_check"), "the new address has no fake studio")
+assert ok(call("admin_painting_save", ""))["api"] == API
+c = ok(call("admin_painting_check"))
+assert c["online"] and c["waiting"] == 2
+S.SECRETS.pop("image_enhancer_key")
+bad(call("admin_painting_check"), "no key")
+S.SECRETS["image_enhancer_key"] = "ie_test_key"
+as_user(ana)
+
 # limits, and removing a hero removes their books
 as_user(ana)
 for i in range(11):
@@ -290,6 +478,7 @@ for i in range(11):
 bad(call("save_hero", None, "One too many", "they", {"hair": "crop"}))
 assert ok(call("delete_hero", mila["id"]))["removed_books"] == 2
 assert not T.voice_pages.search(), "removing a hero removes the recordings of their books"
+assert not T.paintings.search(), "removing a hero removes the paintings of their books"
 assert call("get_shelf")["books"] == [] and not T.books.search(owner=ana)
 pea = ok(call("make_book", T.heroes.search(owner=ana)[0].get_id(), "pea"))["book"]
 ok(call("save_voice", pea["id"], 1, snd(), 3))

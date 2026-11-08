@@ -12,7 +12,8 @@ class Reader(ReaderTemplate):
     """The book reader. Set `book`; buttons placed in it (the "tools" dropzone) join the reader's toolbar.
     It stops reading aloud and lets go of the keyboard when the page closes (hide).
     record=True adds "Record my voice": the engine records a page, and this component saves it (save_voice) and
-    keeps book["voice"] up to date; "Read to me" plays book["voice"] where there is one."""
+    keeps book["voice"] up to date; "Read to me" plays book["voice"] where there is one.
+    book["paint"] (painted pictures) shows instead of the drawings, with a Painted switch; set_paint() updates it."""
 
     def __init__(self, **properties):
         self._book, self._colour, self._record, self._rd = None, True, False, None
@@ -74,6 +75,13 @@ class Reader(ReaderTemplate):
             b["voice"] = r["voice"]
             self.raise_event("voice", voice=r["voice"])
         return json.dumps({"ok": bool(r.get("ok")), "voice": r.get("voice") or {}, "error": r.get("error") or ""})
+
+    def set_paint(self, paint):
+        """New painted pictures (from paint_status): the reader shows them without turning the page."""
+        if isinstance(self._book, dict):
+            self._book["paint"] = paint or {}
+        if self._rd is not None:
+            self._rd.setPaint(paint or {})
 
     def go(self, index):
         """Turn to a page (0 = cover, 1 = the dedication page)."""

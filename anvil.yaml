@@ -163,6 +163,88 @@ db_schema:
     indexes: []
     server: full
     title: Heroes
+  paintings:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: book
+      target: books
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: page
+      type: number
+    - admin_ui:
+        order: 2
+        width: 200
+      name: style
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: source
+      type: media
+    - admin_ui:
+        order: 4
+        width: 200
+      name: picture
+      type: media
+    - admin_ui:
+        order: 5
+        width: 200
+      name: picture_style
+      type: string
+    - admin_ui:
+        order: 6
+        width: 200
+      name: key
+      type: string
+    - admin_ui:
+        order: 7
+        width: 200
+      name: job_id
+      type: string
+    - admin_ui:
+        order: 8
+        width: 200
+      name: status
+      type: string
+    - admin_ui:
+        order: 9
+        width: 200
+      name: error
+      type: string
+    - admin_ui:
+        order: 10
+        width: 200
+      name: eta
+      type: datetime
+    - admin_ui:
+        order: 11
+        width: 200
+      name: attempts
+      type: number
+    - admin_ui:
+        order: 12
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 13
+        width: 200
+      name: updated
+      type: datetime
+    - admin_ui:
+        order: 14
+        width: 200
+      name: checked
+      type: datetime
+    indexes: []
+    server: full
+    title: Paintings
   users:
     client: none
     columns:
@@ -304,7 +386,7 @@ metadata:
 name: Little Hero Books
 native_deps:
   head_html: |
-    <script src="_/theme/legal-kit.js?v=5e50750ccc"></script>
+    <script src="_/theme/legal-kit.js?v=e149d5c39f"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/littleherobooks.json and run seo.py, not here) -->
     <link rel="canonical" href="https://little-hero-books.anvil.app/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -350,13 +432,13 @@ native_deps:
 
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qgsqghg" data-button="false" data-label="Submit feedback" async></script>
-    <link rel="stylesheet" href="_/theme/icons.css?v=30fda15388">
-    <link rel="stylesheet" href="_/theme/app.css?v=77f8a1b98d">
-    <script src="_/theme/lh-kit.js?v=4c731d3cf5"></script>
+    <link rel="stylesheet" href="_/theme/icons.css?v=025d9df016">
+    <link rel="stylesheet" href="_/theme/app.css?v=4dcc711c27">
+    <script src="_/theme/lh-kit.js?v=bae378e051"></script>
     <script src="_/theme/ark-music.js?v=1899ed5b97"></script>
     <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>
     <script src="_/theme/lh-scenes.js?v=2edce843d3"></script>
-    <script src="_/theme/lh-book.js?v=2db5a5ab64"></script>
+    <script src="_/theme/lh-book.js?v=593e4022fc"></script>
 package_name: Little_Hero_Books
 runtime_options:
   client_version: '3'

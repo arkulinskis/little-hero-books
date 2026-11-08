@@ -3,6 +3,10 @@
     python -I tools/ui_test.py                 the user journey (tools/ui/flow.js), the phone-width check (phone.js), admin (admin.js)
     python -I tools/ui_test.py --shots DIR     also screenshots of every page (desktop + phone, light + dark) into DIR
     python -I tools/ui_test.py --stop          stop the local server afterwards
+    python -I tools/ui_test.py --only paint.js one script (flow.js, phone.js, admin.js, paint.js)
+
+App Secrets for the local server come from the environment: LHB_SECRETS="name=value,name=value" (they apply when the
+container is created, so pass --restart). paint.js needs a running Image Enhancer: see tools/testing/paint_e2e.py.
 
 The server runs a copy of this folder: container "lhb-dev" on http://localhost:3031, the app files COPIED into the
 Docker volume "lhb-app" on every run (a mounted Windows folder is slow and blocks --auto-migrate), data in the volume
@@ -54,9 +58,12 @@ def start(restart=False):
     if not running():
         sh("docker", "rm", "-f", NAME, check=False)
         sh("docker", "volume", "rm", "lhb-app", check=False)  # fresh copy: no files left over from old versions
+        secrets = []
+        for pair in filter(None, (__import__("os").environ.get("LHB_SECRETS") or "").split(",")):
+            secrets += ["--secret", pair.strip()]
         sh("docker", "create", "--name", NAME, "-p", "%d:%d" % (PORT, PORT), "-v", "lhb-app:/apps/MainApp",
            "-v", "lhb-data:/anvil-data", IMAGE, "--app", "MainApp", "--origin", URL,
-           "--auto-migrate")  # new tables/columns apply to the local database (--ignore-invalid-schema would block that)
+           "--auto-migrate", *secrets)  # new tables/columns apply to the local database (--ignore-invalid-schema would block that)
         copy_app()
         sh("docker", "start", NAME)
         print("starting the App Server ...")
@@ -77,10 +84,10 @@ def start(restart=False):
 def drive(script, window, out, shots=(), seed=False):
     """Run a page script and/or take screenshots. shots = [(name, hash or JS expression, js to run first)]."""
     steps = [{"waitFor": "window.UI_READY === true", "timeout": 90000}]
+    if seed:  # a fresh account with a hero and a book first (window.SEED)
+        steps.append({"eval": (ROOT / "tools" / "ui" / "seed.js").read_text(encoding="utf-8")})
     if script:
         steps.append({"eval": (ROOT / "tools" / "ui" / script).read_text(encoding="utf-8")})
-    if seed:
-        steps.append({"eval": (ROOT / "tools" / "ui" / "seed.js").read_text(encoding="utf-8")})
     for name, where, js in shots:
         target = where if not where.startswith("#") else json.dumps(where)
         steps += [{"eval": "%s; window.__to = %s; if (location.hash !== window.__to) window.UI_READY = false; location.hash = window.__to; 1"
@@ -100,10 +107,11 @@ def drive(script, window, out, shots=(), seed=False):
 
 def result(text):
     """The {ok, log} the page script returned (drive.mjs prints it after [eval])."""
+    found = None
     for line in text.splitlines():
-        if line.startswith("[eval] {"):
-            return json.loads(line[len("[eval] "):])
-    return None
+        if line.startswith("[eval] {") and '"log"' in line:  # (seed.js also prints a JSON line first)
+            found = json.loads(line[len("[eval] "):])
+    return found
 
 
 def main():
@@ -114,8 +122,20 @@ def main():
     start(restart="--restart" in args)
     out = pathlib.Path(tempfile.mkdtemp(prefix="lhb-ui-"))
     failed = False
-    for script, window in (("flow.js", "1280,1000"), ("phone.js", "390,844"), ("admin.js", "1280,1000")):
-        text = drive(script, window, out / script.replace(".js", ""))
+    runs = (("flow.js", "1280,1000"), ("phone.js", "390,844"), ("admin.js", "1280,1000"))
+    if "--only" in args:
+        only = args[args.index("--only") + 1]
+        runs = [(only, "390,844" if only == "phone.js" else "1280,1000")]
+        if only == "paint.js":  # desktop and phone (a fresh account each time)
+            runs = [(only, "1280,1000"), (only, "390,844")]
+    for script, window in runs:
+        shots = []
+        if script == "paint.js" and "--shots" in args:  # the painted book, desktop then phone (same account)
+            tag = "_phone" if window != "1280,1000" else ""
+            shots = [("painted_book" + tag, "window.SEED.book", "0"), ("painted_dialog" + tag, "window.SEED.book",
+                     "var b = document.querySelector('.rd-tools .anvil-role-ic-palette button'); if (b) b.click()")]
+        text = drive(script, window, out / (script.replace(".js", "") + "-" + window.replace(",", "x")), shots,
+                     seed=(script == "paint.js"))
         res = result(text)
         errors = [l for l in text.splitlines() if "[EXCEPTION]" in l or "Python exception" in l or "Error report" in l]
         print("==== %s (%s)" % (script, window))
@@ -125,7 +145,13 @@ def main():
             print("  " + e)
         if not res or not res.get("ok") or errors:
             failed = True
-    if "--shots" in args:
+    if "--shots" in args and "--only" in args:
+        dest = pathlib.Path(args[args.index("--shots") + 1])
+        for png in out.rglob("*.png"):
+            dest.mkdir(parents=True, exist_ok=True)
+            __import__("shutil").copy(png, dest / png.name)
+        print("screenshots in", dest)
+    elif "--shots" in args:
         dest = pathlib.Path(args[args.index("--shots") + 1])
         guest = [("landing", "#landing"), ("library", "#library"), ("studio", "#studio/new"), ("story", "#story/bears/blank"),
                  ("auth", "#auth/signup")]

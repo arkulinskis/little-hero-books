@@ -18,7 +18,8 @@ class Read(ReadTemplate):
             self.broken_text.text = r.get("error") or ""
             return
         b, hero = r["book"], r["book"]["hero"]
-        self.book = books.as_book(r["story"], hero, dedication=b["dedication"], created=b["created"], voice=b.get("voice") or {})
+        self.book = books.as_book(r["story"], hero, dedication=b["dedication"], created=b["created"], voice=b.get("voice") or {},
+                                  paint=b.get("paint") or {})
         self.eyebrow.text = "A book made for " + hero["name"]
         self.title.text = lh.title(r["story"], hero)
         if self.book["voice"]:

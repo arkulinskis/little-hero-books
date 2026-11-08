@@ -19,6 +19,8 @@ class Pdf(PdfTemplate):
         saved = state.store_get("pdfopts", {}) or {}
         self.kind = "outline" if saved.get("kind") == "outline" else "colour"
         self.use = "print" if saved.get("use") == "print" else "home"
+        self.can_paint = lh.has_paint(book)
+        self.painted = self.can_paint and saved.get("painted", True) is not False
         self.sizes, self.bleeds = lh.print_sizes(), lh.bleeds()
         self.size_box.items = [(s["label"], s["key"]) for s in self.sizes]
         self.bleed_box.items = [(b["label"], b["key"]) for b in self.bleeds]
@@ -34,15 +36,19 @@ class Pdf(PdfTemplate):
     def choice(self):
         size = next((s for s in self.sizes if s["key"] == self.size_box.selected_value), self.sizes[0])
         bleed = next((b for b in self.bleeds if b["key"] == self.bleed_box.selected_value), self.bleeds[0])
-        opts = {"outline": self.kind == "outline",
+        opts = {"outline": self.kind == "outline", "painted": bool(self.painted and self.kind == "colour"),
                 "print": {"trim": size["trim"], "bleed": bleed["v"], "label": size["label"]} if self.use == "print" else None}
-        return {"kind": self.kind, "use": self.use, "size": size["key"], "bleed": bleed["key"], "opts": opts}
+        return {"kind": self.kind, "use": self.use, "size": size["key"], "bleed": bleed["key"], "painted": self.painted,
+                "opts": opts}
 
     def _sync(self):
         self.kind_colour.classes["on"] = self.kind == "colour"
         self.kind_outline.classes["on"] = self.kind == "outline"
         self.use_home.classes["on"] = self.use == "home"
         self.use_print.classes["on"] = self.use == "print"
+        self.painted_row.visible = self.can_paint and self.kind == "colour"
+        self.painted_row.classes["on"] = bool(self.painted)
+        state.set_attr(self.painted_row, "aria-pressed", "true" if self.painted else "false")
         self.print_part.visible = self.use == "print"
         if self.use == "print":
             c = self.choice()
@@ -56,6 +62,10 @@ class Pdf(PdfTemplate):
 
     def kind_click(self, event):
         self.kind = event.currentTarget.getAttribute("data-k")
+        self._sync()
+
+    def painted_click(self, event):
+        self.painted = not self.painted
         self._sync()
 
     def use_click(self, event):
@@ -77,5 +87,6 @@ class Pdf(PdfTemplate):
     @handle("make_button", "click")
     def make_button_click(self, **event_args):
         c = self.choice()
-        state.store_set("pdfopts", {"kind": c["kind"], "use": c["use"], "size": c["size"], "bleed": c["bleed"]})
+        state.store_set("pdfopts", {"kind": c["kind"], "use": c["use"], "size": c["size"], "bleed": c["bleed"],
+                                    "painted": c["painted"]})
         self.raise_event("x-close-alert", value=c["opts"])

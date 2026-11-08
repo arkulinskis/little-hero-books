@@ -109,6 +109,43 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   `document.querySelector('.rd').parentNode.lhReader` (voice(), audio(), playing(), at()).
 - Not verified here: a real iPhone/Safari recording and playback (MediaRecorder MP4/AAC is expected there).
 
+## Paint this book (2026-11-08)
+
+- **What:** every picture of a book repainted by Image Enhancer (the user's own service: github.com/arkulinskis/
+  image-enhancer, folder `image-enhancer`; its API guide is its README and Connect page). `server_code/
+  enhancer_client.py` is a copy of that repo's `clients/enhancer_client.py` (keep them the same); `Painting.py` is the
+  only module that uses it.
+- **Table `paintings`**: book, page (same numbers as voice_pages: 0 cover, 1 dedication, 2.. story, last The End),
+  style, source (the PNG sent), picture (the result), picture_style, key (random, serves /painting/<key>), job_id,
+  status (sending / queued / working / done / failed), error, eta, attempts, created, updated, checked.
+  One row per page; repainting reuses the row and keeps `picture` until the new one is done.
+- **Server:** `paint_info` (styles, ready, the studio's queue, state), `paint_page(book, page, style, png)` (owner,
+  PNG/JPEG/WebP 500 B-8 MB, 150 new pages a day per person, cancels the page's old queued job), `paint_status`
+  (checks open jobs at most every 10 s: one `GET /jobs?status=open` when more than 3, then single calls; "sending"
+  rows are sent again; a 404 job is sent again), `paint_remove`, `admin_painting*`. Webhook `/paint-done` (HMAC with
+  `image_enhancer_webhook_secret`; Image Enhancer only calls https, so not locally). Endpoint `/painting/:key`
+  (private, no-cache, ETag = key, like voice). `get_book` adds `paint` + `paint_state` (owner), `get_shared_book`
+  adds `paint`; `share_book` gives new keys; `delete_book` / `delete_hero` delete rows (queued jobs cancelled).
+  Each page is sent with fidelity "strict", size "source", format jpeg and a prompt asking to keep faces/clothes and
+  add no words (`Painting.PROMPT`). Six kid-friendly styles of Image Enhancer's ten (`Painting.STYLES`).
+- **Address:** Admin → Painting (app_settings `enhancer_api`) > App Secret `image_enhancer_url` > enhancer_client.API.
+- **Client:** `Dialogs/Paint` (styles via `Items/PaintStyle`, the queue line, sends page by page with
+  `lh.paint_picture` -> `anvil.js.to_media` -> `paint_page`), the Book page's strip + `paint_timer` (15 s while
+  painting) + `reader.set_paint()`, `books.as_book` adds `paint` and `paintBase` (/_/api/painting/), the Pdf dialog's
+  "Use the painted pictures" (`opts.painted`).
+- **Engine (lh-book.js):** `LH.paintIndex/paintSrc/hasPaint`, `LH.pageHtml(..., {painted})` swaps the SVG for
+  `<img class="rd-painted">` (never in Colour me in), the reader's `[data-rd=paint]` switch (`UI.store` "painted"),
+  `setPaint(map)` redraws the open page without a page turn, `preload()` loads the next painted picture,
+  `LH.paintPicture(book, idx)` = the PNG sent (scenes 1216x851 without grain, dedication 1024² on yellow, End figure
+  on a 1024² warm-paper square), the PDF's `pictureOf()` (painted picture, else the drawing).
+- **Tests:** server tests fake Image Enhancer in `anvil.http.REPLIES`. `tools/testing/paint_e2e.py` (run with a
+  Python that has anvil-uplink + pillow) starts Image Enhancer's local server and its real worker with the test
+  filters, recreates this app's server with `LHB_SECRETS` (`--secret` flags) and runs `tools/ui/paint.js` at desktop
+  and phone width: paint, watch pages arrive, every page kind, the switch, Colour me in, PDF dialog, reload, back to
+  the drawings, paint again. Without secrets, flow.js checks the dialog says the studio isn't open.
+- Item templates: put `classes`/attributes on `self` (the root element), not on an `anvil:name` at the root (the
+  validator doesn't know it, and the class didn't apply).
+
 ## Gotchas found building it (Nov 2026)
 
 - **A remounted reader must drop its click listener.** The Reader component remounts into the same DOM node (e.g. after

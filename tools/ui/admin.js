@@ -51,6 +51,11 @@
     type($('.anvil-role-ad-search-box'), 'nobody-matches-this'); $('.anvil-role-ic-search button').click();
     await until(() => $$('.ad-user-row').length === 0, 'search narrows');
     ok(/0 people/.test(document.body.textContent), 'users: search');
+    await page('#admin/painting', () => $('.ad-paint'));
+    ok(/image_enhancer_key/.test($('.ad-paint').textContent) && /Using http/.test($('.ad-paint').textContent), 'painting: secrets and the studio address');
+    $('.anvil-role-ic-refresh button').click();
+    await until(() => { const l = $('.anvil-role-ad-check-line'); return l && l.offsetParent && l.textContent.trim(); }, 'connection check');
+    ok(true, 'painting: connection check answers ("' + $('.anvil-role-ad-check-line').textContent.trim().slice(0, 60) + '")');
     await page('#admin/demo', () => $('.ad-demo'));
     ok(/Status:/.test($('.ad-demo').textContent), 'demo: status line');
     log.push('PASSED');

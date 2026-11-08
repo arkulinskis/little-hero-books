@@ -1,5 +1,6 @@
-/* lh-book.js: books: LH.bookPages, LH.pageHtml, LH.reader (page turns, read aloud, colour me in, record my voice),
-   LH.makePdf + LH.writePdf (the PDF made in the browser), LH.coverHtml, LH.confetti.
+/* lh-book.js: books: LH.bookPages, LH.pageHtml, LH.reader (page turns, read aloud, colour me in, record my voice,
+   painted pictures), LH.makePdf + LH.writePdf (the PDF made in the browser), LH.paintPicture (a page's picture as a
+   PNG for the painting studio), LH.coverHtml, LH.confetti.
    The PDF options dialog and its progress window are Python forms (Dialogs.Pdf, Dialogs.PdfProgress). */
 (function () {
   'use strict';
@@ -55,23 +56,42 @@
   };
   function portrait(hero, o) { return hero ? LH.bookAvatar(hero.look, o) : (o.outline ? LH.outline : LH.soften)(LH.avatarSvg(null, Object.assign({}, o, { ghost: true }))); }
 
+  /* ------------------------------------------------------------------ painted pictures
+     The painting studio (Image Enhancer, server_code/Painting.py) repaints a book's pictures. Page numbers are the
+     same as for recordings: 0 cover, 1 dedication, 2.. story pages, last The End. book.paint = {"<page>": {key}},
+     book.paintBase + key is the picture's address. */
+  LH.paintIndex = function (book, p) {
+    if (p.kind === 'cover') return 0;
+    if (p.kind === 'dedication') return 1;
+    if (p.kind === 'story') return p.i + 2;
+    if (p.kind === 'end') return book.story.text.length + 2;
+    return -1;
+  };
+  LH.paintSrc = function (book, idx) {
+    var p = book.paint && book.paint[idx];
+    return p && p.key ? (book.paintBase || '') + p.key : '';
+  };
+  LH.hasPaint = function (book) { return !!(book.paint && Object.keys(book.paint).length); };
+  function paintedImg(src) { return '<img class="rd-painted" src="' + esc(src) + '" alt="" decoding="async" draggable="false">'; }
+
   LH.pageHtml = function (book, p, n, total, mode) {
     mode = mode || {};
     var hero = book.hero, st = book.story, clip = LH.uid('pg'), out = !!mode.outline, so = { clip: clip, outline: out, grain: !out };
+    var src = mode.painted && !out ? LH.paintSrc(book, LH.paintIndex(book, p)) : '';
     if (p.kind === 'cover') {
-      return '<div class="rd-cov" style="--cv:' + esc(st.color) + '"><div class="rd-pic">' + LH.sceneSvg(st.key, 'cover', hero, so) + '</div>' +
+      return '<div class="rd-cov" style="--cv:' + esc(st.color) + '"><div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st.key, 'cover', hero, so)) + '</div>' +
         '<h2>' + esc(LH.title(st, hero)) + '<small>' + (out ? 'A Little Hero colouring book' : 'A Little Hero Book') + '</small></h2></div>';
     }
     if (p.kind === 'dedication') {
       var h = hero || LH.GENERIC;
-      return '<div class="rd-ded"><div class="frame">' + portrait(hero, { crop: 'head', mood: 'laugh', outline: out }) + '</div>' +
+      return '<div class="rd-ded"><div class="frame">' + (src ? paintedImg(src) : portrait(hero, { crop: 'head', mood: 'laugh', outline: out })) + '</div>' +
         '<div class="belongs">' + (out ? 'This colouring book belongs to' : 'This book belongs to') + '</div><div class="who">' + esc(h.name) + '</div><p class="msg">' + esc(LH.dedication(book)) + '</p></div>';
     }
     if (p.kind === 'end') {
-      return '<div class="rd-end"><div class="fig">' + portrait(hero, { pose: 'wave', mood: 'laugh', outline: out }) + '</div>' +
+      return '<div class="rd-end"><div class="fig' + (src ? ' pp' : '') + '">' + (src ? paintedImg(src) : portrait(hero, { pose: 'wave', mood: 'laugh', outline: out })) + '</div>' +
         '<h2>The End</h2><p>' + esc(st.source) + '</p><p>' + esc(LH.madeLine(book)) + '</p></div>';
     }
-    return '<div class="rd-pic">' + LH.sceneSvg(st.key, p.i, hero, so) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
+    return '<div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st.key, p.i, hero, so)) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
       '<div class="rd-num">' + (p.i + 1) + '</div>';
   };
   LH.pageSpeech = function (book, p) {
@@ -145,7 +165,8 @@
   };
   /* opts: start, colour (false hides Colour me in), onFinish(), onPage(i, page),
      record (true: the "Record my voice" button, for the book's owner), onVoiceSave(page, blob, seconds) and
-     onVoiceDelete(page or -1 for all) -> JSON {ok, voice, error} (or null when cancelled), voiceBase. */
+     onVoiceDelete(page or -1 for all) -> JSON {ok, voice, error} (or null when cancelled), voiceBase.
+     Painted pictures (book.paint) show instead of the drawings while the "Painted" switch is on (remembered). */
   LH.reader = function (el, book, opts) {
     opts = opts || {};
     var pages = LH.bookPages(book), at = Math.min(opts.start || 0, pages.length - 1), seen = {}, reading = false, finished = false;
@@ -153,6 +174,7 @@
     var voice = {}, localUrl = {}, recMode = false, rec = null, stream = null, recState = {}, audio = null, playing = null, recFocus = false, alive = true;
     setVoice(book.voice || {});
     var canRec = !!opts.record && LH.canRecord() && !!opts.onVoiceSave;
+    var paintOn = UI.store.get('painted', true) !== false;
     var canSpeak = 'speechSynthesis' in window;
     el.innerHTML = '<div class="rd"><div data-rd-crayons></div><div data-rd-rec></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
       '<div class="rd-book" data-rd-book></div><button class="rd-nav next" data-rd="next" aria-label="Next page">' + UI.icon('arrow') + '</button></div>' +
@@ -160,6 +182,7 @@
       (canSpeak || canRec || Object.keys(voice).length ? '<button class="ui-btn sm" data-rd="speak">' + UI.icon('chat') + '<span>Read to me</span></button>' : '') +
       (canRec ? '<button class="ui-btn sm" data-rd="rec" aria-pressed="false">' + UI.icon('mic') + '<span>Record my voice</span></button>' : '') +
       (window.ArkMusic ? '<button class="ui-btn sm' + (LH.music.on() ? ' on' : '') + '" data-rd="music" aria-pressed="' + LH.music.on() + '">' + UI.icon('music') + '<span>Music</span></button>' : '') +
+      '<button class="ui-btn sm' + (paintOn ? ' on' : '') + '" data-rd="paint" aria-pressed="' + paintOn + '"' + (LH.hasPaint(book) ? '' : ' hidden') + '>' + UI.icon('palette') + '<span>Painted</span></button>' +
       (opts.colour === false ? '' : '<button class="ui-btn sm" data-rd="colour">' + UI.icon('brush') + '<span>Colour me in</span></button>') +
       (opts.tools || '') + '</div></div></div>';
     var bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]'), recEl = el.querySelector('[data-rd-rec]');
@@ -173,10 +196,17 @@
         return '<button data-rd-go="' + i + '" class="' + (i === at ? 'on' : seen[i] ? 'seen' : '') + (voice[i] ? ' vo' : '') + '" aria-label="Page ' + (i + 1) + (voice[i] ? ', recorded' : '') + '"' + (i === at ? ' aria-current="page"' : '') + '></button>';
       }).join('');
     }
+    function pageHtml() { return LH.pageHtml(book, pages[at], at, pages.length, { outline: colouring, painted: paintOn }); }
+    function preload() {  // the next painted picture, so turning the page doesn't flash
+      if (!paintOn || at + 1 >= pages.length) return;
+      var src = LH.paintSrc(book, LH.paintIndex(book, pages[at + 1]));
+      if (src) { var im = new Image(); im.src = src; }
+    }
     function draw(dir) {
       seen[at] = true;
       bookEl.classList.toggle('out', colouring);
-      bookEl.innerHTML = '<div class="rd-page' + (dir < 0 ? ' back' : '') + '">' + LH.pageHtml(book, pages[at], at, pages.length, { outline: colouring }) + '</div>';
+      bookEl.innerHTML = '<div class="rd-page' + (dir < 0 ? ' back' : '') + '">' + pageHtml() + '</div>';
+      preload();
       if (colouring && painted[at]) {
         var list = bookEl.querySelectorAll(SHAPES);
         Object.keys(painted[at]).forEach(function (i) { var p = painted[at][i]; if (list[i]) list[i].setAttribute(p[0], p[1]); });
@@ -422,6 +452,12 @@
       if (k === 'prev') go(at - 1);
       else if (k === 'next') go(at + 1);
       else if (k === 'colour') setColour(!colouring);
+      else if (k === 'paint') {
+        paintOn = !paintOn;
+        UI.store.set('painted', paintOn);
+        b.classList.toggle('on', paintOn); b.setAttribute('aria-pressed', String(paintOn));
+        if (!colouring) { bookEl.innerHTML = '<div class="rd-page still">' + pageHtml() + '</div>'; preload(); }
+      }
       else if (k === 'rec') setRec(!recMode);
       else if (k === 'speak') {
         if (reading) return stopSpeak();
@@ -451,7 +487,16 @@
     var api = {
       go: go, at: function () { return at; }, count: pages.length, colouring: function () { return colouring; },
       recording: function () { return recMode; }, voice: function () { return voice; }, audio: function () { return audio; },
-      playing: function () { return playing; },
+      playing: function () { return playing; }, painted: function () { return paintOn; },
+      /* New painted pictures arrived (the book page checks while the studio works): show them without a page turn. */
+      setPaint: function (map) {
+        var idx = LH.paintIndex(book, pages[at]), before = LH.paintSrc(book, idx);
+        book.paint = map || {};
+        var pb = el.querySelector('[data-rd=paint]');
+        if (pb) pb.hidden = !LH.hasPaint(book);
+        if (!colouring && paintOn && LH.paintSrc(book, idx) !== before) bookEl.innerHTML = '<div class="rd-page still">' + pageHtml() + '</div>';
+        preload();
+      },
       destroy: function () {
         alive = false;
         document.removeEventListener('keydown', key);
@@ -479,6 +524,21 @@
       img.onerror = function () { reject(new Error('A picture could not be drawn.')); };
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     });
+  }
+  function urlImage(src) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('A painted picture could not be loaded.')); };
+      img.src = src;
+    });
+  }
+  /* The painted picture of a page when the PDF asks for them (opts.painted, not the colouring book), else the
+     drawing (also when a painted picture fails to load). Resolves {img, painted}. */
+  function pictureOf(book, p, opts, drawn) {
+    var plain = function () { return drawn().then(function (img) { return { img: img, painted: false }; }); };
+    var src = opts.painted && !opts.outline ? LH.paintSrc(book, LH.paintIndex(book, p)) : '';
+    return src ? urlImage(src).then(function (img) { return { img: img, painted: true }; }, plain) : plain();
   }
   function rrect(ctx, x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -576,8 +636,8 @@
     function sized(svg, w, hgt) { return svg.replace('<svg ', '<svg width="' + Math.round(w * res) + '" height="' + Math.round(hgt * res) + '" '); }
     if (p.kind === 'cover') {
       paper(ctx, st.color);
-      return svgImage(LH.sceneSvg(st.key, 'cover', hero, sceneOpts(1340))).then(function (img) { restore();
-        framed(ctx, img, 80, 80, 1340, 938, 64);
+      return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st.key, 'cover', hero, sceneOpts(1340))); }).then(function (pic) { restore();
+        framed(ctx, pic.img, 80, 80, 1340, 938, 64);
         card(ctx, 80, 1090, 1340, 320, 56);
         textBlock(ctx, LH.title(st, hero), null, { x: 130, y: 1106, w: 1240, h: 214 }, { font: 'Baloo 2', weight: 800, size: 104, lh: 1.02, outlined: OUT });
         spaced(ctx, OUT ? 'A Little Hero colouring book' : 'A Little Hero Book', 750, 1372, 34, '#D9532E');
@@ -586,7 +646,8 @@
     }
     if (p.kind === 'dedication') {
       paper(ctx);
-      return svgImage(sized(avatar({ crop: 'head', mood: 'laugh', bg: '#FFC93C' }), 640, 640)).then(function (img) { restore();
+      return pictureOf(book, p, opts, function () { return svgImage(sized(avatar({ crop: 'head', mood: 'laugh', bg: '#FFC93C' }), 640, 640)); }).then(function (pic) { restore();
+        var img = pic.img;
         ctx.save(); if (!OUT) shadow(ctx, 40, 16, .26); ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(750, 440, OUT ? 320 : 338, 0, 7); ctx.fill(); ctx.restore();
         ctx.save(); ctx.beginPath(); ctx.arc(750, 440, 320, 0, 7); ctx.clip(); ctx.drawImage(img, 430, 120, 640, 640); ctx.restore();
         if (OUT) { ctx.lineWidth = 8; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(750, 440, 320, 0, 7); ctx.stroke(); }
@@ -607,8 +668,9 @@
     }
     if (p.kind === 'end') {
       paper(ctx);
-      return svgImage(sized(avatar({ pose: 'wave', mood: 'laugh' }), 520, 565)).then(function (img) { restore();
-        ctx.drawImage(img, 490, 120, 520, 565);
+      return pictureOf(book, p, opts, function () { return svgImage(sized(avatar({ pose: 'wave', mood: 'laugh' }), 520, 565)); }).then(function (pic) { restore();
+        if (pic.painted) framed(ctx, pic.img, 470, 110, 560, 560, 48);  // a painted End picture is a square, framed
+        else ctx.drawImage(pic.img, 490, 120, 520, 565);
         bigText(ctx, 'The End', 750, 900, '800 170px "Baloo 2", Arial, sans-serif', '#EF5A36');
         textBlock(ctx, st.source, null, { x: 220, y: 980, w: 1060, h: 200 }, { size: 40, weight: 400, color: OUT ? INK : '#6D6490' });
         textBlock(ctx, LH.madeLine(book), null, { x: 220, y: 1190, w: 1060, h: 120 }, { size: 38, weight: 500, color: OUT ? INK : '#6D6490' });
@@ -616,8 +678,8 @@
       });
     }
     paper(ctx);
-    return svgImage(LH.sceneSvg(st.key, p.i, hero, sceneOpts(1340))).then(function (img) { restore();
-      framed(ctx, img, 80, 70, 1340, 938, 64);
+    return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st.key, p.i, hero, sceneOpts(1340))); }).then(function (pic) { restore();
+      framed(ctx, pic.img, 80, 70, 1340, 938, 64);
       textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 1050, w: 1280, h: 330 }, { size: 56 });
       ctx.save(); ctx.fillStyle = OUT ? '#FFFFFF' : '#FFE7A3'; ctx.beginPath(); ctx.arc(750, 1424, 30, 0, 7); ctx.fill(); if (OUT) { ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); } ctx.restore();
       ctx.font = fontOf(600, 32, 'Fredoka'); ctx.fillStyle = ink(); ctx.textAlign = 'center'; ctx.fillText(String(p.i + 1), 750, 1435); ctx.textAlign = 'left';
@@ -673,6 +735,36 @@
     return chain.then(function () { if (progress) progress(pages.length, pages.length); return LH.writePdf(out, LH.title(book.story, book.hero) + (opts.outline ? ' (colouring book)' : '')); });
   };
   LH.drawPdfPage = drawPage;  // used by the flow test
+
+  /* One page's picture as a PNG Blob for the painting studio (about one megapixel, no text: the words stay crisp
+     on the page). Scenes are 10 x 7, the dedication portrait is square on its yellow, the waving hero of The End
+     stands on a square of warm paper. No paper grain: the painter adds its own texture. */
+  LH.paintPicture = function (book, idx) {
+    var st = book.story, hero = book.hero, n = st.text.length, w, h, svg, fig = null;
+    var withSize = function (s, sw, sh) { return s.replace('<svg ', '<svg width="' + Math.round(sw) + '" height="' + Math.round(sh) + '" '); };
+    if (idx === 0 || (idx >= 2 && idx < n + 2)) {
+      w = 1216; h = 851;
+      svg = LH.sceneSvg(st.key, idx === 0 ? 'cover' : idx - 2, hero, { w: w, clip: LH.uid('pp'), outline: false, grain: false });
+    } else if (idx === 1) {
+      w = h = 1024;
+      svg = withSize(portrait(hero, { crop: 'head', mood: 'laugh', bg: '#FFC93C' }), w, h);
+    } else if (idx === n + 2) {
+      w = h = 1024; fig = { w: 760, h: 826 };
+      svg = withSize(portrait(hero, { pose: 'wave', mood: 'laugh' }), fig.w, fig.h);
+    } else {
+      return Promise.reject(new Error('That page has no picture.'));
+    }
+    return svgImage(svg).then(function (img) {
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = fig ? '#FFF4DC' : '#FFFFFF'; ctx.fillRect(0, 0, w, h);
+      if (fig) ctx.drawImage(img, (w - fig.w) / 2, h - fig.h - 40, fig.w, fig.h);
+      else ctx.drawImage(img, 0, 0, w, h);
+      return new Promise(function (resolve, reject) {
+        c.toBlob(function (b) { if (b) resolve(b); else reject(new Error('The picture could not be made.')); }, 'image/png');
+      });
+    });
+  };
 
   LH.DPI = DPI;
   /* Download a Blob under a file name; returns its object URL (kept for a minute, so "Open it" works). */

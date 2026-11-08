@@ -1,0 +1,27 @@
+<div class="ui pt-dialog">
+  <anvil-component type="Label" name="title" prop:role='["dlg-title"]'></anvil-component>
+  <anvil-component type="Label" name="intro" prop:role='["pt-intro"]'></anvil-component>
+  <div class="ui-stack">
+    <div anvil:name="styles_part">
+      <div class="lhp-label pt-label">Pick a style</div>
+      <anvil-component type="RepeatingPanel" name="styles_panel" prop:item_template="Little_Hero_Books.Items.PaintStyle" prop:role='["pt-styles"]'></anvil-component>
+    </div>
+    <div class="pt-queue" anvil:name="queue_box">
+      <i class="ic ic-clock"></i>
+      <anvil-component type="Label" name="queue_line" prop:role='["pt-queue-text"]'></anvil-component>
+    </div>
+    <div class="pt-send" anvil:name="send_part" role="status">
+      <anvil-component type="Label" name="send_text" prop:role='["pt-send-text"]'></anvil-component>
+      <div class="lh-bar" anvil:name="send_bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Pages sent"><i anvil:name="send_fill"></i></div>
+    </div>
+    <anvil-component type="Label" name="error_line" prop:role='["pt-error"]' prop:visible="false"></anvil-component>
+    <p class="fine-print pt-note">An open AI image model paints the pictures on our own computer: your pages aren't sent to an outside AI company. Each painting is a little different from the drawing. If one comes out odd, paint the book again, or switch back to the drawings in the reader.</p>
+    <div class="ui-row end pt-actions">
+      <anvil-component type="Button" name="remove_button" prop:text="Back to the drawings" prop:role='["btn", "btn-ghost", "btn-danger", "ic-trash"]'></anvil-component>
+      <span class="pt-gap"></span>
+      <anvil-component type="Button" name="cancel_button" prop:text="Close" prop:role='["btn", "btn-ghost"]'></anvil-component>
+      <anvil-component type="Button" name="retry_button" prop:text="Try the missing pages again" prop:role='["btn", "ic-redo"]'></anvil-component>
+      <anvil-component type="Button" name="start_button" prop:text="Paint my book" prop:role='["btn", "btn-primary", "ic-palette"]'></anvil-component>
+    </div>
+  </div>
+</div>
