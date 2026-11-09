@@ -140,6 +140,14 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   and dropped the glasses; "Fairy-tale painting" turned the meadow into a forest with a creature; saying "a page of a
   picture book" made the model paint an open book over the characters; "add no creatures" made it drop the bears.
   Keep the total under 600 characters (Image Enhancer's limit; a server test checks the worst case).
+- **Saved styles (2026-11-09):** table `saved_paintings` (book, page, style, look, picture, created) keeps every
+  finished picture per style (`_save` in `_apply`; older paintings are backfilled by `remember`). `look` =
+  `look_key(book)`, a fingerprint of the story + hero look; rows of another look don't match and are deleted when the
+  Paint dialog opens (`saved_styles(prune=True)`). `paint_saved(book, style)` puts the saved pictures on the book at
+  once (new keys, no job) and returns the pages still missing; the dialog then sends only those. Cards show "Saved" /
+  "7 of 12 saved"; the main button becomes "Switch to <style>", "Paint fresh" ignores the saved ones, the current style
+  offers "Paint it fresh", "Delete saved styles" = `paint_forget`. "Back to the drawings" (`paint_remove`) keeps the
+  saved styles; removing the book or hero deletes them. `paintings.look` remembers the look a page was sent with.
 - **Address:** Admin → Painting (app_settings `enhancer_api`) > App Secret `image_enhancer_url` > enhancer_client.API.
 - **Client:** `Dialogs/Paint` (styles via `Items/PaintStyle`, the queue line, sends page by page with
   `lh.paint_picture` -> `anvil.js.to_media` -> `paint_page`), the Book page's strip + `paint_timer` (15 s while

@@ -111,7 +111,9 @@ class Book(BookTemplate):
             self._paint_update(state.call_quiet("paint_status", self._data["id"]))
             return
         if res.get("removed"):
-            state.toast("Back to the drawings", "ok")
+            state.toast("Back to the drawings. The painted pictures stay saved.", "ok")
+        elif res.get("reused") and not res.get("sent") and not res.get("failed"):
+            state.toast("Switched to the saved %s pictures: no waiting!" % res.get("style"), "ok")
         elif res.get("failed"):
             state.toast("%s sent to the studio, %d couldn't be sent: %s" % (
                 state.plural(res["sent"], "picture"), res["failed"], res.get("error") or ""))

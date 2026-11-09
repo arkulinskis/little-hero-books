@@ -158,9 +158,37 @@ db_schema:
     - admin_ui: {order: 14, width: 200}
       name: checked
       type: datetime
+    - admin_ui: {order: 15, width: 200}
+      name: look
+      type: string
     indexes: []
     server: full
     title: Paintings
+  saved_paintings:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: book
+      target: books
+      type: link_single
+    - admin_ui: {order: 1, width: 200}
+      name: page
+      type: number
+    - admin_ui: {order: 2, width: 200}
+      name: style
+      type: string
+    - admin_ui: {order: 3, width: 200}
+      name: look
+      type: string
+    - admin_ui: {order: 4, width: 200}
+      name: picture
+      type: media
+    - admin_ui: {order: 5, width: 200}
+      name: created
+      type: datetime
+    indexes: []
+    server: full
+    title: Saved paintings
   users:
     client: none
     columns:
@@ -256,7 +284,7 @@ metadata: {description: 'Design a cartoon look-alike of your child, then read or
 name: Little Hero Books
 native_deps:
   head_html: |
-    <script src="_/theme/legal-kit.js?v=aee0e241be"></script>
+    <script src="_/theme/legal-kit.js?v=a55d3226e1"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/littleherobooks.json and run seo.py, not here) -->
     <link rel="canonical" href="https://little-hero-books.anvil.app/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -303,7 +331,7 @@ native_deps:
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qgsqghg" data-button="false" data-label="Submit feedback" async></script>
     <link rel="stylesheet" href="_/theme/icons.css?v=025d9df016">
-    <link rel="stylesheet" href="_/theme/app.css?v=3199343376">
+    <link rel="stylesheet" href="_/theme/app.css?v=d1314264bc">
     <script src="_/theme/lh-kit.js?v=bae378e051"></script>
     <script src="_/theme/ark-music.js?v=6d0ae6dcf6"></script>
     <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>

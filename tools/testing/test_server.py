@@ -459,10 +459,50 @@ waiting = [r["job_id"] for r in T.paintings.search(book=bk_row) if r["status"] =
 r = ok(call("paint_remove", bk))
 assert r["paint"] == {} and r["state"] is None and not T.paintings.search(book=bk_row)
 assert waiting and all(JOBS[j]["status"] == "cancelled" for j in waiting)
+# saved styles: every finished picture is kept per style; "Back to the drawings" keeps them; switching back reuses them
+sv = ok(call("paint_info", bk))["saved"]
+assert sv.get("watercolor") == [0] and 0 in sv.get("kids_book", []) and 4 in sv["kids_book"], sv
+n_jobs = len(JOBS)
+r = ok(call("paint_saved", bk, "watercolor"))
+assert r["used"] == [0] and r["missing"] == list(range(1, 12)) and len(JOBS) == n_jobs, "nothing sent again"
+assert r["paint"]["0"]["style"] == "watercolor" and r["state"]["page_status"]["0"] == "done"
+k_saved = r["paint"]["0"]["key"]
+anvil.server.request.headers = {}
+assert ep(key=k_saved).status == 200, "a reused picture gets its own address"
+r = ok(call("paint_saved", bk, "kids_book"))
+assert sorted(r["used"]) == sorted(sv["kids_book"]) and r["paint"]["0"]["style"] == "kids_book" and len(JOBS) == n_jobs
+assert ep(key=k_saved).status == 404, "switching style retires the old address"
+assert ok(call("paint_saved", bk, "comic"))["used"] == [], "a style never painted has nothing saved"
+bad(call("paint_saved", bk, "nope"))
+as_user(bob)
+bad(call("paint_saved", bk, "kids_book"))
+bad(call("paint_forget", bk))
+as_user(None)
+assert denied("paint_saved", bk, "kids_book") and denied("paint_forget", bk)
+as_user(ana)
+ok(call("paint_remove", bk))
+assert ok(call("paint_info", bk))["saved"].get("watercolor") == [0], "back to the drawings keeps the saved styles"
+# a new painting of a page replaces its saved picture once done
+ok(call("paint_page", bk, 0, "watercolor", png()))
+j0 = T.paintings.get(book=bk_row, page=0)["job_id"]
+JOBS[j0]["status"] = "done"
+ok(call("paint_status", bk))
+assert len(T.saved_paintings.search(book=bk_row, page=0, style="watercolor")) == 1
+# editing the hero changes the look: saved pictures stop matching and go when the dialog opens
+ok(call("save_hero", mila["id"], "Mila", "she", {"hair": "bob", "skin": "s5"}))
+assert ok(call("paint_info", bk))["saved"] == {} and not T.saved_paintings.search(book=bk_row), "pruned after a hero edit"
+assert ok(call("paint_saved", bk, "watercolor"))["used"] == []
+# the new look is saved again, and paint_forget deletes saved pictures but keeps the painting on show
+ok(call("paint_page", bk, 2, "comic", png()))
+JOBS[T.paintings.get(book=bk_row, page=2)["job_id"]]["status"] = "done"
+ok(call("paint_status", bk))
+assert ok(call("paint_info", bk))["saved"] == {"comic": [2]}
+assert ok(call("paint_forget", bk))["saved"] == {} and not T.saved_paintings.search(book=bk_row)
+assert ok(call("paint_status", bk))["paint"]["2"]["style"] == "comic", "the painting on show stays"
 ok(call("paint_page", bk, 1, "comic", png()))  # removed with the hero below
 ok(call("paint_page", bk2, 1, "comic", png()))
 ok(call("delete_book", bk2))
-assert not T.paintings.search(book=T.books.get_by_id(bk2)) and len(T.paintings.search()) == 1, "removing a book removes its paintings"
+assert not [x for x in T.paintings.search() if x["book"] is None or x["book"].get_id() == bk2] and T.paintings.search(book=bk_row),     "removing a book removes its paintings (and only its own)"
 # admin: the studio's address, the secrets, a connection check
 assert denied("admin_painting") and denied("admin_painting_save", "https://x.anvil.app") and denied("admin_painting_check")
 as_user(admin)
@@ -489,6 +529,7 @@ bad(call("save_hero", None, "One too many", "they", {"hair": "crop"}))
 assert ok(call("delete_hero", mila["id"]))["removed_books"] == 2
 assert not T.voice_pages.search(), "removing a hero removes the recordings of their books"
 assert not T.paintings.search(), "removing a hero removes the paintings of their books"
+assert not T.saved_paintings.search(), "removing a hero removes the saved styles of their books"
 assert call("get_shelf")["books"] == [] and not T.books.search(owner=ana)
 pea = ok(call("make_book", T.heroes.search(owner=ana)[0].get_id(), "pea"))["book"]
 ok(call("save_voice", pea["id"], 1, snd(), 3))

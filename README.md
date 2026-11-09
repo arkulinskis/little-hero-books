@@ -71,7 +71,8 @@ Keep this list current: it is the first thing read before every change.
   as they arrive (checked every 15 s, or at once through the signed webhook `/paint-done`). The reader gets a
   **Painted** switch (remembered), the family link shows the painted pictures, and the PDF dialog offers "Use the
   painted pictures". Paint it again in another style (the old pictures stay until the new ones are back), send the
-  missing pages again, or go back to the drawings. The words always stay text. Table `paintings`; Privacy & Terms
+  missing pages again, or go back to the drawings. Every style a book was painted in is saved (table
+  `saved_paintings`), so switching back to it is instant; "Paint fresh" paints it anew. The words always stay text. Table `paintings`; Privacy & Terms
   describe it (2026-11-08).
 - **Family link** per book (on/off), edit the dedication, remove a book (and its recordings and paintings), edit or
   remove a hero (removes their books).

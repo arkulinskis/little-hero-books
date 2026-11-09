@@ -1034,3 +1034,7 @@ anvil-dropzone { display: contents; }
 .anvil-role-ad-warn { color: var(--c-warn); font-weight: 700; }
 .anvil-role-ad-check-line { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--c-surface-2); }
 .pt-preview figcaption .anvil-label, .pt-style .anvil-label { margin: 0; }
+.pt-thumb-box { position: relative; display: block; }
+.anvil-role-pt-saved { position: absolute; top: 4px; right: 4px; margin: 0; padding: 1px 7px; border-radius: 999px; background: var(--c-good); color: #fff; font: 800 .72rem/1.5 var(--font-body); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
+:root[data-theme="dark"] .anvil-role-pt-saved { color: #10291d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .anvil-role-pt-saved { color: #10291d; } }

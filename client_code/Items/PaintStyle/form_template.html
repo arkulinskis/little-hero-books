@@ -1,4 +1,7 @@
 <button type="button" class="pt-style" anvil:on-dom:click="self.card_click">
-  <img class="pt-thumb" anvil:name="thumb" alt="" loading="lazy" decoding="async" width="800" height="560">
+  <span class="pt-thumb-box">
+    <img class="pt-thumb" anvil:name="thumb" alt="" loading="lazy" decoding="async" width="800" height="560">
+    <anvil-component type="Label" name="saved_badge" prop:role='["pt-saved"]' prop:visible="false"></anvil-component>
+  </span>
   <anvil-component type="Label" name="label" prop:role='["pt-name"]'></anvil-component>
 </button>

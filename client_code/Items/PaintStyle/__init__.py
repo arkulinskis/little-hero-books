@@ -11,13 +11,16 @@ def preview_url(key):
 
 
 class PaintStyle(PaintStyleTemplate):
-    """A painting style in the Paint dialog: its sample picture and name. item = {"key", "label", "on"}.
+    """A painting style in the Paint dialog: its sample picture and name, and "Saved" when this book was painted in it
+    before (switching back is instant). item = {"key", "label", "on", "saved": "" | "Saved" | "7 of 12 saved"}.
     Tapping it raises x-style(key) on the RepeatingPanel."""
 
     def __init__(self, **properties):
         super().__init__(**properties)
         it = self.item
         self.label.text = it["label"]
+        self.saved_badge.text = it.get("saved") or ""
+        self.saved_badge.visible = bool(it.get("saved"))
         state.set_attr(self.thumb, "src", preview_url(it["key"]))
         self.classes["on"] = bool(it.get("on"))
         state.set_attr(self, "aria-pressed", "true" if it.get("on") else "false")

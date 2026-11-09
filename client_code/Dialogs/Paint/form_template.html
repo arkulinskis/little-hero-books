@@ -28,12 +28,14 @@
       <div class="lh-bar" anvil:name="send_bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Pages sent"><i anvil:name="send_fill"></i></div>
     </div>
     <anvil-component type="Label" name="error_line" prop:role='["pt-error"]' prop:visible="false"></anvil-component>
-    <p class="fine-print pt-note">An open AI image model paints the pictures on our own computer: your pages aren't sent to an outside AI company. Each painting is a little different from the drawing. If one comes out odd, paint the book again, or switch back to the drawings in the reader.</p>
+    <p class="fine-print pt-note">An open AI image model paints the pictures on our own computer: your pages aren't sent to an outside AI company. Each painting is a little different from the drawing. If one comes out odd, paint it fresh, or switch back to the drawings in the reader.</p>
     <div class="ui-row end pt-actions">
-      <anvil-component type="Button" name="remove_button" prop:text="Back to the drawings" prop:role='["btn", "btn-ghost", "btn-danger", "ic-trash"]'></anvil-component>
+      <anvil-component type="Button" name="remove_button" prop:text="Back to the drawings" prop:role='["btn", "btn-ghost", "ic-book"]'></anvil-component>
+      <anvil-component type="Button" name="forget_button" prop:text="Delete saved styles" prop:role='["btn", "btn-ghost", "btn-danger", "ic-trash"]'></anvil-component>
       <span class="pt-gap"></span>
       <anvil-component type="Button" name="cancel_button" prop:text="Close" prop:role='["btn", "btn-ghost"]'></anvil-component>
       <anvil-component type="Button" name="retry_button" prop:text="Try the missing pages again" prop:role='["btn", "ic-redo"]'></anvil-component>
+      <anvil-component type="Button" name="fresh_button" prop:text="Paint fresh" prop:role='["btn", "ic-palette"]'></anvil-component>
       <anvil-component type="Button" name="start_button" prop:text="Paint my book" prop:role='["btn", "btn-primary", "ic-palette"]'></anvil-component>
     </div>
   </div>

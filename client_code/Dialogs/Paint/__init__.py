@@ -20,10 +20,13 @@ def minutes(secs):
 
 class Paint(PaintTemplate):
     """"Paint this book": a sample of each style (the same drawing painted six ways: a big preview of the chosen one with
-    the drawing in the corner, and a card per style), then every page's picture is drawn as a PNG in the browser (LH.paintPicture)
-    and sent to the painting studio (paint_page), one by one with a progress bar. Also: paint it again in another
-    style, send the pages that are missing or failed, or go back to the drawings (paint_remove).
-    Closes with {"sent", "failed", "error"} after sending, {"removed": True}, or None."""
+    the drawing in the corner, and a card per style), then every page's picture is drawn as a PNG in the browser
+    (LH.paintPicture) and sent to the painting studio (paint_page), one by one with a progress bar. Also: send the
+    pages that are missing or failed, or go back to the drawings (paint_remove).
+    Styles the book was painted in before are saved (server: saved_paintings): the card says "Saved", and picking one
+    switches back at once (paint_saved) instead of painting again; "Paint fresh" ignores the saved pictures;
+    "Delete saved styles" (paint_forget) removes them.
+    Closes with {"sent", "failed", "error", "reused", "style"} after sending, {"removed": True}, or None."""
 
     def __init__(self, book, **properties):
         super().__init__(**properties)
@@ -32,12 +35,29 @@ class Paint(PaintTemplate):
         self.send_part.visible = False
         r = anvil.server.call("paint_info", book["id"])
         if not r.get("ok"):  # not your book any more: an explanation instead of styles
-            r.update(styles=[], ready=False, queue=None, pages=0, state=None)
+            r.update(styles=[], ready=False, queue=None, pages=0, state=None, saved={})
         self.info = r
         st = r.get("state") or {}
         keys = [s["key"] for s in r["styles"]]
         self.chosen = st.get("style") if st.get("style") in keys else (keys[0] if keys else None)
+        self._fresh_by_default = False
         self._draw()
+
+    # ---- what's saved
+    def _saved_pages(self, key=None):
+        return list((self.info.get("saved") or {}).get(key or self.chosen) or [])
+
+    def _all_saved(self, key=None):
+        pages = self.info.get("pages") or 0
+        return bool(pages) and len(self._saved_pages(key)) >= pages
+
+    def _is_current(self):
+        st = self.info.get("state")
+        return bool(st) and st["style"] == self.chosen and st["status"] == "done"
+
+    def _label(self, key=None):
+        st = next((s for s in self.info["styles"] if s["key"] == (key or self.chosen)), None)
+        return st["label"] if st else ""
 
     # ---- drawing
     def _draw(self):
@@ -45,31 +65,53 @@ class Paint(PaintTemplate):
         name = (self.book.get("hero") or {}).get("name") or "your hero"
         self.title.text = "The painted edition" if st else "Paint this book"
         if st:
-            self.intro.text = ("The pictures of this book were painted in %s style. Pick a style to paint it again: "
-                               "the pictures you have now stay until the new ones are ready." % st["style_label"])
+            self.intro.text = ("The pictures of this book were painted in %s style. Pick another style to paint it "
+                               "again: the pictures you have now stay until the new ones are ready, and every style "
+                               "you've used is saved, so switching back is instant." % st["style_label"])
         else:
             self.intro.text = ("Our painting studio repaints every picture of this book, from the cover to The End, in "
                                "the style you choose. The words stay just as they are, and %s stays %s: the painter "
                                "is asked to keep faces, hair and clothes as you drew them." % (name, name))
-        self.styles_panel.items = self._style_items()
         self.styles_part.visible = bool(r["styles"])
-        self._preview()
-        self.queue_line.text = self._queue_text()
         missing = self._missing()
         self.remove_button.visible = bool(st)
         self.retry_button.visible = bool(st) and bool(missing)
         self.retry_button.text = "Send %s again" % state.plural(len(missing), "missing page")
-        self.start_button.text = "Paint it again" if st else "Paint my book"
-        self.start_button.enabled = bool(r.get("ready")) and bool(self.chosen)
         self.retry_button.enabled = bool(r.get("ready"))
+        self._refresh()
         if r.get("error"):
             self._error(r["error"])
 
+    def _refresh(self):
+        """Everything that depends on the chosen style: cards, preview, the queue line and the buttons."""
+        self.styles_panel.items = self._style_items()
+        self._preview()
+        self.queue_line.text = self._queue_text()
+        r = self.info
+        ready, saved = bool(r.get("ready")), self._saved_pages()
+        self._fresh_by_default = False
+        if self._is_current():
+            self.start_button.text = "Paint it fresh"
+            self.start_button.enabled = ready
+            self._fresh_by_default = True
+            self.fresh_button.visible = False
+        elif self._all_saved():
+            self.start_button.text = "Switch to %s" % self._label()
+            self.start_button.enabled = True
+            self.fresh_button.visible = ready
+        else:
+            self.start_button.text = "Paint it again" if r.get("state") else "Paint my book"
+            self.start_button.enabled = ready and bool(self.chosen)
+            self.fresh_button.visible = ready and bool(saved)
+        self.forget_button.visible = bool(r.get("saved"))
+
     def _style_items(self):
-        out = []
+        out, pages = [], self.info.get("pages") or 0
         for st in self.info["styles"]:
+            n = len(self._saved_pages(st["key"]))
             item = {"key": st["key"], "label": st["label"]}
             item["on"] = st["key"] == self.chosen
+            item["saved"] = "Saved" if pages and n >= pages else ("%d of %d saved" % (n, pages) if n else "")
             out.append(item)
         return out
 
@@ -86,8 +128,6 @@ class Paint(PaintTemplate):
         r, st, q = self.info, self.info.get("state"), self.info.get("queue")
         if r.get("error"):
             return "This book can't be painted."
-        if not r.get("ready"):
-            return "The painting studio isn't open yet. Please come back soon."
         if st and st["status"] == "painting":
             done = "%d of %d pages painted." % (st["done"], st["total"])
             if q and not q["online"]:
@@ -95,15 +135,26 @@ class Paint(PaintTemplate):
             if st.get("seconds_left") is not None:
                 return done + " The rest should be ready in %s. You can close the book: painting carries on." % minutes(st["seconds_left"])
             return done + " The rest are on their way."
+        if self._is_current():
+            return "This is the style on your book now. Paint it fresh for new pictures in the same style."
+        if self._all_saved():
+            return "Saved from before: switching to %s takes a moment, with no painting or waiting." % self._label()
+        if not r.get("ready"):
+            return "The painting studio isn't open yet. Please come back soon."
+        saved = len(self._saved_pages())
+        todo = max(0, r["pages"] - saved)
+        lead = ("%d of %d pages are saved from before; the other %d get painted. " % (saved, r["pages"], todo)) if saved else ""
         if q is None:
-            return "The painting studio can't be reached right now. Your pages wait and go as soon as it answers."
+            return lead + "The painting studio can't be reached right now. Your pages wait and go as soon as it answers."
         if q["paused"]:
-            return "The studio is taking a short break. Your pages wait in line and get painted after it."
+            return lead + "The studio is taking a short break. Your pages wait in line and get painted after it."
         if not q["online"]:
-            return "The studio's computer is resting right now. Your pages wait in line and get painted when it's back on."
+            return lead + "The studio's computer is resting right now. Your pages wait in line and get painted when it's back on."
         per = q.get("average_seconds") or 60
-        total = (q.get("first_seconds") or per) + per * max(0, r["pages"] - 1)
+        total = (q.get("first_seconds") or per) + per * max(0, todo - 1)
         ahead = ("%s waiting ahead of yours. " % state.plural(q["waiting"], "picture is", "pictures are")) if q["waiting"] else ""
+        if saved:
+            return "%s%sThey should be ready in %s." % (lead, ahead, minutes(total))
         return "%sAll %d pages should be ready in %s." % (ahead, r["pages"], minutes(total))
 
     def _missing(self):
@@ -121,12 +172,12 @@ class Paint(PaintTemplate):
     def _pick(self, key, **event_args):
         if self.chosen != key:
             self.chosen = key
-            self.styles_panel.items = self._style_items()
-            self._preview()
+            self._refresh()
 
     # ---- sending
     def _busy(self, on):
-        for b in (self.start_button, self.retry_button, self.remove_button, self.cancel_button):
+        for b in (self.start_button, self.fresh_button, self.retry_button, self.remove_button, self.cancel_button,
+                  self.forget_button):
             b.enabled = not on
         self.styles_part.visible = not on
         self.send_part.visible = on
@@ -136,7 +187,21 @@ class Paint(PaintTemplate):
         self.send_fill.style["transform"] = "scaleX(%.3f)" % (pct / 100.0)
         state.set_attr(self.send_bar, "aria-valuenow", str(pct))
 
-    def _send(self, pages):
+    def _start(self, fresh):
+        """Use the saved pictures of this style first (unless fresh), then paint only the pages still missing."""
+        pages, reused = list(range(self.info["pages"])), 0
+        if not fresh and self._saved_pages():
+            r = state.call("paint_saved", self.book["id"], self.chosen)
+            if not r:
+                return
+            reused, pages = len(r["used"]), list(r["missing"])
+        if not pages:
+            self.raise_event("x-close-alert", value={"sent": 0, "failed": 0, "error": None, "reused": reused,
+                                                     "style": self._label()})
+            return
+        self._send(pages, reused)
+
+    def _send(self, pages, reused=0):
         self.error_line.visible = False
         self._busy(True)
         sent, failed, first_error, n = 0, 0, None, len(pages)
@@ -157,24 +222,39 @@ class Paint(PaintTemplate):
                     break  # the first page was refused (studio closed, daily limit): the rest would be too
         self._bar(n, n)
         self._busy(False)
-        if not sent:
+        if not sent and not reused:
             self._error(first_error or "The pictures couldn't be sent. Please try again.")
             return
-        self.raise_event("x-close-alert", value={"sent": sent, "failed": failed, "error": first_error})
+        self.raise_event("x-close-alert", value={"sent": sent, "failed": failed, "error": first_error, "reused": reused,
+                                                 "style": self._label()})
 
     @handle("start_button", "click")
     def start_button_click(self, **event_args):
-        self._send(list(range(self.info["pages"])))
+        self._start(fresh=self._fresh_by_default)
+
+    @handle("fresh_button", "click")
+    def fresh_button_click(self, **event_args):
+        self._start(fresh=True)
 
     @handle("retry_button", "click")
     def retry_button_click(self, **event_args):
         self._send(self._missing())
 
+    @handle("forget_button", "click")
+    def forget_button_click(self, **event_args):
+        if confirm("The pictures saved from earlier paintings are deleted. The painting on your book now stays. "
+                   "Going back to another style means painting it again.", title="Delete the saved styles?",
+                   buttons=[("Keep them", False), ("Delete them", True)], role="lh-dialog"):
+            if state.call("paint_forget", self.book["id"]):
+                self.info["saved"] = {}
+                self._refresh()
+                state.toast("Saved styles deleted", "ok")
+
     @handle("remove_button", "click")
     def remove_button_click(self, **event_args):
-        if confirm("The painted pictures are deleted and the book shows its drawings again. You can paint it again "
-                   "any time.", title="Back to the drawings?", buttons=[("Keep the paintings", False),
-                                                                         ("Delete them", True)], role="lh-dialog"):
+        if confirm("The book shows its drawings again. The painted pictures stay saved, so you can switch back to "
+                   "them any time.", title="Back to the drawings?",
+                   buttons=[("Cancel", False), ("Show the drawings", True)], role="lh-dialog"):
             if state.call("paint_remove", self.book["id"]):
                 self.raise_event("x-close-alert", value={"removed": True})
 

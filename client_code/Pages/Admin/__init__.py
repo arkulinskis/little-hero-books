@@ -101,8 +101,9 @@ class Admin(AdminTemplate):
         self.api_box.text = d["api"].replace("/_/api/v1", "") if d["custom"] else ""
         self.api_note.text = ("Using %s. Leave the box empty to use the built-in address." % d["api"])
         s = d["stats"]
-        self.paint_stats.text = "%s painted · %s done · %d on the way · %d failed" % (
-            state.plural(s["books"], "book"), state.plural(s["done"], "page"), s["open"], s["failed"])
+        self.paint_stats.text = "%s painted · %s done · %d on the way · %d failed · %s saved for switching back" % (
+            state.plural(s["books"], "book"), state.plural(s["done"], "page"), s["open"], s["failed"],
+            state.plural(s.get("saved", 0), "picture"))
 
     @handle("api_save_button", "click")
     def api_save_button_click(self, **event_args):

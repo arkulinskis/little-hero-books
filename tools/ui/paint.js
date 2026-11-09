@@ -115,10 +115,11 @@
     // ---- the dialog for a painted book: paint again / back to the drawings
     paintBtn().click();
     await until(() => $$('.pt-style').length === 6 && /The painted edition/.test(text('.anvil-modal-content')), 'painted dialog');
-    ok($$('.pt-style')[1].classList.contains('on') && byText('.anvil-modal-content button', 'Paint it again'),
-      'dialog: "The painted edition", Watercolour picked, "Paint it again"');
+    ok($$('.pt-style')[1].classList.contains('on') && /Saved/.test($$('.pt-style')[1].textContent) &&
+      byText('.anvil-modal-content button', 'Paint it fresh'),
+      'dialog: "The painted edition", Watercolour picked and Saved, "Paint it fresh"');
     await click('.anvil-modal-content button', 'Back to the drawings');
-    const yes = await until(() => $$('.anvil-modal button').find((b) => b.textContent.trim() === 'Delete them' && b.offsetParent), 'confirm');
+    const yes = await until(() => $$('.anvil-modal button').find((b) => b.textContent.trim() === 'Show the drawings' && b.offsetParent), 'confirm');
     yes.click();
     await until(() => !$('.anvil-modal-content') && $('.rd-pic svg') && !$('.rd-painted'), 'drawings back', 30000);
     await until(() => !/Painted/.test(text('.bk-head .ui-row')), 'badge gone');
@@ -132,6 +133,20 @@
     await until(() => !$('.anvil-modal-content'), 'sent again', 180000);
     await until(() => /Painted: Storybook/.test(text('.bk-head')) && !shown($('.bk-paint')), 'painted in Storybook', 300000);
     ok(true, 'painted again in Storybook');
+
+    // ---- switch back to the saved Watercolour pictures: instant, nothing painted again
+    paintBtn().click();
+    await until(() => $$('.pt-style').length === 6, 'dialog with saved styles');
+    ok(/Saved/.test($$('.pt-style')[0].textContent) && /Saved/.test($$('.pt-style')[1].textContent) && !/Saved/.test($$('.pt-style')[2].textContent),
+      'dialog: Storybook and Watercolour say Saved, 3D cartoon does not');
+    $$('.pt-style')[1].click();
+    const switchBtn = await until(() => byText('.anvil-modal-content button', 'Switch to Watercolour'), 'switch button');
+    ok(/no painting or waiting/.test(text('.anvil-role-pt-queue-text')) && shown(byText('.anvil-modal-content button', 'Paint fresh')),
+      'dialog: "Switch to Watercolour" with no waiting, and "Paint fresh" offered');
+    const t1 = Date.now();
+    switchBtn.click();
+    await until(() => !$('.anvil-modal-content') && /Painted: Watercolour/.test(text('.bk-head')) && imgOk($('.rd-pic img.rd-painted')), 'switched back', 20000);
+    ok(!shown($('.bk-paint')), 'switched back to the saved Watercolour pictures in ' + ((Date.now() - t1) / 1000).toFixed(1) + ' s, nothing painted');
     say('PASSED');
     return { ok: true, log: log };
   } catch (e) {

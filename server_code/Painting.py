@@ -15,6 +15,10 @@ How a book gets painted:
      Either way the result is saved in `picture` with a fresh random `key`; /painting/<key> serves it.
   4. The reader shows painted pictures where there are any (a Painted / Drawn switch), the family link too, and the
      PDF can use them. Repainting keeps the old picture on screen until the new one arrives.
+  5. Every finished picture is also kept in `saved_paintings` (book, page, style, look = a fingerprint of the story and
+     the hero's look). Going back to a style the book was painted in before reuses those pictures at once
+     (paint_saved): nothing is sent again. Editing the hero changes the fingerprint, so old saved pictures stop
+     matching (and are deleted the next time the Paint dialog opens). "Paint fresh" skips the saved pictures.
 
 One row per page in table `paintings` (page 0 = cover, 1 = the dedication page, 2.. = the story, last = The End;
 the same numbers as voice_pages). Statuses: sending (not accepted by the service yet: tried again on the next
@@ -25,6 +29,8 @@ Setup (the Anvil side): App Secrets `image_enhancer_key` (a key made on Image En
 "enhancer_api"), else the App Secret `image_enhancer_url`, else enhancer_client.API.
 """
 import datetime as dt
+import hashlib
+import json
 import re
 import secrets
 
@@ -224,8 +230,71 @@ def state_for(book_row, rows=None):
             "status": "painting" if open_n else ("failed" if count["failed"] else "done")}
 
 
-def delete_for(book_row):
-    """Removes a book's paintings (when the book or its hero goes); jobs still waiting are cancelled."""
+def look_key(book_row):
+    """A fingerprint of what the pictures show: the story and the hero's look. Saved paintings are reused only while it
+    matches (edit the hero, and the book needs painting again)."""
+    hero = book_row["hero"]
+    look = hero["look"] if hero is not None else None
+    raw = json.dumps({"story": book_row["story"], "look": look or {}}, sort_keys=True, default=str)
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _saved(book_row):
+    try:
+        return list(app_tables.saved_paintings.search(book=book_row))
+    except Exception:  # before the owner accepts the Schema Mismatch: nothing saved yet
+        return []
+
+
+def _save(row, style, look):
+    """Keep a finished picture for this book, page and style (replacing an older one)."""
+    if not look or row["picture"] is None or not style:
+        return
+    try:
+        for old in app_tables.saved_paintings.search(book=row["book"], page=row["page"], style=style):
+            old.delete()
+        app_tables.saved_paintings.add_row(book=row["book"], page=row["page"], style=style, look=look,
+                                           picture=row["picture"], created=C.now())
+    except Exception:
+        pass
+
+
+def remember(book_row, rows):
+    """Pictures finished before saving existed (2026-11-09): save the done ones, unless the hero changed since."""
+    hero = book_row["hero"]
+    lk = look_key(book_row)
+    for r in rows:
+        if r["status"] != "done" or r["picture"] is None or not r["picture_style"] or r["look"]:
+            continue
+        if hero is not None and hero["updated"] and r["updated"] and r["updated"] < hero["updated"]:
+            continue
+        r["look"] = lk
+        _save(r, r["picture_style"], lk)
+
+
+def saved_styles(book_row, prune=False):
+    """{style: [pages]} saved for the hero as they look now. prune=True deletes pictures of an older look."""
+    lk = look_key(book_row)
+    out = {}
+    for sp in _saved(book_row):
+        if sp["look"] != lk:
+            if prune:
+                sp.delete()
+            continue
+        out.setdefault(sp["style"], []).append(int(sp["page"]))
+    return dict((k, sorted(set(v))) for k, v in out.items())
+
+
+def delete_saved(book_row):
+    for sp in _saved(book_row):
+        sp.delete()
+
+
+def delete_for(book_row, keep_saved=False):
+    """Removes a book's paintings (when the book or its hero goes, or "Back to the drawings" with keep_saved);
+    jobs still waiting are cancelled."""
+    if not keep_saved:
+        delete_saved(book_row)
     rows = _rows(book_row)
     if any(r["status"] in ("queued", "working") and r["job_id"] for r in rows) and configured():
         _use()
@@ -289,6 +358,7 @@ def _apply(row, job):
         ext = {"image/png": "png", "image/webp": "webp"}.get(ctype, "jpg")
         row.update(picture=anvil.BlobMedia(ctype, media.get_bytes(), name="page-%d.%s" % (int(row["page"]), ext)),
                    picture_style=row["style"], key=_key(), status="done", error=None, eta=None, updated=C.now())
+        _save(row, row["style"], row["look"])
     elif status in ("failed", "cancelled"):
         row.update(status="failed", eta=None, updated=C.now(),
                    error=C.text(job.get("error") or "The studio couldn't paint this page.", 300))
@@ -369,8 +439,9 @@ def paint_info(book_id):
     if r is None:
         return C.fail("You can only paint your own books.")
     rows = sync(r, force=True)
+    remember(r, rows)
     return C.ok(styles=STYLES, ready=configured(), queue=_queue(), pages=Voice.page_count(r),
-                paint=paint_for(r, rows), state=state_for(r, rows))
+                paint=paint_for(r, rows), state=state_for(r, rows), saved=saved_styles(r, prune=True))
 
 
 @anvil.server.callable(require_user=True)
@@ -416,12 +487,60 @@ def paint_page(book_id, page, style, picture):
             except Exception:
                 pass
         row.update(style=style, source=data, job_id=None, status="sending", error=None, eta=None, attempts=0,
-                   created=C.now(), updated=C.now(), checked=None)
+                   created=C.now(), updated=C.now(), checked=None, look=look_key(r))
     else:
         row = app_tables.paintings.add_row(book=r, page=p, style=style, source=data, status="sending", attempts=0,
-                                           created=C.now(), updated=C.now())
+                                           created=C.now(), updated=C.now(), look=look_key(r))
     _submit(row)
     return C.ok(page=p, status=row["status"], error=row["error"] if row["status"] == "failed" else None)
+
+
+@anvil.server.callable(require_user=True)
+def paint_saved(book_id, style):
+    """Use the pictures saved from an earlier painting in this style (same hero look) at once. Returns the pages used
+    and the pages still missing (the dialog sends only those)."""
+    me = C.require_user()
+    r = _own_book(book_id, me)
+    if r is None:
+        return C.fail("You can only paint your own books.")
+    if style not in BY_STYLE:
+        return C.fail("Pick one of the painting styles.")
+    lk = look_key(r)
+    rows = {}
+    for x in _rows(r):
+        rows.setdefault(int(x["page"]), x)
+    total = Voice.page_count(r)
+    used = []
+    for sp in _saved(r):
+        p = int(sp["page"])
+        if sp["style"] != style or sp["look"] != lk or p >= total or p in used:
+            continue
+        row = rows.get(p)
+        if row is not None and row["status"] == "queued" and row["job_id"] and configured():
+            _use()
+            try:
+                enhancer.cancel(row["job_id"])
+            except Exception:
+                pass
+        if row is None:
+            row = rows[p] = app_tables.paintings.add_row(book=r, page=p, attempts=0, created=C.now(), status="done")
+        row.update(style=style, picture=sp["picture"], picture_style=style, key=_key(), status="done", job_id=None,
+                   error=None, eta=None, look=lk, updated=C.now(), checked=None)
+        used.append(p)
+    all_rows = _rows(r)
+    return C.ok(used=sorted(used), missing=[p for p in range(total) if p not in used],
+                paint=paint_for(r, all_rows), state=state_for(r, all_rows))
+
+
+@anvil.server.callable(require_user=True)
+def paint_forget(book_id):
+    """Delete the pictures saved from earlier paintings (the painting on show stays)."""
+    me = C.require_user()
+    r = _own_book(book_id, me)
+    if r is None:
+        return C.fail("You can only change your own books.")
+    delete_saved(r)
+    return C.ok(saved={})
 
 
 @anvil.server.callable(require_user=True)
@@ -436,12 +555,13 @@ def paint_status(book_id):
 
 @anvil.server.callable(require_user=True)
 def paint_remove(book_id):
-    """Back to the drawn pictures: deletes every painted page of the book."""
+    """Back to the drawn pictures: the painted pages come off the book (saved styles stay, to switch back later)."""
     me = C.require_user()
     r = _own_book(book_id, me)
     if r is None:
         return C.fail("You can only change your own books.")
-    delete_for(r)
+    remember(r, _rows(r))
+    delete_for(r, keep_saved=True)
     return _reply(r, [])
 
 
@@ -454,7 +574,15 @@ def admin_stats():
     books = set(r["book"].get_id() for r in rows if r["book"] is not None)
     return {"books": len(books), "done": len([r for r in rows if r["status"] == "done"]),
             "open": len([r for r in rows if r["status"] in OPEN]),
-            "failed": len([r for r in rows if r["status"] == "failed"])}
+            "failed": len([r for r in rows if r["status"] == "failed"]),
+            "saved": len(_all_saved())}
+
+
+def _all_saved():
+    try:
+        return list(app_tables.saved_paintings.search())
+    except Exception:
+        return []
 
 
 @anvil.server.callable(require_user=True)
