@@ -1,27 +1,27 @@
 ---
 custom_component: true
-properties:
-  - name: story
-    type: object
-    description: '{key, title, color} (from get_library or get_story)'
-    default_binding_prop: true
-  - name: hero
-    type: object
-    description: '{name, pronoun, look}; None = the blank book with the "your hero here" outline'
-  - name: sub
-    type: string
-    default_value: ""
-    description: Small line under the title, e.g. "A Little Hero Book"
-  - name: outline
-    type: boolean
-    default_value: false
-    description: Draw it as the colour-me-in outline
 events:
-  - name: click
-    default_event: true
-    description: The cover was clicked or tapped
+- default_event: true
+  description: The cover was clicked or tapped
+  name: click
+properties:
+- default_binding_prop: true
+  description: '{key, title, color} (from get_library or get_story)'
+  name: story
+  type: object
+- description: '{name, pronoun, look}; None = the blank book with the "your hero here" outline'
+  name: hero
+  type: object
+- default_value: ''
+  description: Small line under the title, e.g. "A Little Hero Book"
+  name: sub
+  type: string
+- default_value: false
+  description: Draw it as the colour-me-in outline
+  name: outline
+  type: boolean
 toolbox_item:
-  title: Book cover
   group: Little Hero Books
+  title: Book cover
 ---
 <div class="lh-cover-box" anvil:on-dom:click="self.cover_click"></div>

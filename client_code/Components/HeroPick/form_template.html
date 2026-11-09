@@ -1,22 +1,22 @@
 ---
 custom_component: true
-properties:
-  - name: choice
-    type: object
-    description: '{ref, hero, label, note} from books.hero_choices'
-    default_binding_prop: true
-  - name: selected
-    type: boolean
-    default_value: false
 events:
-  - name: pick
-    default_event: true
-    description: Tapped; the event has ref
-    parameters:
-      - name: ref
+- default_event: true
+  description: Tapped; the event has ref
+  name: pick
+  parameters:
+  - name: ref
+properties:
+- default_binding_prop: true
+  description: '{ref, hero, label, note} from books.hero_choices'
+  name: choice
+  type: object
+- default_value: false
+  name: selected
+  type: boolean
 toolbox_item:
-  title: Hero chip
   group: Little Hero Books
+  title: Hero chip
 ---
 <button type="button" class="lb-pick" anvil:on-dom:click="self.chip_click">
   <span class="face" anvil:name="face_box">

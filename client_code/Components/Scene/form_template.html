@@ -1,27 +1,27 @@
 ---
 custom_component: true
-properties:
-  - name: story_key
-    type: string
-    default_value: bears
-    description: bears, beanstalk, turnip ... (lh.STORY_KEYS)
-  - name: page
-    type: string
-    default_value: cover
-    description: '"cover" or a story page number 0-8'
-  - name: hero
-    type: object
-    description: '{name, pronoun, look}; None = the blank-book outline'
-    default_binding_prop: true
-  - name: align
-    type: string
-    default_value: ""
-    description: '"right" keeps the right side of a wide picture in view on narrow boxes'
 events:
-  - name: click
-    default_event: true
+- default_event: true
+  name: click
+properties:
+- default_value: bears
+  description: bears, beanstalk, turnip ... (lh.STORY_KEYS)
+  name: story_key
+  type: string
+- default_value: cover
+  description: '"cover" or a story page number 0-8'
+  name: page
+  type: string
+- default_binding_prop: true
+  description: '{name, pronoun, look}; None = the blank-book outline'
+  name: hero
+  type: object
+- default_value: ''
+  description: '"right" keeps the right side of a wide picture in view on narrow boxes'
+  name: align
+  type: string
 toolbox_item:
-  title: Story picture
   group: Little Hero Books
+  title: Story picture
 ---
 <div class="lh-scene-box" anvil:on-dom:click="self.scene_click"></div>
