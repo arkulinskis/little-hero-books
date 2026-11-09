@@ -132,6 +132,19 @@
     await click('.anvil-modal-content button', 'Close');
     await until(() => !$('.anvil-modal-content'), 'paint dialog closes');
     ok(!$('.bk-paint') || $('.bk-paint').offsetParent === null, 'paint: picking a style and closing sends nothing');
+    // the skin check measures what it should: the drawing itself scores ~0, the same page with only the child's skin
+    // made dark scores far past the limit (Painting.SKIN_TOLERANCE = 25), and so does a dark child made fair
+    const skinBook = (skin) => ({ story: { key: 'bears', text: new Array(9).fill('x'), title: 'x', color: '#ef5a36' },
+      hero: { name: 'Test', pronoun: 'she', look: { size: 'kid', skin: skin, hair: 'curly', hairColor: 'ginger', outfit: 'overalls', outfitColor: 'sky' } } });
+    const asUrl = async (bk, marker) => URL.createObjectURL(await LH.paintPicture(bk, 0, marker));
+    const fair = skinBook('s2'), darkKid = skinBook('s19');
+    const same = JSON.parse(await LH.skinCheck(fair, 0, await asUrl(fair)));
+    const flipped = JSON.parse(await LH.skinCheck(fair, 0, await asUrl(fair, LH.COL.skin.s19)));
+    const reverse = JSON.parse(await LH.skinCheck(darkKid, 0, await asUrl(darkKid, LH.COL.skin.s2)));
+    const near = JSON.parse(await LH.skinCheck(fair, 0, await asUrl(fair, LH.COL.skin.s3)));
+    ok(Math.abs(same.relative) < 2 && flipped.relative < -25 && reverse.relative > 25 && Math.abs(near.relative) < 25 && same.pixels > 1000,
+      'skin check: same picture ' + same.relative + ', fair child made dark ' + flipped.relative + ', dark child made fair ' +
+      reverse.relative + ', a near shade ' + near.relative + ' (' + same.pixels + ' skin pixels)');
 
     // ---- record my voice (drive.mjs gives Chrome a fake microphone that beeps)
     await click('[data-rd=rec]');

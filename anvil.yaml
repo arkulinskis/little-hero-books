@@ -164,6 +164,15 @@ db_schema:
     - admin_ui: {order: 16, width: 200}
       name: fresh
       type: bool
+    - admin_ui: {order: 17, width: 200}
+      name: verified
+      type: bool
+    - admin_ui: {order: 18, width: 200}
+      name: auto_retries
+      type: number
+    - admin_ui: {order: 19, width: 200}
+      name: skin_check
+      type: simpleObject
     indexes: []
     server: full
     title: Paintings
@@ -337,12 +346,12 @@ native_deps:
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qgsqghg" data-button="false" data-label="Submit feedback" async></script>
     <link rel="stylesheet" href="_/theme/icons.css?v=025d9df016">
-    <link rel="stylesheet" href="_/theme/app.css?v=d1314264bc">
+    <link rel="stylesheet" href="_/theme/app.css?v=43a230d91b">
     <script src="_/theme/lh-kit.js?v=bae378e051"></script>
     <script src="_/theme/ark-music.js?v=6d0ae6dcf6"></script>
     <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>
     <script src="_/theme/lh-scenes.js?v=2edce843d3"></script>
-    <script src="_/theme/lh-book.js?v=593e4022fc"></script>
+    <script src="_/theme/lh-book.js?v=324a603013"></script>
 package_name: Little_Hero_Books
 runtime_options:
   client_version: '3'

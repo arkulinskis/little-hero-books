@@ -538,6 +538,45 @@ ok(call("paint_status", bk))
 assert ok(call("paint_info", bk))["saved"] == {"comic": [2]}
 assert ok(call("paint_forget", bk))["saved"] == {} and not T.saved_paintings.search(book=bk_row)
 assert ok(call("paint_status", bk))["paint"]["2"]["style"] == "comic", "the painting on show stays"
+# the skin check: the browser reports, the server keeps, repaints from the drawing (new seed) or flags
+row2 = T.paintings.get(book=bk_row, page=2)
+drawing2 = __import__("hashlib").sha1(row2["source"].get_bytes()).hexdigest()
+assert call("get_book", bk)["book"]["paint"]["2"] == {"key": row2["key"], "style": "comic", "done": True, "checked": False, "flag": False}
+r = ok(call("paint_verdict", bk, 2, '{"drawn": 89.5, "painted": 92.0, "picture": 4.0, "relative": -1.5, "pixels": 4000}'))
+assert not r["retry"] and not r["flag"] and r["paint"]["2"]["checked"] and row2["verified"] is True and row2["skin_check"]["relative"] == -1.5
+ok(call("paint_page", bk, 2, "comic", png()))
+assert row2["verified"] is None and row2["auto_retries"] == 0, "a new painting is checked again"
+JOBS[row2["job_id"]]["status"] = "done"
+ok(call("paint_status", bk))
+before = len(JOBS)
+ok(call("paint_saved", bk, "comic"))  # (puts the saved comic picture back: also unchecked)
+r = ok(call("paint_verdict", bk, 2, {"drawn": 89.5, "painted": 38.0, "picture": -2.0, "relative": -49.5, "pixels": 4000}))
+assert r["retry"] and not r["flag"] and len(JOBS) == before + 1 and row2["status"] == "queued" and row2["auto_retries"] == 1
+retry_job = JOBS[row2["job_id"]]
+assert retry_job["seed"] is None and retry_job["image_sha"] == drawing2, "repainted from the same vector drawing, new seed"
+assert not T.saved_paintings.search(book=bk_row, page=2, style="comic"), "a picture that doesn't look like the child isn't kept"
+assert r["state"]["rechecking"] == 1 and r["paint"]["2"]["done"] is False, "the old picture stays on show meanwhile"
+retry_job["status"] = "done"
+ok(call("paint_status", bk))
+assert ok(call("paint_verdict", bk, 2, {"relative": 41}))["retry"] and row2["auto_retries"] == 2
+JOBS[row2["job_id"]]["status"] = "done"
+ok(call("paint_status", bk))
+r = ok(call("paint_verdict", bk, 2, {"relative": -44}))
+assert r["flag"] and not r["retry"] and row2["verified"] is False and r["state"]["flagged"] == [2] and r["paint"]["2"]["flag"]
+assert len(JOBS) == before + 2, "at most two automatic repaints"
+# nothing to judge, or nothing to measure
+ok(call("paint_page", bk, 2, "comic", png(), True))
+assert not ok(call("paint_verdict", bk, 2, {"relative": -60}))["retry"] and row2["status"] == "queued", "only finished pictures"
+JOBS[row2["job_id"]]["status"] = "done"
+ok(call("paint_status", bk))
+assert not ok(call("paint_verdict", bk, 2, {"skipped": "hero too small on this page"}))["flag"] and row2["verified"] is True
+assert not ok(call("paint_verdict", bk, 2, "not json"))["retry"]
+bad(call("paint_verdict", bk, 40, {"relative": 0}))
+as_user(bob)
+bad(call("paint_verdict", bk, 2, {"relative": -60}))
+as_user(None)
+assert denied("paint_verdict", bk, 2, {"relative": -60})
+as_user(ana)
 ok(call("paint_page", bk, 1, "comic", png()))  # removed with the hero below
 ok(call("paint_page", bk2, 1, "comic", png()))
 ok(call("delete_book", bk2))

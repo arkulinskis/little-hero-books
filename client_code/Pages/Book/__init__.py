@@ -1,3 +1,4 @@
+import anvil.js
 import anvil.server
 from anvil import *
 
@@ -8,7 +9,9 @@ from ... import books, lh, router, state
 class Book(BookTemplate):
     """#book/<id>: a book on your shelf (or an example book) in the reader. Yours: PDF, family link, dedication,
     Record my voice (in the reader), Paint this book (Dialogs/Paint; a strip shows how the painting is going and
-    paint_status is asked every 15 s until every page is back), remove. Someone else's example: PDF (signed in) and "Make one like this". Otherwise a friendly "private" page."""
+    paint_status is asked every 15 s until every page is back), Repaint this page (the page open in the reader, a new
+    seed), remove. Each painted picture that arrives gets the skin check here (lh.skin_check -> paint_verdict): the
+    server repaints it by itself if the child's skin came out wrong, and flags it after two tries. Someone else's example: PDF (signed in) and "Make one like this". Otherwise a friendly "private" page."""
 
     def __init__(self, args=(), **properties):
         super().__init__(**properties)
@@ -29,6 +32,7 @@ class Book(BookTemplate):
                                   share_key=b.get("share_key"), shared=b.get("shared"), voice=b.get("voice") or {},
                                   paint=b.get("paint") or {})
         self._paint_state = b.get("paint_state")
+        self._page, self._checking = 0, False
         mine = b["mine"]
         self.back_shelf.visible = bool(me)
         self.back_library.visible = not me
@@ -65,7 +69,18 @@ class Book(BookTemplate):
         self.paint_button.text = "Painted edition" if st else "Paint this book"
         busy = bool(st) and st["status"] == "painting"
         self.paint_strip.visible = bool(st) and st["status"] != "done"
-        self.paint_timer.interval = 15 if busy else 0
+        unchecked = bool(self._unchecked())
+        self.paint_timer.interval = 15 if busy else (2 if unchecked else 0)
+        self._page_tools()
+        flagged = (st or {}).get("flagged") or []
+        if st and st["status"] == "done" and flagged:
+            self.paint_strip.visible = True
+            self.paint_strip.classes["bad"] = True
+            self.paint_fill.style["transform"] = "scaleX(1)"
+            self.paint_head.text = "%s may not look like %s" % (state.plural(len(flagged), "picture"), self._hero_name())
+            self.paint_note.text = ("The child's skin colour came out different from the drawing, even after painting it "
+                                    "again. Open the page (marked below the book) and press Repaint this page.")
+            return
         if not st or st["status"] == "done":
             return
         pct = int(round(100.0 * st["done"] / max(1, st["total"])))
@@ -76,14 +91,85 @@ class Book(BookTemplate):
             self.paint_head.text = "Painting your book in %s style" % st["style_label"]
             from ...Dialogs.Paint import minutes
             left = (" · ready in %s" % minutes(st["seconds_left"])) if st.get("seconds_left") is not None else ""
+            again = (" %s being painted again because the child didn't look like the drawing." % state.plural(
+                st["rechecking"], "page is", "pages are")) if st.get("rechecking") else ""
             self.paint_note.text = ("%d of %d pages painted%s. You can close the book: painting carries on, and new "
-                                    "pictures appear here as they arrive." % (st["done"], st["total"], left))
+                                    "pictures appear here as they arrive.%s" % (st["done"], st["total"], left, again))
         else:
             missing = st["failed"] + st["missing"]
             self.paint_head.text = "%s couldn't be painted" % state.plural(missing, "page")
             self.paint_note.text = "%d of %d pages are painted. Open Details to send the others again." % (st["done"], st["total"])
 
-    def _paint_update(self, r):
+    def _hero_name(self):
+        return (self.book.get("hero") or {}).get("name") or "your hero"
+
+    def _unchecked(self):
+        """Painted pages whose newest picture hasn't had the skin check yet (the owner's own books only)."""
+        if not self._data["mine"]:
+            return []
+        return sorted(int(k) for k, v in (self.book.get("paint") or {}).items() if v.get("done") and not v.get("checked"))
+
+    def _check_skin(self):
+        """Run the skin check on each new picture and tell the server (it repaints a page by itself if needed)."""
+        if self._checking:
+            return
+        self._checking = True
+        try:
+            for idx in self._unchecked():
+                entry = (self.book.get("paint") or {}).get(str(idx)) or {}
+                try:
+                    res = lh.skin_check(self.book, idx, self.book["paintBase"] + entry["key"])
+                except Exception:
+                    res = '{"skipped": "the picture could not be read"}'
+                r = state.call_quiet("paint_verdict", self._data["id"], idx, res)
+                if r and r.get("ok"):
+                    self._paint_update(r, check=False)
+                    if r.get("retry"):
+                        state.toast("Page %d didn't look like %s, so it's being painted again." % (idx + 1, self._hero_name()))
+        finally:
+            self._checking = False
+        self._paint_draw()
+
+    def _page_tools(self):
+        """Repaint this page, and the warning, for the page open in the reader."""
+        st = self._paint_state if self._data["mine"] else None
+        entry = (self.book.get("paint") or {}).get(str(self._page))
+        status = ((st or {}).get("page_status") or {}).get(str(self._page))
+        self.repaint_button.visible = bool(st) and (entry is not None or status is not None)
+        self.repaint_button.enabled = status != "queued" and status != "working" and status != "sending"
+        self.repaint_button.text = "Repainting…" if not self.repaint_button.enabled else "Repaint this page"
+        flagged = bool(entry and entry.get("flag"))
+        self.paint_flag.visible = flagged
+        if flagged:
+            self.paint_flag_text.text = ("This picture may not look like %s: the skin colour came out different from the "
+                                         "drawing. Press Repaint this page, or switch Painted off to show the drawing."
+                                         % self._hero_name())
+
+    @handle("reader", "page")
+    def reader_page(self, index, **event_args):
+        self._page = int(index)
+        self._page_tools()
+
+    @handle("repaint_button", "click")
+    def repaint_button_click(self, **event_args):
+        st = self._paint_state or {}
+        entry = (self.book.get("paint") or {}).get(str(self._page)) or {}
+        style = entry.get("style") or st.get("style")
+        if not style:
+            return
+        self.repaint_button.enabled = False
+        self.repaint_button.text = "Repainting…"
+        try:
+            blob = lh.paint_picture(self.book, self._page)
+            r = state.call("paint_page", self._data["id"], self._page, style, anvil.js.to_media(blob), True)
+        except Exception:
+            r = None
+            state.toast("That page couldn't be sent. Check your connection and try again.")
+        if r:
+            state.toast("Painting page %d again. The new picture appears here in a minute or two." % (self._page + 1), "ok")
+        self._paint_update(state.call_quiet("paint_status", self._data["id"]))
+
+    def _paint_update(self, r, check=True):
         if not r or not r.get("ok"):
             return
         self._paint_state = r.get("state")
@@ -91,10 +177,18 @@ class Book(BookTemplate):
             self.reader.set_paint(r.get("paint") or {})
         self.book["paint"] = r.get("paint") or {}
         self._paint_draw()
+        if check and self._unchecked():
+            self._check_skin()
 
     @handle("paint_timer", "tick")
     def paint_timer_tick(self, **event_args):
-        self._paint_update(state.call_quiet("paint_status", self._data["id"]))
+        st = self._paint_state or {}
+        if st.get("status") == "painting":
+            self._paint_update(state.call_quiet("paint_status", self._data["id"]))
+        elif self._unchecked():
+            self._check_skin()
+        else:
+            self.paint_timer.interval = 0
 
     @handle("paint_button", "click")
     def paint_button_click(self, **event_args):

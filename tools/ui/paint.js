@@ -95,6 +95,21 @@
     $('[data-rd=colour]').click();
     await until(() => imgOk($('.rd-pic img.rd-painted')), 'painted after colouring');
 
+    // the skin check ran on every page (the test filters keep the skin): nothing flagged, nothing repainted by itself
+    await sleep(6000);
+    ok(!shown($('.bk-flag')) && !/may not look like/.test(text('.bk-paint')) && !$$('.anvil-alert, .anvil-notification').some((n) => /didn.t look like/.test(n.textContent)),
+      'skin check: every page checked, none flagged or repainted (the test filters keep the skin colour)');
+
+    // Repaint this page: only the open page, a new seed, the old picture stays until the new one arrives
+    const rb = () => $('.rd-tools .anvil-role-ic-redo button');
+    ok(shown(rb()) && /Repaint this page/.test(rb().textContent), 'reader: "Repaint this page" for a painted page');
+    const oldSrc = $('.rd-pic img.rd-painted').src;
+    rb().click();
+    await until(() => /Repainting/.test(rb().textContent), 'repainting');
+    ok(imgOk($('.rd-pic img.rd-painted')) && $('.rd-pic img.rd-painted').src === oldSrc, 'repaint: the old picture stays meanwhile');
+    await until(() => /Repaint this page/.test(rb().textContent) && $('.rd-pic img.rd-painted') && $('.rd-pic img.rd-painted').src !== oldSrc && imgOk($('.rd-pic img.rd-painted')), 'repainted page', 120000);
+    ok((await fetch(oldSrc)).status === 404, 'repaint: page 1 has a new picture (the old address is gone), the rest untouched');
+
     // ---- the PDF dialog offers the painted pictures; a painted page draws into the PDF canvas
     await click('.rd-tools .anvil-role-ic-download button');
     await until(() => $('.lhp-dialog'), 'pdf dialog');

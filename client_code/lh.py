@@ -105,5 +105,11 @@ def paint_picture(book, index):
     return LH.paintPicture(book, index)
 
 
+def skin_check(book, index, src):
+    """Compare the hero's skin in a painted picture (its address) with the drawing. A JSON string: {skipped} or
+    {drawn, painted, picture, relative, pixels} (lightness, CIE L*). Waits until both pictures are drawn."""
+    return LH.skinCheck(book, index, src)
+
+
 def has_paint(book):
     return bool(LH.hasPaint(book))

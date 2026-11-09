@@ -739,20 +739,29 @@
   /* One page's picture as a PNG Blob for the painting studio (about one megapixel, no text: the words stay crisp
      on the page). Scenes are 10 x 7, the dedication portrait is square on its yellow, the waving hero of The End
      stands on a square of warm paper. No paper grain: the painter adds its own texture. */
-  LH.paintPicture = function (book, idx) {
+  /* The page's drawing on a canvas. skinMarker: draw the hero's skin in that colour instead (for the skin check: the
+     pixels that differ from the normal drawing are exactly the hero's skin). The colour table is swapped only while
+     the SVG text is built, like the engine's own "ghost" outline. */
+  function pageCanvas(book, idx, skinMarker) {
     var st = book.story, hero = book.hero, n = st.text.length, w, h, svg, fig = null;
     var withSize = function (s, sw, sh) { return s.replace('<svg ', '<svg width="' + Math.round(sw) + '" height="' + Math.round(sh) + '" '); };
-    if (idx === 0 || (idx >= 2 && idx < n + 2)) {
-      w = 1216; h = 851;
-      svg = LH.sceneSvg(st.key, idx === 0 ? 'cover' : idx - 2, hero, { w: w, clip: LH.uid('pp'), outline: false, grain: false });
-    } else if (idx === 1) {
-      w = h = 1024;
-      svg = withSize(portrait(hero, { crop: 'head', mood: 'laugh', bg: '#FFC93C' }), w, h);
-    } else if (idx === n + 2) {
-      w = h = 1024; fig = { w: 760, h: 826 };
-      svg = withSize(portrait(hero, { pose: 'wave', mood: 'laugh' }), fig.w, fig.h);
-    } else {
-      return Promise.reject(new Error('That page has no picture.'));
+    var key = skinMarker && hero && hero.look ? LH.normal(hero.look).skin : null, saved = key ? LH.COL.skin[key] : null;
+    if (key) LH.COL.skin[key] = skinMarker;
+    try {
+      if (idx === 0 || (idx >= 2 && idx < n + 2)) {
+        w = 1216; h = 851;
+        svg = LH.sceneSvg(st.key, idx === 0 ? 'cover' : idx - 2, hero, { w: w, clip: LH.uid('pp'), outline: false, grain: false });
+      } else if (idx === 1) {
+        w = h = 1024;
+        svg = withSize(portrait(hero, { crop: 'head', mood: 'laugh', bg: '#FFC93C' }), w, h);
+      } else if (idx === n + 2) {
+        w = h = 1024; fig = { w: 760, h: 826 };
+        svg = withSize(portrait(hero, { pose: 'wave', mood: 'laugh' }), fig.w, fig.h);
+      } else {
+        return Promise.reject(new Error('That page has no picture.'));
+      }
+    } finally {
+      if (key) LH.COL.skin[key] = saved;
     }
     return svgImage(svg).then(function (img) {
       var c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -760,9 +769,52 @@
       ctx.fillStyle = fig ? '#FFF4DC' : '#FFFFFF'; ctx.fillRect(0, 0, w, h);
       if (fig) ctx.drawImage(img, (w - fig.w) / 2, h - fig.h - 40, fig.w, fig.h);
       else ctx.drawImage(img, 0, 0, w, h);
+      return c;
+    });
+  }
+  LH.paintPicture = function (book, idx, skinMarker) {  // skinMarker: tests only (a page with the skin recoloured)
+    return pageCanvas(book, idx, skinMarker).then(function (c) {
       return new Promise(function (resolve, reject) {
         c.toBlob(function (b) { if (b) resolve(b); else reject(new Error('The picture could not be made.')); }, 'image/png');
       });
+    });
+  };
+
+  /* Skin check: does the painted child keep the drawn skin colour? Compares the lightness (CIE L*, 0-100) of the hero's
+     skin pixels in the painting with the drawing, minus how much the whole picture got lighter or darker (3D, clay
+     and fairy-tale lighting darken everything). Correct paintings stay within about +-16; a fair child painted dark
+     (or the reverse) moves 40 or more. Resolves JSON {skipped} or {drawn, painted, picture, relative, pixels};
+     the server decides (Painting.SKIN_TOLERANCE). */
+  function lstar(r, g, b) {
+    var f = function (c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    var y = 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
+  }
+  function trimmedMean(xs) {
+    xs.sort(function (a, b) { return a - b; });
+    var lo = Math.floor(xs.length * 0.2), hi = Math.ceil(xs.length * 0.8), s = 0;
+    for (var i = lo; i < hi; i++) s += xs[i];
+    return s / Math.max(1, hi - lo);
+  }
+  LH.skinCheck = function (book, idx, src) {
+    if (!book.hero || !book.hero.look) return Promise.resolve(JSON.stringify({ skipped: 'no hero' }));
+    return Promise.all([pageCanvas(book, idx), pageCanvas(book, idx, '#00FF00'), urlImage(src)]).then(function (r) {
+      var a = r[0], w = a.width, h = a.height, pc = document.createElement('canvas');
+      pc.width = w; pc.height = h; pc.getContext('2d').drawImage(r[2], 0, 0, w, h);
+      var A = a.getContext('2d').getImageData(0, 0, w, h).data, B = r[1].getContext('2d').getImageData(0, 0, w, h).data,
+        P = pc.getContext('2d').getImageData(0, 0, w, h).data;
+      var skinD = [], skinP = [], restD = [], restP = [];
+      for (var y = 0; y < h; y += 2) {
+        for (var x = 0; x < w; x += 2) {
+          var i = (y * w + x) * 4, diff = Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]);
+          if (diff > 90) { skinD.push(lstar(A[i], A[i + 1], A[i + 2])); skinP.push(lstar(P[i], P[i + 1], P[i + 2])); }
+          else if (diff === 0 && (x % 6 === 0) && (y % 6 === 0)) { restD.push(lstar(A[i], A[i + 1], A[i + 2])); restP.push(lstar(P[i], P[i + 1], P[i + 2])); }
+        }
+      }
+      if (skinD.length < 300) return JSON.stringify({ skipped: 'hero too small on this page', pixels: skinD.length });
+      var d = trimmedMean(skinD), p = trimmedMean(skinP), pic = trimmedMean(restP) - trimmedMean(restD);
+      var round = function (v) { return Math.round(v * 10) / 10; };
+      return JSON.stringify({ drawn: round(d), painted: round(p), picture: round(pic), relative: round(p - d - pic), pixels: skinD.length });
     });
   };
 

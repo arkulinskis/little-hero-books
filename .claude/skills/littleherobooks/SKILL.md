@@ -160,6 +160,15 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   have: "keep ... glasses" gave every child (and Papa Bear) glasses in the 2026-11-09 Kofi test.
 - **Seeds:** `seed_for(book, page, style)` = the same seed every time (same drawing + words + seed = same picture);
   "Paint fresh" sends `fresh=True` (column `paintings.fresh`) and no seed.
+- **Skin check + Repaint this page (2026-11-09, after a fair child came out dark):** when a picture arrives the
+  owner's book page runs `lh.skin_check` (`LH.skinCheck`: draws the page twice, once with the hero's skin in marker
+  green, so the differing pixels are exactly the hero's skin; compares their CIE L* in the painting vs the drawing,
+  minus the whole picture's change, trimmed means) and sends it to `paint_verdict`. |relative| > `SKIN_TOLERANCE`
+  (25) -> repainted from the stored vector drawing with a new seed, up to `MAX_AUTO_RETRIES` (2), then
+  `verified=False` (flag: warning above the page + strip). Calibration: correct paintings +-16 (style lighting
+  included), flips 40-55; browser test in flow.js (same 0, fair->dark -50, dark->fair +50, near shade -5). Columns
+  `paintings.verified/auto_retries/skin_check`; `paint_for` entries carry done/checked/flag. "Repaint this page" (Book
+  page toolbar, the page open in the reader) = `paint_page(..., fresh=True)` for that page only.
 - **Address:** Admin → Painting (app_settings `enhancer_api`) > App Secret `image_enhancer_url` > enhancer_client.API.
 - **Client:** `Dialogs/Paint` (styles via `Items/PaintStyle`, the queue line, sends page by page with
   `lh.paint_picture` -> `anvil.js.to_media` -> `paint_page`), the Book page's strip + `paint_timer` (15 s while

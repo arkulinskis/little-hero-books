@@ -1038,3 +1038,6 @@ anvil-dropzone { display: contents; }
 .anvil-role-pt-saved { position: absolute; top: 4px; right: 4px; margin: 0; padding: 1px 7px; border-radius: 999px; background: var(--c-good); color: #fff; font: 800 .72rem/1.5 var(--font-body); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
 :root[data-theme="dark"] .anvil-role-pt-saved { color: #10291d; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .anvil-role-pt-saved { color: #10291d; } }
+.bk-flag { display: flex; gap: 10px; align-items: flex-start; margin: -8px 0 16px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--c-warn-soft); color: var(--c-ink); border: 2px solid var(--c-warn); }
+.bk-flag .ic { flex: none; width: 20px; height: 20px; margin-top: 2px; color: var(--c-warn); }
+.anvil-role-bk-flag-text { margin: 0; font-size: .92rem; line-height: 1.45; max-width: 70ch; }

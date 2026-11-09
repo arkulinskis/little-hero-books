@@ -23,10 +23,15 @@
         <anvil-component type="Button" name="paint_more" prop:text="Details" prop:role='["btn", "btn-sm"]'></anvil-component>
       </div>
       <anvil-component type="Timer" name="paint_timer" prop:interval="0"></anvil-component>
+      <div class="bk-flag" anvil:name="paint_flag" role="status">
+        <i class="ic ic-info"></i>
+        <anvil-component type="Label" name="paint_flag_text" prop:role='["bk-flag-text"]'></anvil-component>
+      </div>
       <anvil-component type="Little_Hero_Books.Components.Reader" name="reader">
         <anvil-component type="Button" name="pdf_button" prop:text="Download PDF" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
         <anvil-component type="Link" name="signup_link" prop:text="Sign up free to download" prop:url="#auth/signup" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
         <anvil-component type="Button" name="paint_button" prop:text="Paint this book" prop:role='["btn", "btn-sm", "ic-palette"]' container:dropzone="tools"></anvil-component>
+        <anvil-component type="Button" name="repaint_button" prop:text="Repaint this page" prop:role='["btn", "btn-sm", "ic-redo"]' prop:visible="false" container:dropzone="tools"></anvil-component>
         <anvil-component type="Button" name="share_button" prop:text="Family link" prop:role='["btn", "btn-sm", "ic-link"]' container:dropzone="tools"></anvil-component>
         <anvil-component type="Button" name="dedication_button" prop:text="Dedication" prop:role='["btn", "btn-sm", "ic-edit"]' container:dropzone="tools"></anvil-component>
         <anvil-component type="Button" name="remove_button" prop:text="Remove this book" prop:role='["btn", "btn-sm", "btn-icon", "ic-trash"]' container:dropzone="tools"></anvil-component>

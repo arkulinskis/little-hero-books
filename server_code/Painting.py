@@ -15,6 +15,11 @@ How a book gets painted:
      Either way the result is saved in `picture` with a fresh random `key`; /painting/<key> serves it.
   4. The reader shows painted pictures where there are any (a Painted / Drawn switch), the family link too, and the
      PDF can use them. Repainting keeps the old picture on screen until the new one arrives.
+  6. The skin check (2026-11-09, after a fair child came out dark): when a picture arrives, the owner's browser
+     compares the child's skin in the painting with the drawing (LH.skinCheck: the hero's skin pixels found by
+     drawing the page again with the skin in a marker colour) and reports it (paint_verdict). Too far off: the page
+     is painted again from the same vector drawing with a new seed, at most MAX_AUTO_RETRIES times; after that the
+     page is flagged in the reader with "Repaint this page".
   5. Every finished picture is also kept in `saved_paintings` (book, page, style, look = a fingerprint of the story and
      the hero's look). Going back to a style the book was painted in before reuses those pictures at once
      (paint_saved): nothing is sent again. Editing the hero changes the fingerprint, so old saved pictures stop
@@ -77,6 +82,11 @@ MAX_PROMPT = 600  # Image Enhancer keeps at most 600 characters of an app's extr
 # pictures saved with older words aren't reused ("2026-11-09b": the fix for invented glasses and lighter skin).
 WORDS_VERSION = "2026-11-09b"
 WAITING = "Waiting to reach the painting studio. It will be sent again in a moment."
+# The skin check (LH.skinCheck): how far the child's skin may move in lightness (CIE L*, relative to the whole picture)
+# before the page is painted again. Measured 2026-11-09: correct paintings stay within about +-16 (style lighting
+# included); a fair child painted dark, or the reverse, moves 40 or more.
+SKIN_TOLERANCE = 25
+MAX_AUTO_RETRIES = 2
 
 # How the hero looks, in words, from the studio choices (theme/assets/lh-avatar.js), so the painting looks like the
 # child the parent designed.
@@ -255,12 +265,34 @@ def _when(value):
         return None
 
 
+def _get(row, col, default=None):
+    """A column that may not exist yet (before the owner accepts the Schema Mismatch)."""
+    try:
+        v = row[col]
+    except Exception:
+        return default
+    return default if v is None else v
+
+
+def _set(row, **values):
+    for k, v in values.items():
+        try:
+            row[k] = v
+        except Exception:
+            pass
+
+
 def paint_for(book_row, rows=None):
-    """{"<page>": {"key", "style"}}: every page with a painted picture (also while a repaint is on its way)."""
+    """{"<page>": {"key", "style", "done", "checked", "flag"}}: every page with a painted picture (also while a repaint
+    is on its way). done = the picture shown is the latest one; checked = the skin check ran; flag = it failed even
+    after the automatic repaints."""
     out = {}
     for r in rows if rows is not None else _rows(book_row):
         if r["picture"] is not None and r["key"]:
-            out[str(int(r["page"]))] = {"key": r["key"], "style": r["picture_style"] or r["style"]}
+            verified = _get(r, "verified")
+            out[str(int(r["page"]))] = {"key": r["key"], "style": r["picture_style"] or r["style"],
+                                        "done": r["status"] == "done", "checked": verified is not None,
+                                        "flag": verified is False}
     return out
 
 
@@ -291,6 +323,8 @@ def state_for(book_row, rows=None):
             "pages": len(rows), "done": count["done"], "failed": count["failed"], "open": open_n,
             "sending": count["sending"], "working": count["working"], "missing": max(0, total - len(rows)),
             "seconds_left": left, "error": error, "page_status": pages,
+            "flagged": sorted(int(r["page"]) for r in rows if _get(r, "verified") is False),
+            "rechecking": len([r for r in rows if r["status"] in OPEN and _get(r, "auto_retries", 0) > 0]),
             "status": "painting" if open_n else ("failed" if count["failed"] else "done")}
 
 
@@ -448,6 +482,7 @@ def _apply(row, job):
         ext = {"image/png": "png", "image/webp": "webp"}.get(ctype, "jpg")
         row.update(picture=anvil.BlobMedia(ctype, media.get_bytes(), name="page-%d.%s" % (int(row["page"]), ext)),
                    picture_style=row["style"], key=_key(), status="done", error=None, eta=None, updated=C.now())
+        _set(row, verified=None, skin_check=None)
         _save(row, row["style"], _row_look(row))
     elif status in ("failed", "cancelled"):
         row.update(status="failed", eta=None, updated=C.now(),
@@ -585,10 +620,7 @@ def paint_page(book_id, page, style, picture, fresh=False):
         row = app_tables.paintings.add_row(book=r, page=p, style=style, source=data, status="sending", attempts=0,
                                            created=C.now(), updated=C.now())
     _set_look(row, look_key(r))
-    try:
-        row["fresh"] = bool(fresh)
-    except Exception:  # before the Schema Mismatch is accepted: no fresh column yet, stable seed
-        pass
+    _set(row, fresh=bool(fresh), verified=None, auto_retries=0, skin_check=None)  # (columns may not exist yet)
     _submit(row)
     return C.ok(page=p, status=row["status"], error=row["error"] if row["status"] == "failed" else None)
 
@@ -624,11 +656,66 @@ def paint_saved(book_id, style):
             row = rows[p] = app_tables.paintings.add_row(book=r, page=p, attempts=0, created=C.now(), status="done")
         row.update(style=style, picture=sp["picture"], picture_style=style, key=_key(), status="done", job_id=None,
                    error=None, eta=None, updated=C.now(), checked=None)
+        _set(row, verified=None, auto_retries=0, skin_check=None)
         _set_look(row, lk)
         used.append(p)
     all_rows = _rows(r)
     return C.ok(used=sorted(used), missing=[p for p in range(total) if p not in used],
                 paint=paint_for(r, all_rows), state=state_for(r, all_rows))
+
+
+def _number(v):
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if -200 < f < 200 else None
+
+
+@anvil.server.callable(require_user=True)
+def paint_verdict(book_id, page, result):
+    """The owner's browser reports the skin check of a page's painted picture (LH.skinCheck). Fine: the page is checked.
+    Too far off: painted again from the stored vector drawing with a new seed (at most MAX_AUTO_RETRIES times), then
+    flagged. Returns {retry, flag} and the book's paint state."""
+    me = C.require_user()
+    r = _own_book(book_id, me)
+    if r is None:
+        return C.fail("You can only check your own books.")
+    p = Voice._page(page, r)
+    if p is None:
+        return C.fail("That page isn't in this book.")
+    rows = [x for x in _rows(r) if int(x["page"]) == p]
+    row = rows[0] if rows else None
+    if row is None or row["status"] != "done" or row["picture"] is None:
+        out = _reply(r)  # nothing to judge (already repainting, or gone)
+        out.update(retry=False, flag=False)
+        return out
+    res = result if isinstance(result, dict) else {}
+    if isinstance(result, str):
+        try:
+            res = json.loads(result)
+        except ValueError:
+            res = {}
+    rel = _number(res.get("relative"))
+    keep = dict((k, _number(res.get(k))) for k in ("drawn", "painted", "picture", "relative", "pixels"))
+    keep["skipped"] = C.text(res.get("skipped"), 80) if res.get("skipped") else None
+    retry = flag = False
+    if rel is None or abs(rel) <= SKIN_TOLERANCE:
+        _set(row, verified=True, skin_check=keep)
+    elif _get(row, "auto_retries", 0) < MAX_AUTO_RETRIES and row["source"] is not None:
+        _set(row, auto_retries=_get(row, "auto_retries", 0) + 1, skin_check=keep, fresh=True, verified=None)
+        for sp in _saved(r):  # don't keep a picture that doesn't look like the child
+            if int(sp["page"]) == p and sp["style"] == row["picture_style"]:
+                sp.delete()
+        row.update(status="sending", job_id=None, error=None, eta=None, attempts=0, updated=C.now(), checked=None)
+        _submit(row)  # the stored source: the page's own vector drawing
+        retry = True
+    else:
+        _set(row, verified=False, skin_check=keep)
+        flag = True
+    out = _reply(r)
+    out.update(retry=retry, flag=flag)
+    return out
 
 
 @anvil.server.callable(require_user=True)
