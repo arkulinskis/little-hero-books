@@ -308,7 +308,8 @@ def fake_studio(url, method, data):
         jid = "job_%04d" % STUDIO["n"]
         JOBS[jid] = {"id": jid, "status": "queued", "style": body["style"], "fidelity": body["fidelity"],
                      "ref": body.get("ref"), "callback": body.get("callback_url"), "prompt": body.get("prompt"),
-                     "format": body.get("format"), "size": body.get("size"), "image_len": len(body["image"]),
+                     "format": body.get("format"), "size": body.get("size"), "image_len": len(body["image"]), "seed": body.get("seed"),
+                     "image_sha": __import__("hashlib").sha1(__import__("base64").b64decode(body["image"])).hexdigest(),
                      "eta_at": (now + dt.timedelta(minutes=5)).isoformat(), "error": None}
         return json.dumps({"ok": True, "job": JOBS[jid]})
     if path.startswith("/jobs?status=open"):
@@ -328,7 +329,13 @@ def fake_studio(url, method, data):
 
 
 H.REPLIES[API] = fake_studio
-png = lambda n=4000, t="image/png": anvil.BlobMedia(t, (b"\x89PNG\r\n\x1a\n" + bytes(range(256)) * (n // 256 + 1))[:n], name="p.png")
+def png(n=4000, t="image/png", w=1216, h=851, tag=b""):
+    """A picture shaped like the app's vector drawing of a page: a PNG header with its size (IHDR), then filler."""
+    head = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + w.to_bytes(4, "big") + h.to_bytes(4, "big") + tag
+    return anvil.BlobMedia(t, (head + bytes(range(256)) * (n // 256 + 1))[:max(n, len(head))], name="p.png")
+
+
+
 as_user(ana)
 bk = b["id"]
 bk_row = T.books.get_by_id(bk)
@@ -348,6 +355,12 @@ bad(call("paint_page", bk, 1, "realistic", png()), "only the picture-book styles
 bad(call("paint_page", bk, 1, "kids_book", "not media"))
 bad(call("paint_page", bk, 1, "kids_book", png(t="text/html")), "only pictures")
 bad(call("paint_page", bk, 1, "kids_book", png(100)), "too small")
+# only the book's own vector drawing can be the base: not a painted JPEG, not a sample picture (800 x 560), no other size
+bad(call("paint_page", bk, 1, "kids_book", png(t="image/jpeg")), "a JPEG (a painted picture) is never a base")
+bad(call("paint_page", bk, 1, "kids_book", png(w=800, h=560)), "a style sample is never a base")
+bad(call("paint_page", bk, 1, "kids_book", png(w=1215, h=851)), "only the drawing's own sizes")
+bad(call("paint_page", bk, 1, "kids_book", anvil.BlobMedia("image/png", b"\xff\xd8\xff" + b"x" * 4000)), "not really a PNG")
+assert P.png_size(png(w=1024, h=1024).get_bytes()) == (1024, 1024)
 bad(call("paint_page", bk, 1, "kids_book", png(P.MAX_BYTES + 10)), "too big")
 bad(call("paint_page", T.books.search(is_demo=True)[0].get_id(), 1, "kids_book", png()), "example books can't be painted")
 as_user(bob)
@@ -363,16 +376,36 @@ for i in range(12):
     assert r["page"] == i and r["status"] == "queued", r
 assert len(JOBS) == 12 and all(j["fidelity"] == "strict" and j["callback"] is None and j["format"] == "jpeg" for j in JOBS.values())
 assert JOBS["job_0001"]["ref"] == "lhb:%s:0" % bk and "Add nothing new" in JOBS["job_0001"]["prompt"]
-assert JOBS["job_0001"]["prompt"].startswith("The child has "), "the hero in words comes first"
+hero_now = bk_row["hero"]
+assert JOBS["job_0001"]["prompt"].startswith(P.hero_words(hero_now["look"], "she")) and "The child is a girl" in JOBS["job_0001"]["prompt"], \
+    "the hero in words comes first"
+assert all("glass" not in j["prompt"].lower() for j in JOBS.values()), "a child without glasses: glasses are never mentioned"
+assert "glass" not in P.PROMPT.lower() and not any("glass" in t.lower() for t in P.STYLE_EXTRA.values())
+# every pass starts from the drawing that was sent: the studio got exactly those bytes; one stable seed per page + style
+sent0 = T.paintings.get(book=bk_row, page=0)["source"].get_bytes()
+assert JOBS["job_0001"]["image_sha"] == __import__("hashlib").sha1(sent0).hexdigest()
+assert JOBS["job_0001"]["seed"] == P.seed_for(bk_row, 0, "kids_book") and JOBS["job_0002"]["seed"] != JOBS["job_0001"]["seed"]
 assert "book" not in P.PROMPT.lower() and "page" not in P.PROMPT.lower(), "the model paints an open book when told 'page of a book'"
-assert P.hero_words({"skin": "s2", "hair": "curly", "hairColor": "ginger", "freckles": True, "glasses": "round", "hat": "none"}) ==     "The child has fair skin, ginger curly hair, freckles and round glasses."
-assert P.hero_words({"skin": "s20", "hair": "none", "hat": "hijab"}) == "The child has very deep brown skin, no hair yet and a hijab."
-assert P.hero_words(None) == "" and P.hero_words({}) == "" and P.hero_words({"skin": "zz"}) == ""
-worst = {"skin": "s16", "hair": "curlylong", "hairColor": "strawberry", "freckles": True, "glasses": "star", "hat": "flower"}
+juniper = {"size": "kid", "skin": "s2", "hair": "curly", "hairColor": "ginger", "eyeColor": "green", "freckles": True,
+           "cheeks": True, "glasses": "round", "outfit": "overalls", "outfitColor": "sky", "hat": "none"}
+assert P.hero_words(juniper, "she") == ("Her skin is fair, as light as in the drawing. The child is a girl of about 6 with "
+                                        "green eyes, ginger curly hair, freckles and rosy cheeks, wearing sky-blue dungarees "
+                                        "and round glasses.")
+kofi = {"size": "kid", "skin": "s7", "hair": "crop", "hairColor": "black", "eyeColor": "dark", "cheeks": True,
+        "freckles": False, "glasses": "none", "outfit": "cape", "outfitColor": "tomato", "hat": "none"}
+assert P.hero_words(kofi, "he") == ("His skin is dark brown, as dark as in the drawing. The child is a boy of about 6 with "
+                                    "dark brown eyes, black short hair and rosy cheeks, wearing a red superhero cape.")
+assert P.hero_words({"skin": "s20", "hair": "none", "hat": "hijab", "size": "a1"}, "they") == \
+    "Their skin is very deep brown, as dark as in the drawing. The child is a child of about 1 with no hair yet, wearing a hijab."
+assert "<" not in P.hero_words({"hair": "bob", "hairColor": "<script>x", "eyeColor": "evil\"one"})
+assert P.hero_words(None) == "" and P.hero_words({}) == ""
+worst = {"size": "a12", "skin": "s16", "hair": "curlylong", "hairColor": "strawberry", "eyeColor": "lightbrown",
+         "freckles": True, "cheeks": True, "glasses": "star", "hat": "flower", "outfit": "astro", "outfitColor": "berry"}
 for st in P.BY_STYLE:
-    hero_row = type("H", (), {"__getitem__": lambda self, k: worst})()
+    hero_row = type("H", (), {"__getitem__": lambda self, k: worst if k == "look" else "they"})()
     book_row = {"hero": hero_row}
-    assert len(P.prompt_for(book_row, st)) <= P.MAX_PROMPT, st
+    text = P.prompt_for(book_row, st)
+    assert len(text) <= P.MAX_PROMPT and text.startswith("Their skin is light brown"), (st, len(text))
 st = call("get_book", bk)["book"]["paint_state"]
 assert st["status"] == "painting" and st["open"] == 12 and st["done"] == 0 and st["total"] == 12 and st["style_label"] == "Storybook"
 assert 0 < st["seconds_left"] <= 300 and st["page_status"]["11"] == "queued"
@@ -398,10 +431,11 @@ anvil.server.request.headers = {"if-none-match": '"%s"' % k0}
 assert ep(key=k0).status == 304
 anvil.server.request.headers = {}
 assert ep(key="x" * 24).status == 404 and ep(key="../../secret").status == 404
-# a job the studio forgot is sent again; the studio being down keeps pages waiting
-del JOBS["job_0012"]
+# a job the studio forgot is sent again (the same drawing, the same seed); the studio being down keeps pages waiting
+first11 = JOBS.pop("job_0012")
 ok(call("paint_status", bk))
 assert T.paintings.get(book=bk_row, page=11)["status"] == "queued" and "job_0013" in JOBS, "sent again after a 404"
+assert JOBS["job_0013"]["image_sha"] == first11["image_sha"] and JOBS["job_0013"]["seed"] == first11["seed"]
 STUDIO["down"] = True
 r = ok(call("paint_page", bk, 3, "kids_book", png()))
 assert r["status"] == "sending", "kept, to be sent again"
@@ -419,6 +453,11 @@ new0 = T.paintings.get(book=bk_row, page=0)["job_id"]
 JOBS[new0]["status"] = "done"
 r = ok(call("paint_status", bk))
 assert r["paint"]["0"]["key"] != k0 and r["paint"]["0"]["style"] == "watercolor" and ep(key=k0).status == 404
+# "Paint fresh": a new random seed (none sent), the same kind of drawing
+ok(call("paint_page", bk, 6, "kids_book", png(tag=b"fresh"), True))
+assert JOBS[T.paintings.get(book=bk_row, page=6)["job_id"]]["seed"] is None
+ok(call("paint_page", bk, 6, "kids_book", png()))
+assert JOBS[T.paintings.get(book=bk_row, page=6)["job_id"]]["seed"] == P.seed_for(bk_row, 6, "kids_book"), "stable again"
 # replacing a page that is still waiting cancels its old job
 old5 = T.paintings.get(book=bk_row, page=5)["job_id"]
 ok(call("paint_page", bk, 5, "kids_book", png()))

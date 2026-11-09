@@ -4,10 +4,13 @@ from ._anvil_designer import PaintStyleTemplate
 from ... import state
 
 
+SAMPLES = "2026-11-09c"  # change when tools/paint_previews.py repaints the samples (browsers keep the old ones)
+
+
 def preview_url(key):
     """The sample picture for a style (theme/assets/paint-<key>.jpg; "drawing" = the drawing they all started from).
     Painted on 2026-11-09 by the real studio from Juniper on the Three Bears cover, with the same instructions as books."""
-    return "_/theme/paint-%s.jpg" % key
+    return "_/theme/paint-%s.jpg?v=%s" % (key, SAMPLES)
 
 
 class PaintStyle(PaintStyleTemplate):

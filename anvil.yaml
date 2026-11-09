@@ -161,6 +161,9 @@ db_schema:
     - admin_ui: {order: 15, width: 200}
       name: look
       type: string
+    - admin_ui: {order: 16, width: 200}
+      name: fresh
+      type: bool
     indexes: []
     server: full
     title: Paintings

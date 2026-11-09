@@ -199,9 +199,9 @@ class Paint(PaintTemplate):
             self.raise_event("x-close-alert", value={"sent": 0, "failed": 0, "error": None, "reused": reused,
                                                      "style": self._label()})
             return
-        self._send(pages, reused)
+        self._send(pages, reused, fresh)
 
-    def _send(self, pages, reused=0):
+    def _send(self, pages, reused=0, fresh=False):
         self.error_line.visible = False
         self._busy(True)
         sent, failed, first_error, n = 0, 0, None, len(pages)
@@ -210,7 +210,7 @@ class Paint(PaintTemplate):
             self._bar(i, n)
             try:
                 blob = lh.paint_picture(self.book, idx)
-                r = anvil.server.call_s("paint_page", self.book["id"], idx, self.chosen, anvil.js.to_media(blob))
+                r = anvil.server.call_s("paint_page", self.book["id"], idx, self.chosen, anvil.js.to_media(blob), fresh)
             except Exception:
                 r = {"ok": False, "error": "A picture couldn't be sent. Check your connection and try again."}
             if r.get("ok") and r.get("status") != "failed":

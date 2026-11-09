@@ -148,6 +148,18 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   "7 of 12 saved"; the main button becomes "Switch to <style>", "Paint fresh" ignores the saved ones, the current style
   offers "Paint it fresh", "Delete saved styles" = `paint_forget`. "Back to the drawings" (`paint_remove`) keeps the
   saved styles; removing the book or hero deletes them. `paintings.look` remembers the look a page was sent with.
+- **The drawing is the truth (2026-11-09, the user's rule):** every pass starts from the page's own vector drawing.
+  `paint_page` accepts only a PNG at the drawing's size (`SOURCE_SIZES`: 1216x851 scenes, 1024x1024 dedication/End,
+  `png_size`), so a painted JPEG or a style sample (800x560) can never become the base; resends after a lost job use
+  the stored `source`. The ComfyUI workflow loads exactly one image (that drawing) as the reference
+  (`ReferenceLatent`); the samples in theme/assets are display-only. `tools/testing/paint_e2e.py` checks it: every
+  Image Enhancer job of a page got byte-identical PNG bytes ("ok truth: ...").
+- **The hero in words:** `hero_words(look, pronoun)` = skin first in its own sentence ("His skin is dark brown, as dark
+  as in the drawing."), then girl/boy/child, age, eyes, hair, freckles, rosy cheeks, outfit with colour, glasses and
+  hats only when chosen. NEVER name a feature in the general rules (`PROMPT`, `STYLE_EXTRA`) that a child may not
+  have: "keep ... glasses" gave every child (and Papa Bear) glasses in the 2026-11-09 Kofi test.
+- **Seeds:** `seed_for(book, page, style)` = the same seed every time (same drawing + words + seed = same picture);
+  "Paint fresh" sends `fresh=True` (column `paintings.fresh`) and no seed.
 - **Address:** Admin → Painting (app_settings `enhancer_api`) > App Secret `image_enhancer_url` > enhancer_client.API.
 - **Client:** `Dialogs/Paint` (styles via `Items/PaintStyle`, the queue line, sends page by page with
   `lh.paint_picture` -> `anvil.js.to_media` -> `paint_page`), the Book page's strip + `paint_timer` (15 s while

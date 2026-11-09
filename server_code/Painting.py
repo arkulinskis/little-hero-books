@@ -60,23 +60,31 @@ PAGES_PER_DAY = 150                 # per person: about ten books a day
 CHECK_EVERY = 10                    # seconds between two checks of the same book's jobs
 KEY_RE = re.compile(r"^[A-Za-z0-9_-]{20,40}$")
 # Asked of the painter on every page, after the style (the service adds "keep the composition" for strict).
-# Don't say "page" or "book" here: the model then paints an open book into the picture (2026-11-09 previews).
-PROMPT = ("Keep every character, the animals too, in the same place, size and pose, with the same face, hair, skin tone, "
-          "glasses, clothes and colours. Gentle and friendly for young children. Add nothing new and no text.")
-# Extra words for styles that drifted in the 2026-11-09 previews (fantasy turned the meadow into a forest with a creature;
-# clay darkened the hero's skin and lost the glasses).
+# What the painter is told besides the style. Lessons from real tests (2026-11-09, FLUX.2 [klein] on the studio PC):
+# - never name a feature the child may not have: the old rule said "keep ... glasses" for everyone, and every child
+#   (and Papa Bear) came out with glasses. Glasses, hats and freckles are named only in hero_words, only if chosen;
+# - don't say "page" or "book": the model paints an open book into the picture; "add no creatures" drops the bears;
+# - say the skin colour first, in its own sentence: otherwise darker skin comes out lighter in soft-light styles.
+PROMPT = ("Keep every character, the animals too, in the same place, size and pose, with the same face, hair and clothes, "
+          "and the child's skin exactly as dark or light as in the drawing. Gentle and friendly for young children. "
+          "Add nothing new and no text.")
 STYLE_EXTRA = {
     "fantasy": "Keep the same place, house, trees and sky; make it magical only with light and colour.",
     "claymation": "Model the child in clay of exactly the drawn skin colour.",
-    "cartoon_3d": "Keep the glasses and freckles if drawn.",
 }
 MAX_PROMPT = 600  # Image Enhancer keeps at most 600 characters of an app's extra words
+WAITING = "Waiting to reach the painting studio. It will be sent again in a moment."
 
-# How the hero looks, in words, so the painter keeps the child the parent designed (studio choices, lh-avatar.js).
+# How the hero looks, in words, from the studio choices (theme/assets/lh-avatar.js), so the painting looks like the
+# child the parent designed.
+AGES = {"a1": 1, "toddler": 2, "a3": 3, "a4": 4, "a5": 5, "kid": 6, "a7": 7, "a8": 8, "a9": 9, "a10": 10, "a11": 11,
+        "a12": 12}
+KIND = {"she": "girl", "he": "boy"}
 SKIN_WORDS = {"s9": "very fair", "s1": "very fair", "s10": "fair", "s2": "fair", "s11": "light", "s3": "light",
               "s12": "light golden", "s13": "medium", "s4": "medium", "s14": "medium tan", "s5": "tan",
               "s15": "tan brown", "s16": "light brown", "s6": "brown", "s17": "brown", "s7": "dark brown",
               "s18": "dark brown", "s8": "deep brown", "s19": "deep brown", "s20": "very deep brown"}
+LIGHT_SKINS = {"s9", "s1", "s10", "s2", "s11", "s3", "s12", "s13", "s4"}
 HAIR_STYLES = {"fuzz": "baby-fuzz", "buzz": "buzz-cut", "crop": "short", "sidepart": "side-parted", "swoop": "swept",
                "quiff": "quiffed", "spiky": "spiky", "mohawk": "mohawk", "bowl": "bowl-cut", "pixie": "pixie-cut",
                "mop": "shaggy", "curly": "curly", "afro": "afro", "puff": "afro-puff", "puffs": "two-puff",
@@ -92,46 +100,99 @@ HATS = {"bow": "a bow", "flower": "a flower in the hair", "clips": "hair clips",
         "helmet": "a bike helmet", "cowboy": "a cowboy hat", "party": "a party hat", "crown": "a crown",
         "wizard": "a wizard hat", "pirate": "a pirate hat", "bunny": "bunny ears", "cat": "cat ears", "hijab": "a hijab",
         "turban": "a patka", "kippah": "a kippah"}
-COLOURS = {"dark": "dark brown", "lightbrown": "light brown", "strawberry": "strawberry blonde", "ash": "ash blonde",
-           "cherry": "cherry red", "steel": "steel blue", "sun": "yellow", "white": "cream"}
+OUTFITS = {"tee": "T-shirt", "stripes": "striped top", "shorts": "T-shirt and shorts", "overalls": "dungarees",
+           "jumper": "jumper", "cardigan": "cardigan", "hoodie": "hoodie", "tracksuit": "tracksuit", "jersey": "football kit",
+           "sailor": "sailor top", "uniform": "school blazer", "raincoat": "raincoat", "dress": "dress", "skirt": "skirt",
+           "tutu": "tutu", "gown": "party gown", "pyjamas": "pyjamas", "cape": "superhero cape", "dino": "dinosaur suit",
+           "astro": "astronaut suit"}
+PLURAL_OUTFITS = {"overalls", "pyjamas", "shorts"}
+HAIR_COLOURS = {"dark": "dark brown", "strawberry": "strawberry-blonde", "ash": "ash-blonde", "lightbrown": "light brown",
+                "cherry": "cherry-red"}
+EYE_COLOURS = {"dark": "dark brown", "lightbrown": "light brown"}
+CLOTH_COLOURS = {"tomato": "red", "sun": "yellow", "sky": "sky-blue", "grass": "green", "plum": "purple",
+                 "berry": "berry-pink", "white": "cream", "steel": "steel-blue", "lemon": "lemon-yellow", "lime": "lime-green"}
 
 
-def hero_words(look):
-    """One sentence describing the hero for the painter, e.g. "The child has fair skin, ginger curly hair, freckles and
-    round glasses." Empty if there's no look."""
+def _clean_word(v):
+    return re.sub(r"[^a-z -]", "", str(v or "").lower())[:20]
+
+
+def hero_words(look, pronoun=None):
+    """The hero in words, from the studio choices, e.g. "Her skin is fair, as light as in the drawing. The child is a
+    girl of about 6 with green eyes, ginger curly hair, freckles and rosy cheeks, wearing sky-blue dungarees and round
+    glasses." Glasses, hats and freckles are named only when the hero has them. Empty without a look."""
     if not isinstance(look, dict) or not look:
         return ""
-    colour = lambda key: COLOURS.get(look.get(key) or "", str(look.get(key) or "").replace("_", " "))
-    parts = []
+    join = lambda xs: xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1]
+    skin = ""
     if look.get("skin") in SKIN_WORDS:
-        parts.append("%s skin" % SKIN_WORDS[look["skin"]])
+        pos = {"she": "Her", "he": "His"}.get(pronoun or "", "Their")
+        skin = "%s skin is %s, as %s as in the drawing. " % (pos, SKIN_WORDS[look["skin"]],
+                                                              "light" if look["skin"] in LIGHT_SKINS else "dark")
+    age = AGES.get(look.get("size") or "")
+    who = "a %s%s" % (KIND.get(pronoun or "", "child"), " of about %d" % age if age else "")
+    feats = []
+    eye = _clean_word(look.get("eyeColor"))
+    if eye:
+        feats.append("%s eyes" % EYE_COLOURS.get(eye, eye))
     hair = look.get("hair") or ""
     if hair == "none":
-        parts.append("no hair yet")
+        feats.append("no hair yet")
     elif hair in HAIR_STYLES:
-        parts.append(("%s %s hair" % (colour("hairColor"), HAIR_STYLES[hair])).strip())
+        col = _clean_word(look.get("hairColor"))
+        feats.append(("%s %s hair" % (HAIR_COLOURS.get(col, col), HAIR_STYLES[hair])).strip())
     if look.get("freckles"):
-        parts.append("freckles")
+        feats.append("freckles")
+    if look.get("cheeks"):
+        feats.append("rosy cheeks")
+    wear = []
+    if look.get("outfit") in OUTFITS:
+        col = _clean_word(look.get("outfitColor"))
+        item = ("%s %s" % (CLOTH_COLOURS.get(col, col), OUTFITS[look["outfit"]])).strip()
+        wear.append(item if look["outfit"] in PLURAL_OUTFITS else ("an " if item[0].lower() in "aeiou" else "a ") + item)
     if look.get("glasses") in GLASSES:
-        parts.append(GLASSES[look["glasses"]])
+        wear.append(GLASSES[look["glasses"]])
     if look.get("hat") in HATS:
-        parts.append(HATS[look["hat"]])
-    if not parts:
-        return ""
-    listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
-    return "The child has %s." % listed
+        wear.append(HATS[look["hat"]])
+    text = skin + "The child is " + who
+    if feats:
+        text += " with " + join(feats)
+    if wear:
+        text += ", wearing " + join(wear)
+    return text + "."
 
 
 def prompt_for(book_row, style):
-    """The extra words sent with each page: the hero in words, the picture-book rules, and the style's own fix."""
+    """The extra words sent with each page: the hero in words, the rules, and the style's own fix. Over Image
+    Enhancer's 600 characters, the style fix goes first (never the hero)."""
     hero = book_row["hero"] if book_row is not None else None
-    words = [hero_words(hero["look"] if hero is not None else None), PROMPT, STYLE_EXTRA.get(style, "")]
-    text = " ".join(w for w in words if w)
-    return text if len(text) <= MAX_PROMPT else " ".join(w for w in words[1:] if w)[:MAX_PROMPT]
-WAITING = "Waiting to reach the painting studio. It will be sent again in a moment."
+    who = hero_words(hero["look"], hero["pronoun"]) if hero is not None else ""
+    for words in ([who, PROMPT, STYLE_EXTRA.get(style, "")], [who, PROMPT]):
+        text = " ".join(w for w in words if w)
+        if len(text) <= MAX_PROMPT:
+            return text
+    return text[:MAX_PROMPT]
 
 
-# ------------------------------------------------------------------------------------------- setup
+def seed_for(book_row, page, style):
+    """The same seed every time a page is painted in a style: the same drawing, words and seed give the same picture.
+    "Paint fresh" sends no seed (the studio picks a random one)."""
+    raw = "%s:%d:%s" % (book_row.get_id(), int(page), style)
+    return int(hashlib.sha1(raw.encode("utf-8")).hexdigest()[:8], 16)
+
+
+# The only pictures accepted as the base of a painting: the app's own vector drawing of a page, as LH.paintPicture
+# makes it (PNG; scenes 1216 x 851, the dedication portrait and The End 1024 x 1024). A painted picture (JPEG) or
+# anything else can never become the base, so every pass starts from the drawing.
+SOURCE_SIZES = {(1216, 851), (1024, 1024)}
+
+
+def png_size(data):
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+        return None
+    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+
+
 def api_address():
     """Admin -> Painting's saved address, else the App Secret image_enhancer_url, else the built-in one."""
     url = C.get_setting("enhancer_api") or _secret("image_enhancer_url").strip().rstrip("/")
@@ -342,7 +403,7 @@ def _submit(row):
     book = row["book"]
     try:
         job = enhancer.submit(row["source"], row["style"], prompt=prompt_for(book, row["style"]), fidelity="strict",
-                              megapixels=1.0,
+                              megapixels=1.0, seed=_row_seed(row),
                               size="source", fmt="jpeg", ref="lhb:%s:%d" % (book.get_id(), int(row["page"])),
                               callback_url=_callback_url())
     except enhancer.EnhancerError as e:
@@ -358,6 +419,16 @@ def _submit(row):
     row.update(job_id=job.get("id"), status="queued", error=None, attempts=(row["attempts"] or 0) + 1,
                updated=C.now())
     _apply(row, job)
+
+
+def _row_seed(row):
+    """The stable seed for this page and style, or None when the page was sent with "Paint fresh"."""
+    try:
+        if row["fresh"]:
+            return None
+    except Exception:
+        pass
+    return seed_for(row["book"], row["page"], row["style"])
 
 
 def _apply(row, job):
@@ -461,8 +532,10 @@ def paint_info(book_id):
 
 
 @anvil.server.callable(require_user=True)
-def paint_page(book_id, page, style, picture):
-    """Keep one page's drawing and send it to be painted (replaces that page's earlier painting request)."""
+def paint_page(book_id, page, style, picture, fresh=False):
+    """Keep one page's drawing and send it to be painted (replaces that page's earlier painting request). The picture
+    must be the page's own vector drawing (PNG at the drawing's size): it is the truth every pass starts from.
+    fresh=True: a new random seed instead of the page's stable one ("Paint fresh")."""
     me = C.require_user()
     r = _own_book(book_id, me)
     if r is None:
@@ -477,9 +550,10 @@ def paint_page(book_id, page, style, picture):
     if not isinstance(picture, anvil.Media):
         return C.fail("The picture didn't arrive. Please try again.")
     ctype = (picture.content_type or "").split(";")[0].strip().lower()
-    if ctype not in ("image/png", "image/jpeg", "image/webp"):
-        return C.fail("That isn't a picture.")
-    size = picture.length or 0
+    raw = picture.get_bytes()
+    if ctype != "image/png" or png_size(raw) not in SOURCE_SIZES:
+        return C.fail("Only the book's own drawings can be painted. Please reload the page and try again.")
+    size = len(raw)
     if size < 500 or size > MAX_BYTES:
         return C.fail("That picture is the wrong size. Please try again.")
     try:
@@ -491,7 +565,7 @@ def paint_page(book_id, page, style, picture):
             if x["book"] is not None and x["book"]["owner"] == me]
     if len(mine) >= PAGES_PER_DAY and not old:
         return C.fail("That's a lot of painting for one day. Please try again tomorrow.")
-    data = anvil.BlobMedia(ctype, picture.get_bytes(), name="page-%d.png" % p)
+    data = anvil.BlobMedia("image/png", raw, name="page-%d.png" % p)
     if old:
         row = old[0]
         for extra in old[1:]:
@@ -508,6 +582,10 @@ def paint_page(book_id, page, style, picture):
         row = app_tables.paintings.add_row(book=r, page=p, style=style, source=data, status="sending", attempts=0,
                                            created=C.now(), updated=C.now())
     _set_look(row, look_key(r))
+    try:
+        row["fresh"] = bool(fresh)
+    except Exception:  # before the Schema Mismatch is accepted: no fresh column yet, stable seed
+        pass
     _submit(row)
     return C.ok(page=p, status=row["status"], error=row["error"] if row["status"] == "failed" else None)
 

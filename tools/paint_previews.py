@@ -9,7 +9,8 @@ Run it on the studio PC after changing Painting.PROMPT, STYLE_EXTRA, hero_words 
    (../image-enhancer/worker/engines.py) and the exact instruction a book page gets (Image Enhancer's default style
    words + "strict" + Painting.prompt_for words for Juniper). ComfyUI must be running (start_worker.bat starts it);
    nothing goes through the live apps' databases;
-3. saves 800 x 560 JPEGs into theme/assets. Look at them before committing; then python tools/assets.py.
+3. saves 800 x 560 JPEGs into theme/assets. Look at them before committing, and bump SAMPLES in
+   client_code/Items/PaintStyle/__init__.py so browsers fetch the new ones.
 """
 import base64
 import json
@@ -55,14 +56,16 @@ def main():
     sys.path.insert(0, str(IE / "worker"))
     import engines
     painting = (ROOT / "server_code" / "Painting.py").read_text(encoding="utf-8")
-    ns = {}
+    import hashlib
+    import re
+    ns = {"re": re, "hashlib": hashlib}
     exec(painting[painting.index("STYLES = ["):painting.index("BY_STYLE")], ns)
     exec(painting[painting.index("PROMPT = ("):painting.index("def api_address")], ns)
     styles_src = (IE / "server_code" / "Styles.py").read_text(encoding="utf-8")
     sty = {}
     exec(styles_src[styles_src.index("DEFAULTS = ["):styles_src.index("\n\n\n", styles_src.index("FIDELITY = {"))], sty)
     words = {d[0]: d[3] for d in sty["DEFAULTS"]}
-    hero = {"look": LOOK}
+    hero = {"look": LOOK, "pronoun": "she"}
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = draw_source(url, tmp)
     print("drawing:", len(src) // 1024, "KB")

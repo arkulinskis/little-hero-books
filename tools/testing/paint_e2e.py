@@ -65,6 +65,20 @@ def main():
         print(r.stdout[-6000:], r.stderr[-2000:])
         jobs = list(app_tables.jobs.search())
         print("Image Enhancer jobs: %d (%s)" % (len(jobs), ", ".join(sorted(set(j["status"] for j in jobs)))))
+        # The truth check: every pass of a page (first paint, repaints, other styles, Paint fresh) started from
+        # byte-for-byte the same vector drawing, a PNG at the drawing's size, never a painted picture or a sample.
+        ours = [j for j in jobs if j["client"] is not None and j["client"]["key_prefix"] == key[:9]]
+        by_page = {}
+        for j in ours:
+            raw = j["source"].get_bytes()
+            assert raw[:8] == b"\x89PNG\r\n\x1a\n", "a base that isn't the PNG drawing: %s" % j["client_ref"]
+            size = (int.from_bytes(raw[16:20], "big"), int.from_bytes(raw[20:24], "big"))
+            assert size in ((1216, 851), (1024, 1024)), "a base of the wrong size %s: %s" % (size, j["client_ref"])
+            by_page.setdefault(j["client_ref"], set()).add(hashlib.sha1(raw).hexdigest())
+        repainted = [ref for ref in by_page if sum(1 for j in ours if j["client_ref"] == ref) > 1]
+        assert ours and all(len(h) == 1 for h in by_page.values()), "a page started from different drawings: %s" % by_page
+        print("ok   truth: %d passes over %d pages all started from the same vector drawing of their page (%d pages painted"
+              " more than once)" % (len(ours), len(by_page), len(repainted)))
         if "ALL UI TESTS PASSED" not in r.stdout:
             print("worker log:", open(str(cfg) + ".log", encoding="utf-8", errors="replace").read()[-3000:])
             sys.exit("PAINT E2E FAILED")
