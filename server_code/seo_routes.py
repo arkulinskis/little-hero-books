@@ -17,7 +17,7 @@ SEO = {
  "name": "Little Hero Books",
  "title": "Little Hero Books: picture books starring your child",
  "tagline": "Design your child as a cartoon, then read stories starring them",
- "description": "Design a cartoon look-alike of your child, then read or download classic picture-book stories starring them as a PDF. Eight fairy tales retold for ages 3 to 6.",
+ "description": "Design a cartoon look-alike of your child, then read, colour, paint or print classic fairy tales starring them. Twelve tales retold for ages 3 to 6.",
  "keywords": [
   "personalised children's book",
   "custom picture book",
@@ -27,37 +27,47 @@ SEO = {
   "bedtime stories ages 3 to 6",
   "child cartoon avatar",
   "printable picture book",
-  "inclusive kids books"
+  "personalised colouring book",
+  "inclusive kids books",
+  "gift for grandchildren"
  ],
  "type": "Service",
  "category": "EducationalApplication",
  "audience": "Parents and grandparents of children aged about 3 to 6",
  "about": [
-  "Little Hero Books makes personalised picture books. A parent designs a cartoon look-alike of their child (face, skin tone, hair, eyes, clothes, hats, glasses, name and pronouns), then picks from eight public-domain fairy tales retold short for ages 3 to 6.",
-  "Every illustration has a space where the child goes, and the app draws the child into it. The finished 12-page book can be read on screen with page turns and Read to me, or downloaded as a square 8 x 8 inch PDF."
+  "Little Hero Books makes personalised picture books. A parent designs a cartoon look-alike of their child (ages 1 to 12; face, skin tone, hair, eyes, clothes, hats and head coverings, glasses, name and pronouns), then picks from twelve public-domain fairy tales retold short for ages 3 to 6.",
+  "Every illustration has a space where the child goes, and the app draws the child into it. The finished 12-page book can be read on screen with page turns and Read to me, coloured in with on-screen crayons, or downloaded as an 8 x 8 inch PDF, a print-ready PDF with bleed for photo-book printers, or a colour-me-in book.",
+  "Parents can record their own voice reading each page, share a family link so grandparents can read along, and have the whole book repainted in one of six art styles, from watercolour to clay, while the child keeps the look they designed."
  ],
  "features": [
-  "A hero studio with 20 skin tones, 30 hairstyles and many outfits",
+  "A hero studio for ages 1 to 12 with 20 skin tones, 30 hairstyles and 20 outfits",
   "Head coverings including hijab, patka and kippah",
-  "Eight classic fairy tales retold for ages 3 to 6",
-  "Your child drawn into every illustration",
-  "Read on screen with Read to me, or download an 8 x 8 inch PDF"
+  "Twelve classic fairy tales retold for ages 3 to 6, with your child drawn into every picture",
+  "Read on screen with Read to me, or record your own voice page by page",
+  "Colour me in: every picture becomes an outline to colour with on-screen crayons",
+  "Paint this book: repaint every picture in one of six art styles",
+  "Download an 8 x 8 inch PDF, a print-ready PDF with bleed, or a colour-me-in book",
+  "Family links so grandparents can read the book too"
  ],
  "faq": [
   [
    "Which stories are included?",
-   "Eight public-domain fairy tales, retold in 300 to 500 words for children aged 3 to 6."
+   "Twelve public-domain fairy tales, such as The Three Bears, Jack and the Beanstalk, The Gingerbread Man and The Ugly Duckling, retold in 300 to 500 words for children aged 3 to 6."
   ],
   [
    "Can I print the book?",
-   "Yes. Download it as a square 8 x 8 inch PDF."
+   "Yes. Download an 8 x 8 inch PDF for a home printer, a print-ready PDF with bleed for photo-book printers (8 x 8 in, 8.5 x 8.5 in or 20 x 20 cm), or a colour-me-in book."
   ],
   [
    "Do I upload a photo of my child?",
    "No. You design a cartoon look-alike by choosing features; no photo is needed."
+  ],
+  [
+   "Can the pictures look painted?",
+   "Yes. Paint this book repaints every picture in one of six styles (Storybook, Watercolour, 3D cartoon, Clay, Comic book, Fairy-tale painting), keeping the look you designed."
   ]
  ],
- "site": "https://little-hero-books.anvil.app",
+ "site": "https://littleheroapp.com",
  "updated": "2026-11-09",
  "icon": "icon-512.png",
  "colors": {
