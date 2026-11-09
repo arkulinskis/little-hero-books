@@ -10,7 +10,7 @@ Theme: happy, joyous kindergarten ("Crayon Classroom"); the books themselves hav
 - **App repo:** github.com/arkulinskis/little-hero-books (branch `master`). Anvil pulls `master`.
 - Built as native Anvil Forms (Python + HTML templates, a layout, custom components, RepeatingPanels) since
   2026-11-02, following Anvil's agent references.
-- **Live:** https://little-hero-books.anvil.app
+- **Live:** https://littleheroapp.com
 
 ## What it does
 

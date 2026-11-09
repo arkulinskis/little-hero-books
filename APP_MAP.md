@@ -6,7 +6,7 @@
 around them with an offset instead of whole files.
 
 **What it is:** Design a cartoon look-alike of your child, then read or download classic picture-book stories starring them as a PDF. Eight fairy tales retold for ages 3 to 6.
-**Live:** https://little-hero-books.anvil.app · **Repo:** github.com/arkulinskis/little-hero-books · **Layout:** native Anvil Forms · **Deploy:** master
+**Live:** https://littleheroapp.com · **Repo:** github.com/arkulinskis/little-hero-books · **Layout:** native Anvil Forms · **Deploy:** master
 **Guide** (workflow, design rules, product knowledge): `.claude/skills/littleherobooks/SKILL.md`
 
 ## How to change it

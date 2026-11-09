@@ -1,6 +1,6 @@
 """Repaint the style samples in the Paint dialog (theme/assets/paint-<style>.jpg + paint-drawing.jpg).
 
-    <python with pillow> tools/paint_previews.py [--url https://little-hero-books.anvil.app]
+    <python with pillow> tools/paint_previews.py [--url https://littleheroapp.com]
 
 Run it on the studio PC after changing Painting.PROMPT, STYLE_EXTRA, hero_words or a style in Image Enhancer:
 1. draws Juniper (the demo hero) on the Three Bears cover with the app's own engine (LH.paintPicture, headless Chrome
@@ -50,7 +50,7 @@ def draw_source(url, tmp):
 
 
 def main():
-    url = sys.argv[sys.argv.index("--url") + 1] if "--url" in sys.argv else "https://little-hero-books.anvil.app"
+    url = sys.argv[sys.argv.index("--url") + 1] if "--url" in sys.argv else "https://littleheroapp.com"
     from PIL import Image
     import io
     sys.path.insert(0, str(IE / "worker"))

@@ -14,7 +14,7 @@ _scenes.html = lh-scenes.js, _book.html = lh-book.js).
 
 **Where it lives:**
 - Folder `C:\Users\arkvi\Documents\CLAUDE\little-hero-books-components\` = a git clone of
-  github.com/arkulinskis/little-hero-books, branch **master** (live at https://little-hero-books.anvil.app).
+  github.com/arkulinskis/little-hero-books, branch **master** (live at https://littleheroapp.com).
   **"git" layout**: the folder *is* the Anvil app (no sync step). Edit, commit, `git push origin master`.
 - The old JavaScript source folder `little-hero-books` is retired (its deploy.py refuses to run).
 
