@@ -73,6 +73,9 @@ STYLE_EXTRA = {
     "claymation": "Model the child in clay of exactly the drawn skin colour.",
 }
 MAX_PROMPT = 600  # Image Enhancer keeps at most 600 characters of an app's extra words
+# Part of every saved painting's fingerprint: change it when the words sent to the painter change for the better, so
+# pictures saved with older words aren't reused ("2026-11-09b": the fix for invented glasses and lighter skin).
+WORDS_VERSION = "2026-11-09b"
 WAITING = "Waiting to reach the painting studio. It will be sent again in a moment."
 
 # How the hero looks, in words, from the studio choices (theme/assets/lh-avatar.js), so the painting looks like the
@@ -296,7 +299,7 @@ def look_key(book_row):
     matches (edit the hero, and the book needs painting again)."""
     hero = book_row["hero"]
     look = hero["look"] if hero is not None else None
-    raw = json.dumps({"story": book_row["story"], "look": look or {}}, sort_keys=True, default=str)
+    raw = json.dumps({"story": book_row["story"], "look": look or {}, "words": WORDS_VERSION}, sort_keys=True, default=str)
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
