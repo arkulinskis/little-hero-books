@@ -239,6 +239,22 @@ def look_key(book_row):
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def _set_look(row, look):
+    """Remember the look a page was painted for. Before the owner accepts the Schema Mismatch the live paintings table
+    has no look column yet: painting then works as before, just without saving styles."""
+    try:
+        row["look"] = look
+    except Exception:
+        pass
+
+
+def _row_look(row):
+    try:
+        return row["look"]
+    except Exception:
+        return None
+
+
 def _saved(book_row):
     try:
         return list(app_tables.saved_paintings.search(book=book_row))
@@ -264,11 +280,11 @@ def remember(book_row, rows):
     hero = book_row["hero"]
     lk = look_key(book_row)
     for r in rows:
-        if r["status"] != "done" or r["picture"] is None or not r["picture_style"] or r["look"]:
+        if r["status"] != "done" or r["picture"] is None or not r["picture_style"] or _row_look(r):
             continue
         if hero is not None and hero["updated"] and r["updated"] and r["updated"] < hero["updated"]:
             continue
-        r["look"] = lk
+        _set_look(r, lk)
         _save(r, r["picture_style"], lk)
 
 
@@ -358,7 +374,7 @@ def _apply(row, job):
         ext = {"image/png": "png", "image/webp": "webp"}.get(ctype, "jpg")
         row.update(picture=anvil.BlobMedia(ctype, media.get_bytes(), name="page-%d.%s" % (int(row["page"]), ext)),
                    picture_style=row["style"], key=_key(), status="done", error=None, eta=None, updated=C.now())
-        _save(row, row["style"], row["look"])
+        _save(row, row["style"], _row_look(row))
     elif status in ("failed", "cancelled"):
         row.update(status="failed", eta=None, updated=C.now(),
                    error=C.text(job.get("error") or "The studio couldn't paint this page.", 300))
@@ -487,10 +503,11 @@ def paint_page(book_id, page, style, picture):
             except Exception:
                 pass
         row.update(style=style, source=data, job_id=None, status="sending", error=None, eta=None, attempts=0,
-                   created=C.now(), updated=C.now(), checked=None, look=look_key(r))
+                   created=C.now(), updated=C.now(), checked=None)
     else:
         row = app_tables.paintings.add_row(book=r, page=p, style=style, source=data, status="sending", attempts=0,
-                                           created=C.now(), updated=C.now(), look=look_key(r))
+                                           created=C.now(), updated=C.now())
+    _set_look(row, look_key(r))
     _submit(row)
     return C.ok(page=p, status=row["status"], error=row["error"] if row["status"] == "failed" else None)
 
@@ -525,7 +542,8 @@ def paint_saved(book_id, style):
         if row is None:
             row = rows[p] = app_tables.paintings.add_row(book=r, page=p, attempts=0, created=C.now(), status="done")
         row.update(style=style, picture=sp["picture"], picture_style=style, key=_key(), status="done", job_id=None,
-                   error=None, eta=None, look=lk, updated=C.now(), checked=None)
+                   error=None, eta=None, updated=C.now(), checked=None)
+        _set_look(row, lk)
         used.append(p)
     all_rows = _rows(r)
     return C.ok(used=sorted(used), missing=[p for p in range(total) if p not in used],
