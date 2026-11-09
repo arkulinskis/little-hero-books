@@ -20,7 +20,7 @@ STORIES = [("bears", "{name} and the Three Bears", "#ef5a36"), ("beanstalk", "{n
            ("gingerbread", "{name} and the Gingerbread Man", "#d9823b"), ("duckling", "{name} and the Ugly Duckling", "#5fb8e0"),
            ("goats", "{name} and the Billy Goats Gruff", "#8cc04b"), ("tortoise", "{name} and the Great Race", "#e9a23b")]
 # The app's video on the Addanapp YouTube channel (APP_MAKER/youtube/manifest.json), shown in the Watch section.
-YT_VIDEO = "lpY_f2LUTdI"
+YT_VIDEO = "GGIkFuY4_pc"
 PAGE = ("{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too cold!” Then the wee bowl. “Just right!” "
         "said {name}, and before {he} knew it, the little bowl was empty. Oops!")
 

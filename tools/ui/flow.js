@@ -45,7 +45,7 @@
     ok(true, 'landing: tapping a kid redraws the shelf');
     ok($('.ytf .ytf-cover') && !$('.ytf iframe'), 'landing: the Watch section shows the video cover, no YouTube player yet');
     $('.ytf .ytf-cover').click();
-    await until(() => $('.ytf iframe[src*="youtube-nocookie.com/embed/lpY_f2LUTdI"]'), 'video player');
+    await until(() => $('.ytf iframe[src*="youtube-nocookie.com/embed/GGIkFuY4_pc"]'), 'video player');
     ok(true, 'landing: pressing play loads the YouTube player');
 
     // ---- library as a guest
