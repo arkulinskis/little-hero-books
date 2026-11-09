@@ -386,7 +386,7 @@ metadata:
 name: Little Hero Books
 native_deps:
   head_html: |
-    <script src="_/theme/legal-kit.js?v=e149d5c39f"></script>
+    <script src="_/theme/legal-kit.js?v=aee0e241be"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/littleherobooks.json and run seo.py, not here) -->
     <link rel="canonical" href="https://little-hero-books.anvil.app/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -435,7 +435,7 @@ native_deps:
     <link rel="stylesheet" href="_/theme/icons.css?v=025d9df016">
     <link rel="stylesheet" href="_/theme/app.css?v=4dcc711c27">
     <script src="_/theme/lh-kit.js?v=bae378e051"></script>
-    <script src="_/theme/ark-music.js?v=1899ed5b97"></script>
+    <script src="_/theme/ark-music.js?v=5bba11da96"></script>
     <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>
     <script src="_/theme/lh-scenes.js?v=2edce843d3"></script>
     <script src="_/theme/lh-book.js?v=593e4022fc"></script>
