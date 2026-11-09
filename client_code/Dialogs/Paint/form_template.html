@@ -2,9 +2,22 @@
   <anvil-component type="Label" name="title" prop:role='["dlg-title"]'></anvil-component>
   <anvil-component type="Label" name="intro" prop:role='["pt-intro"]'></anvil-component>
   <div class="ui-stack">
-    <div anvil:name="styles_part">
-      <div class="lhp-label pt-label">Pick a style</div>
-      <anvil-component type="RepeatingPanel" name="styles_panel" prop:item_template="Little_Hero_Books.Items.PaintStyle" prop:role='["pt-styles"]'></anvil-component>
+    <div class="pt-pick" anvil:name="styles_part">
+      <figure class="pt-preview">
+        <div class="pt-preview-pic">
+          <img class="pt-preview-img" anvil:name="preview_img" alt="" decoding="async" width="800" height="560">
+          <span class="pt-drawn"><img src="_/theme/paint-drawing.jpg" alt="" loading="lazy" decoding="async" width="800" height="560"><span>The drawing</span></span>
+        </div>
+        <figcaption>
+          <anvil-component type="Label" name="preview_name" prop:role='["pt-preview-name"]'></anvil-component>
+          <anvil-component type="Label" name="preview_note" prop:role='["pt-preview-note"]'></anvil-component>
+        </figcaption>
+      </figure>
+      <div>
+        <div class="lhp-label pt-label">Pick a style</div>
+        <anvil-component type="RepeatingPanel" name="styles_panel" prop:item_template="Little_Hero_Books.Items.PaintStyle" prop:role='["pt-styles"]'></anvil-component>
+        <p class="pt-sample">Samples: Juniper on the cover of The Three Bears, painted by our studio. Your book keeps your own hero and pictures.</p>
+      </div>
     </div>
     <div class="pt-queue" anvil:name="queue_box">
       <i class="ic ic-clock"></i>

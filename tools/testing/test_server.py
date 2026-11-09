@@ -362,7 +362,17 @@ for i in range(12):
     r = ok(call("paint_page", bk, i, "kids_book", png()))
     assert r["page"] == i and r["status"] == "queued", r
 assert len(JOBS) == 12 and all(j["fidelity"] == "strict" and j["callback"] is None and j["format"] == "jpeg" for j in JOBS.values())
-assert JOBS["job_0001"]["ref"] == "lhb:%s:0" % bk and "children's picture book" in JOBS["job_0001"]["prompt"]
+assert JOBS["job_0001"]["ref"] == "lhb:%s:0" % bk and "Add nothing new" in JOBS["job_0001"]["prompt"]
+assert JOBS["job_0001"]["prompt"].startswith("The child has "), "the hero in words comes first"
+assert "book" not in P.PROMPT.lower() and "page" not in P.PROMPT.lower(), "the model paints an open book when told 'page of a book'"
+assert P.hero_words({"skin": "s2", "hair": "curly", "hairColor": "ginger", "freckles": True, "glasses": "round", "hat": "none"}) ==     "The child has fair skin, ginger curly hair, freckles and round glasses."
+assert P.hero_words({"skin": "s20", "hair": "none", "hat": "hijab"}) == "The child has very deep brown skin, no hair yet and a hijab."
+assert P.hero_words(None) == "" and P.hero_words({}) == "" and P.hero_words({"skin": "zz"}) == ""
+worst = {"skin": "s16", "hair": "curlylong", "hairColor": "strawberry", "freckles": True, "glasses": "star", "hat": "flower"}
+for st in P.BY_STYLE:
+    hero_row = type("H", (), {"__getitem__": lambda self, k: worst})()
+    book_row = {"hero": hero_row}
+    assert len(P.prompt_for(book_row, st)) <= P.MAX_PROMPT, st
 st = call("get_book", bk)["book"]["paint_state"]
 assert st["status"] == "painting" and st["open"] == 12 and st["done"] == 0 and st["total"] == 12 and st["style_label"] == "Storybook"
 assert 0 < st["seconds_left"] <= 300 and st["page_status"]["11"] == "queued"

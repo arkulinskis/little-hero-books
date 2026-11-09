@@ -4,6 +4,7 @@ import anvil.server
 
 from ._anvil_designer import PaintTemplate
 from ... import lh, state
+from ...Items.PaintStyle import preview_url
 
 
 def minutes(secs):
@@ -18,7 +19,8 @@ def minutes(secs):
 
 
 class Paint(PaintTemplate):
-    """"Paint this book": pick a style, then every page's picture is drawn as a PNG in the browser (LH.paintPicture)
+    """"Paint this book": a sample of each style (the same drawing painted six ways: a big preview of the chosen one with
+    the drawing in the corner, and a card per style), then every page's picture is drawn as a PNG in the browser (LH.paintPicture)
     and sent to the painting studio (paint_page), one by one with a progress bar. Also: paint it again in another
     style, send the pages that are missing or failed, or go back to the drawings (paint_remove).
     Closes with {"sent", "failed", "error"} after sending, {"removed": True}, or None."""
@@ -51,6 +53,7 @@ class Paint(PaintTemplate):
                                "is asked to keep faces, hair and clothes as you drew them." % (name, name))
         self.styles_panel.items = self._style_items()
         self.styles_part.visible = bool(r["styles"])
+        self._preview()
         self.queue_line.text = self._queue_text()
         missing = self._missing()
         self.remove_button.visible = bool(st)
@@ -65,10 +68,19 @@ class Paint(PaintTemplate):
     def _style_items(self):
         out = []
         for st in self.info["styles"]:
-            item = {"key": st["key"], "label": st["label"], "note": st["note"]}
+            item = {"key": st["key"], "label": st["label"]}
             item["on"] = st["key"] == self.chosen
             out.append(item)
         return out
+
+    def _preview(self):
+        st = next((s for s in self.info["styles"] if s["key"] == self.chosen), None)
+        if st is None:
+            return
+        state.set_attr(self.preview_img, "src", preview_url(st["key"]))
+        state.set_attr(self.preview_img, "alt", "A sample cover painted in %s style" % st["label"])
+        self.preview_name.text = st["label"]
+        self.preview_note.text = st["note"]
 
     def _queue_text(self):
         r, st, q = self.info, self.info.get("state"), self.info.get("queue")
@@ -110,12 +122,13 @@ class Paint(PaintTemplate):
         if self.chosen != key:
             self.chosen = key
             self.styles_panel.items = self._style_items()
+            self._preview()
 
     # ---- sending
     def _busy(self, on):
         for b in (self.start_button, self.retry_button, self.remove_button, self.cancel_button):
             b.enabled = not on
-        self.styles_panel.visible = not on
+        self.styles_part.visible = not on
         self.send_part.visible = on
 
     def _bar(self, done, total):

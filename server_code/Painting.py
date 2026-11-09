@@ -54,8 +54,74 @@ PAGES_PER_DAY = 150                 # per person: about ten books a day
 CHECK_EVERY = 10                    # seconds between two checks of the same book's jobs
 KEY_RE = re.compile(r"^[A-Za-z0-9_-]{20,40}$")
 # Asked of the painter on every page, after the style (the service adds "keep the composition" for strict).
-PROMPT = ("This is a page of a children's picture book for ages 3 to 6. Keep every character's face, hair, skin tone, "
-          "clothes and colours exactly as drawn, keep it friendly and gentle, and add no words or letters.")
+# Don't say "page" or "book" here: the model then paints an open book into the picture (2026-11-09 previews).
+PROMPT = ("Keep every character, the animals too, in the same place, size and pose, with the same face, hair, skin tone, "
+          "glasses, clothes and colours. Gentle and friendly for young children. Add nothing new and no text.")
+# Extra words for styles that drifted in the 2026-11-09 previews (fantasy turned the meadow into a forest with a creature;
+# clay darkened the hero's skin and lost the glasses).
+STYLE_EXTRA = {
+    "fantasy": "Keep the same place, house, trees and sky; make it magical only with light and colour.",
+    "claymation": "Model the child in clay of exactly the drawn skin colour.",
+    "cartoon_3d": "Keep the glasses and freckles if drawn.",
+}
+MAX_PROMPT = 600  # Image Enhancer keeps at most 600 characters of an app's extra words
+
+# How the hero looks, in words, so the painter keeps the child the parent designed (studio choices, lh-avatar.js).
+SKIN_WORDS = {"s9": "very fair", "s1": "very fair", "s10": "fair", "s2": "fair", "s11": "light", "s3": "light",
+              "s12": "light golden", "s13": "medium", "s4": "medium", "s14": "medium tan", "s5": "tan",
+              "s15": "tan brown", "s16": "light brown", "s6": "brown", "s17": "brown", "s7": "dark brown",
+              "s18": "dark brown", "s8": "deep brown", "s19": "deep brown", "s20": "very deep brown"}
+HAIR_STYLES = {"fuzz": "baby-fuzz", "buzz": "buzz-cut", "crop": "short", "sidepart": "side-parted", "swoop": "swept",
+               "quiff": "quiffed", "spiky": "spiky", "mohawk": "mohawk", "bowl": "bowl-cut", "pixie": "pixie-cut",
+               "mop": "shaggy", "curly": "curly", "afro": "afro", "puff": "afro-puff", "puffs": "two-puff",
+               "knots": "Bantu-knot", "cornrows": "cornrow", "locs": "loc", "bun": "top-bun", "spacebuns": "space-bun",
+               "pigtails": "pigtail", "ponytail": "ponytail", "sidepony": "side-ponytail", "bob": "bob",
+               "wavy": "wavy", "long": "long", "longbangs": "long fringed", "curlylong": "long curly", "braids": "braided"}
+GLASSES = {"round": "round glasses", "square": "square glasses", "oval": "oval glasses", "tiny": "little round glasses",
+           "big": "big round glasses", "bright": "brightly framed glasses", "browline": "browline glasses",
+           "cateye": "cat-eye glasses", "aviator": "aviator glasses", "sun": "sunglasses", "heart": "heart-shaped glasses",
+           "star": "star-shaped party glasses", "threed": "3D glasses", "swim": "swim goggles", "visor": "a sporty visor"}
+HATS = {"bow": "a bow", "flower": "a flower in the hair", "clips": "hair clips", "headband": "a star headband",
+        "tiara": "a tiara", "cap": "a cap", "beanie": "a beanie", "sunhat": "a sun hat", "beret": "a beret",
+        "helmet": "a bike helmet", "cowboy": "a cowboy hat", "party": "a party hat", "crown": "a crown",
+        "wizard": "a wizard hat", "pirate": "a pirate hat", "bunny": "bunny ears", "cat": "cat ears", "hijab": "a hijab",
+        "turban": "a patka", "kippah": "a kippah"}
+COLOURS = {"dark": "dark brown", "lightbrown": "light brown", "strawberry": "strawberry blonde", "ash": "ash blonde",
+           "cherry": "cherry red", "steel": "steel blue", "sun": "yellow", "white": "cream"}
+
+
+def hero_words(look):
+    """One sentence describing the hero for the painter, e.g. "The child has fair skin, ginger curly hair, freckles and
+    round glasses." Empty if there's no look."""
+    if not isinstance(look, dict) or not look:
+        return ""
+    colour = lambda key: COLOURS.get(look.get(key) or "", str(look.get(key) or "").replace("_", " "))
+    parts = []
+    if look.get("skin") in SKIN_WORDS:
+        parts.append("%s skin" % SKIN_WORDS[look["skin"]])
+    hair = look.get("hair") or ""
+    if hair == "none":
+        parts.append("no hair yet")
+    elif hair in HAIR_STYLES:
+        parts.append(("%s %s hair" % (colour("hairColor"), HAIR_STYLES[hair])).strip())
+    if look.get("freckles"):
+        parts.append("freckles")
+    if look.get("glasses") in GLASSES:
+        parts.append(GLASSES[look["glasses"]])
+    if look.get("hat") in HATS:
+        parts.append(HATS[look["hat"]])
+    if not parts:
+        return ""
+    listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+    return "The child has %s." % listed
+
+
+def prompt_for(book_row, style):
+    """The extra words sent with each page: the hero in words, the picture-book rules, and the style's own fix."""
+    hero = book_row["hero"] if book_row is not None else None
+    words = [hero_words(hero["look"] if hero is not None else None), PROMPT, STYLE_EXTRA.get(style, "")]
+    text = " ".join(w for w in words if w)
+    return text if len(text) <= MAX_PROMPT else " ".join(w for w in words[1:] if w)[:MAX_PROMPT]
 WAITING = "Waiting to reach the painting studio. It will be sent again in a moment."
 
 
@@ -190,7 +256,8 @@ def _submit(row):
     _use()
     book = row["book"]
     try:
-        job = enhancer.submit(row["source"], row["style"], prompt=PROMPT, fidelity="strict", megapixels=1.0,
+        job = enhancer.submit(row["source"], row["style"], prompt=prompt_for(book, row["style"]), fidelity="strict",
+                              megapixels=1.0,
                               size="source", fmt="jpeg", ref="lhb:%s:%d" % (book.get_id(), int(row["page"])),
                               callback_url=_callback_url())
     except enhancer.EnhancerError as e:

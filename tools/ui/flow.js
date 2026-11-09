@@ -121,8 +121,14 @@
     const start = byText('.anvil-modal-content .anvil-role-btn-primary button', 'Paint my book');
     const closed = /isn.t open yet/.test($('.anvil-role-pt-queue-text').textContent);
     ok(start && (closed ? start.disabled : !start.disabled), 'paint: dialog with 6 styles; ' + (closed ? 'studio not set up here, so Paint my book is off' : 'studio set up, Paint my book is on'));
+    const loaded = (img) => img && img.complete && img.naturalWidth > 0;
+    await until(() => loaded($('.pt-preview-img')) && loaded($('.pt-drawn img')) && $$('.pt-thumb').every(loaded), 'style previews load');
+    ok(/paint-kids_book\.jpg$/.test($('.pt-preview-img').src) && /Storybook/.test($('.anvil-role-pt-preview-name').textContent),
+      'paint: a sample of every style, Storybook large with the drawing in the corner');
     $$('.pt-style')[3].click();
-    await until(() => $$('.pt-style')[3].classList.contains('on'), 'style picked');
+    await until(() => $$('.pt-style')[3].classList.contains('on') && /paint-claymation\.jpg$/.test($('.pt-preview-img').src), 'style picked');
+    ok(/Clay/.test($('.anvil-role-pt-preview-name').textContent) && /clay/i.test($('.anvil-role-pt-preview-note').textContent),
+      'paint: picking Clay shows its sample and description');
     await click('.anvil-modal-content button', 'Close');
     await until(() => !$('.anvil-modal-content'), 'paint dialog closes');
     ok(!$('.bk-paint') || $('.bk-paint').offsetParent === null, 'paint: picking a style and closing sends nothing');

@@ -128,6 +128,18 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   adds `paint`; `share_book` gives new keys; `delete_book` / `delete_hero` delete rows (queued jobs cancelled).
   Each page is sent with fidelity "strict", size "source", format jpeg and a prompt asking to keep faces/clothes and
   add no words (`Painting.PROMPT`). Six kid-friendly styles of Image Enhancer's ten (`Painting.STYLES`).
+- **Style samples (2026-11-09):** the Paint dialog shows the same drawing (Juniper on the Three Bears cover) painted
+  in each style: a big preview of the chosen one with the drawing in the corner, and a card per style
+  (`theme/assets/paint-<style>.jpg`, `paint-drawing.jpg`, `Items/PaintStyle.preview_url`). They were painted by the
+  real model with the exact book instructions. **After changing `PROMPT`, `STYLE_EXTRA`, `hero_words` or a style in
+  Image Enhancer, run `tools/paint_previews.py` on the studio PC** (draws the page with the live engine, paints it
+  through ComfyUI with the worker's engine, saves the JPEGs) and look at them before committing.
+- **Instructions the model gets** = Image Enhancer's style words + its "strict" sentence + `prompt_for(book, style)`:
+  `hero_words(look)` ("The child has fair skin, ginger curly hair, freckles and round glasses."), `PROMPT`, and
+  `STYLE_EXTRA[style]`. Lessons from the first previews: without the hero in words, Clay darkened a fair child's skin
+  and dropped the glasses; "Fairy-tale painting" turned the meadow into a forest with a creature; saying "a page of a
+  picture book" made the model paint an open book over the characters; "add no creatures" made it drop the bears.
+  Keep the total under 600 characters (Image Enhancer's limit; a server test checks the worst case).
 - **Address:** Admin → Painting (app_settings `enhancer_api`) > App Secret `image_enhancer_url` > enhancer_client.API.
 - **Client:** `Dialogs/Paint` (styles via `Items/PaintStyle`, the queue line, sends page by page with
   `lh.paint_picture` -> `anvil.js.to_media` -> `paint_page`), the Book page's strip + `paint_timer` (15 s while
