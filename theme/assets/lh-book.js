@@ -20,7 +20,8 @@
       p.style.setProperty('--r', (Math.random() * 900 - 450) + 'deg');
       box.appendChild(p);
     }
-    document.body.appendChild(box);
+    // in full screen only the full-screen element is visible, so the confetti goes inside it
+    (document.fullscreenElement || document.webkitFullscreenElement || document.body).appendChild(box);
     setTimeout(function () { box.remove(); }, 3200);
   };
 
@@ -72,7 +73,67 @@
     return p && p.key ? (book.paintBase || '') + p.key : '';
   };
   LH.hasPaint = function (book) { return !!(book.paint && Object.keys(book.paint).length); };
-  function paintedImg(src) { return '<img class="rd-painted" src="' + esc(src) + '" alt="" decoding="async" draggable="false">'; }
+
+  /* ------------------------------------------------------------------ pictures and recordings kept for the visit
+     Painted pictures and recorded pages are downloaded once and kept in memory (blob: addresses) until the tab
+     closes, so turning back, reopening a book, reading it again or making its PDF downloads nothing again. A key
+     changes whenever its content does (a repaint, a Redo), so a kept copy is never out of date. Up to ~200 MB; past
+     that the longest-unused copies go first. load(src) -> Promise of the address to use; url(src) -> it, or ''. */
+  LH.media = (function () {
+    var LIMIT = 200 * 1024 * 1024, store = {}, order = [], bytes = 0, pending = {}, stats = { downloads: 0, reuses: 0 };
+    // Anvil serves /_/api/ on every address of the app: fetch it from the one we're on, so no CORS is needed.
+    function local(src) {
+      try {
+        var u = new URL(src, location.href);
+        return u.origin !== location.origin && u.pathname.indexOf('/_/api/') >= 0 ? location.origin + u.pathname + u.search : u.href;
+      } catch (e) { return src; }
+    }
+    function touch(src) { var i = order.indexOf(src); if (i >= 0) order.splice(i, 1); order.push(src); }
+    function drop(src) {
+      var e = store[src];
+      if (!e) return;
+      URL.revokeObjectURL(e.url); bytes -= e.size; delete store[src];
+      var i = order.indexOf(src); if (i >= 0) order.splice(i, 1);
+    }
+    function put(src, blob) {
+      drop(src);
+      store[src] = { url: URL.createObjectURL(blob), size: blob.size || 0 };
+      bytes += store[src].size; touch(src);
+      while (bytes > LIMIT && order.length > 1) drop(order[0]);
+      return store[src].url;
+    }
+    function url(src) {
+      var e = src && store[src];
+      if (!e) return '';
+      touch(src); stats.reuses++;
+      return e.url;
+    }
+    function load(src) {
+      if (!src) return Promise.reject(new Error('no address'));
+      if (store[src]) return Promise.resolve(url(src));
+      if (pending[src]) return pending[src];
+      return (pending[src] = fetch(local(src), { credentials: 'same-origin' }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.blob();
+      }).then(function (b) { delete pending[src]; stats.downloads++; return put(src, b); },
+        function (e) { delete pending[src]; throw e; }));
+    }
+    /* Pictures drawn before they were in memory (data-lh-src): download once, then show. */
+    function fill(root) {
+      Array.prototype.forEach.call(root.querySelectorAll('img[data-lh-src]'), function (img) {
+        var src = img.getAttribute('data-lh-src');
+        img.removeAttribute('data-lh-src');
+        load(src).then(function (u) { img.src = u; }, function () { img.src = src; });  // couldn't keep it: load it directly
+      });
+    }
+    return { load: load, url: url, put: put, drop: drop, fill: fill, has: function (src) { return !!store[src]; },
+      stats: function () { return { downloads: stats.downloads, reuses: stats.reuses, kept: order.length, bytes: bytes }; } };
+  })();
+  /* An <img> of a kept picture (or one that LH.media.fill downloads next). */
+  function paintedImg(src) {
+    var have = LH.media.url(src);
+    return '<img class="rd-painted" ' + (have ? 'src="' + esc(have) + '"' : 'data-lh-src="' + esc(src) + '"') + ' alt="" decoding="async" draggable="false">';
+  }
 
   LH.pageHtml = function (book, p, n, total, mode) {
     mode = mode || {};
@@ -127,7 +188,8 @@
      A parent reads each page aloud and it is recorded in the browser (MediaRecorder). The recording goes to the
      server through opts.onVoiceSave(page, blob, seconds), which answers JSON {ok, voice, error}; "Read to me" then
      plays it, and pages without a recording fall back to the speech voice. book.voice = {"<page>": {key, seconds}};
-     opts.voiceBase + key is the audio's address (Voice.py serves it with byte ranges). */
+     opts.voiceBase + key is the audio's address (Voice.py serves it with byte ranges). Each recording is downloaded
+     once per visit and played from memory after that (LH.media); a page just recorded plays from memory at once. */
   LH.VOICE_MAX = 180;  // seconds per page (the server's limit too)
   LH.canRecord = function () { return !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia); };
   /* MP4/AAC first (it plays everywhere, iPhones included), then WebM/Opus (Firefox, older Chrome). */
@@ -166,17 +228,22 @@
   /* opts: start, colour (false hides Colour me in), onFinish(), onPage(i, page),
      record (true: the "Record my voice" button, for the book's owner), onVoiceSave(page, blob, seconds) and
      onVoiceDelete(page or -1 for all) -> JSON {ok, voice, error} (or null when cancelled), voiceBase.
-     Painted pictures (book.paint) show instead of the drawings while the "Painted" switch is on (remembered). */
+     Painted pictures (book.paint) show instead of the drawings while the "Painted" switch is on (remembered).
+     "Full screen" fills the screen with the book (the browser's full screen, or the whole window where there is none,
+     as on iPhones); "Exit full screen" (top right), the same toolbar button or Esc leave it. */
+  var SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
   LH.reader = function (el, book, opts) {
     opts = opts || {};
     var pages = LH.bookPages(book), at = Math.min(opts.start || 0, pages.length - 1), seen = {}, reading = false, finished = false;
     var colouring = false, crayon = LH.CRAYONS[0], painted = {};
-    var voice = {}, localUrl = {}, recMode = false, rec = null, stream = null, recState = {}, audio = null, playing = null, recFocus = false, alive = true;
+    var voice = {}, recMode = false, rec = null, stream = null, recState = {}, audio = null, playing = null, playSrc = '', playId = 0, unlocked = false, recFocus = false, alive = true;
+    var full = false, wake = null;
     setVoice(book.voice || {});
     var canRec = !!opts.record && LH.canRecord() && !!opts.onVoiceSave;
     var paintOn = UI.store.get('painted', true) !== false;
     var canSpeak = 'speechSynthesis' in window;
-    el.innerHTML = '<div class="rd"><div data-rd-crayons></div><div data-rd-rec></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
+    el.innerHTML = '<div class="rd"><button type="button" class="rd-exit" data-rd="full" hidden>' + UI.icon('shrink') + '<span>Exit full screen</span></button>' +
+      '<div data-rd-crayons></div><div data-rd-rec></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
       '<div class="rd-book" data-rd-book></div><button class="rd-nav next" data-rd="next" aria-label="Next page">' + UI.icon('arrow') + '</button></div>' +
       '<div class="rd-bar"><div class="rd-dots" data-rd-dots></div><div class="rd-tools">' +
       (canSpeak || canRec || Object.keys(voice).length ? '<button class="ui-btn sm" data-rd="speak">' + UI.icon('chat') + '<span>Read to me</span></button>' : '') +
@@ -184,8 +251,10 @@
       (window.ArkMusic ? '<button class="ui-btn sm' + (LH.music.on() ? ' on' : '') + '" data-rd="music" aria-pressed="' + LH.music.on() + '">' + UI.icon('music') + '<span>Music</span></button>' : '') +
       '<button class="ui-btn sm' + (paintOn ? ' on' : '') + '" data-rd="paint" aria-pressed="' + paintOn + '"' + (LH.hasPaint(book) ? '' : ' hidden') + '>' + UI.icon('palette') + '<span>Painted</span></button>' +
       (opts.colour === false ? '' : '<button class="ui-btn sm" data-rd="colour">' + UI.icon('brush') + '<span>Colour me in</span></button>') +
+      '<button class="ui-btn sm rd-full-btn" data-rd="full" aria-pressed="false">' + UI.icon('expand') + '<span>Full screen</span></button>' +
       (opts.tools || '') + '</div></div></div>';
-    var bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]'), recEl = el.querySelector('[data-rd-rec]');
+    var rdEl = el.querySelector('.rd'), bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]'), recEl = el.querySelector('[data-rd-rec]');
+    function show(html) { bookEl.innerHTML = html; LH.media.fill(bookEl); }
     function drawCrayons() {
       crayEl.innerHTML = colouring ? '<div class="rd-crayons"><div class="hint">Pick a crayon, then tap the picture</div>' + LH.CRAYONS.map(function (c) {
         return '<button type="button" data-crayon="' + c + '" style="--cr:' + c + '" class="' + (c === crayon ? 'on' : '') + '" aria-label="Crayon ' + c + '"></button>';
@@ -197,15 +266,15 @@
       }).join('');
     }
     function pageHtml() { return LH.pageHtml(book, pages[at], at, pages.length, { outline: colouring, painted: paintOn }); }
-    function preload() {  // the next painted picture, so turning the page doesn't flash
+    function preload() {  // the next painted picture into memory, so turning the page doesn't flash
       if (!paintOn || at + 1 >= pages.length) return;
       var src = LH.paintSrc(book, LH.paintIndex(book, pages[at + 1]));
-      if (src) { var im = new Image(); im.src = src; }
+      if (src && !LH.media.has(src)) LH.media.load(src).catch(function () {});
     }
     function draw(dir) {
       seen[at] = true;
       bookEl.classList.toggle('out', colouring);
-      bookEl.innerHTML = '<div class="rd-page' + (dir < 0 ? ' back' : '') + '">' + pageHtml() + '</div>';
+      show('<div class="rd-page' + (dir < 0 ? ' back' : '') + '">' + pageHtml() + '</div>');
       preload();
       if (colouring && painted[at]) {
         var list = bookEl.querySelectorAll(SHAPES);
@@ -238,6 +307,7 @@
       var next = function () { if (reading && mine === at) { if (at < pages.length - 1) setTimeout(function () { if (reading && mine === at) go(at + 1); }, 900); else stopSpeak(); } };
       if (voice[at]) playVoice(at, next, function () { if (reading && mine === at) synth(mine, next); });
       else synth(at, next);
+      if (voice[at + 1] && !LH.media.has(voiceSrc(at + 1))) LH.media.load(voiceSrc(at + 1)).catch(function () {});  // the next page's voice, ready
     }
     function synth(p, next) {
       if (!canSpeak) { setTimeout(next, 1500); return; }
@@ -256,27 +326,83 @@
       var b = el.querySelector('[data-rd=speak]');
       if (b) { b.classList.remove('on'); b.querySelector('span').textContent = 'Read to me'; }
     }
-    function voiceSrc(p) { return localUrl[p] && localUrl[p].key === voice[p].key ? localUrl[p].url : (opts.voiceBase || '') + voice[p].key; }
+    function voiceSrc(p) { return (opts.voiceBase || '') + voice[p].key; }
+    /* Called straight from a tap: Safari only lets an audio element play later (after a download) once it has
+       started playing inside a tap, so a silent sound starts it here. */
+    function unlockAudio() {
+      if (!audio) { audio = new Audio(); audio.preload = 'auto'; }
+      if (unlocked) return;
+      unlocked = true;
+      try { audio.src = SILENT; var pr = audio.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+    }
+    /* Plays a page's recording from memory, downloading it first the first time (or straight from the server if
+       keeping it fails). */
     function playVoice(p, onEnd, onFail) {
       stopAudio();
       if (!audio) { audio = new Audio(); audio.preload = 'auto'; }
-      audio.onended = function () { playing = null; if (recMode) drawRec(); if (onEnd) onEnd(); };
-      audio.onerror = function () { playing = null; if (onFail) onFail(); };
-      audio.src = voiceSrc(p);
-      playing = p;
-      var pr = audio.play();
-      if (pr && pr.catch) pr.catch(function (e) { if (e && e.name === 'AbortError') return; playing = null; if (onFail) onFail(); });
+      var src = voiceSrc(p), mine = playId;
+      playing = p; playSrc = src;
+      var start = function (u) {
+        if (mine !== playId || !alive) return;  // stopped (or another page started) while it downloaded
+        audio.onended = function () { playing = null; playSrc = ''; if (recMode) drawRec(); if (onEnd) onEnd(); };
+        audio.onerror = function () { playing = null; playSrc = ''; if (onFail) onFail(); };
+        audio.src = u;
+        var pr = audio.play();
+        if (pr && pr.catch) pr.catch(function (e) { if (e && e.name === 'AbortError') return; playing = null; playSrc = ''; if (onFail) onFail(); });
+      };
+      var have = LH.media.url(src);
+      if (have) start(have);
+      else LH.media.load(src).then(start, function () { start(src); });
     }
     function stopAudio() {
+      playId++;
       if (audio) { audio.onended = audio.onerror = null; try { audio.pause(); } catch (e) {} }
-      playing = null;
+      playing = null; playSrc = '';
     }
+
+    /* ---- full screen */
+    function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+    function keepAwake(on) {  // the screen stays on while the book fills it (where the browser allows)
+      if (on && !wake && navigator.wakeLock) {
+        wake = 'asking';
+        navigator.wakeLock.request('screen').then(function (w) { if (full && alive) wake = w; else { wake = null; w.release(); } }, function () { wake = null; });
+      } else if (!on && wake) {
+        if (wake.release) try { wake.release(); } catch (e) {}
+        wake = null;
+      }
+    }
+    function drawFull() {
+      rdEl.classList.toggle('rd-full', full);
+      document.documentElement.classList.toggle('rd-full-on', full);
+      var exit = el.querySelector('.rd-exit'), b = el.querySelector('.rd-full-btn');
+      exit.hidden = !full;
+      if (b) { b.setAttribute('aria-pressed', String(full)); b.querySelector('span').textContent = full ? 'Exit full screen' : 'Full screen'; }
+      keepAwake(full);
+    }
+    function setFull(on) {
+      if (on === full) return;
+      full = on;
+      if (on && recMode) setRec(false);  // recording (and its dialogs) stay on the normal page
+      drawFull();
+      if (on) {
+        var req = rdEl.requestFullscreen || rdEl.webkitRequestFullscreen;
+        if (req) try { var pr = req.call(rdEl); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}  // refused: the window-filling version stays
+        el.querySelector('.rd-exit').focus();
+      } else {
+        if (fsEl() === rdEl) { var ex = document.exitFullscreen || document.webkitExitFullscreen; try { var r = ex.call(document); if (r && r.catch) r.catch(function () {}); } catch (e) {} }
+        var b = el.querySelector('.rd-full-btn');
+        if (b && rdEl.contains(document.activeElement)) b.focus();
+      }
+    }
+    function fsChange() { if (full && fsEl() !== rdEl) setFull(false); }  // Esc or the browser's own exit
+    document.addEventListener('fullscreenchange', fsChange);
+    document.addEventListener('webkitfullscreenchange', fsChange);
 
     /* ---- recording ("Record my voice", the owner only) */
     function setVoice(v) {
       var next = {};
       Object.keys(v || {}).forEach(function (k) { if (v[k] && v[k].key) next[k] = { key: v[k].key, seconds: +v[k].seconds || 0 }; });
-      Object.keys(localUrl).forEach(function (k) { if (!next[k] || next[k].key !== localUrl[k].key) { URL.revokeObjectURL(localUrl[k].url); delete localUrl[k]; } });
+      Object.keys(voice).forEach(function (k) { if (!next[k] || next[k].key !== voice[k].key) LH.media.drop(voiceSrc(k)); });  // deleted or redone
       voice = next;
       book.voice = next;
     }
@@ -340,7 +466,7 @@
         var res = JSON.parse(json || 'null');
         if (!res || !res.ok) return fail(res && res.error);
         setVoice(res.voice);
-        if (voice[p]) localUrl[p] = { url: URL.createObjectURL(blob), key: voice[p].key };  // plays back from memory
+        if (voice[p]) LH.media.put(voiceSrc(p), blob);  // plays back from memory, no download
         recState[p] = { s: 'saved' };
         drawRec(); drawDots();
       }, function () { fail(); });
@@ -438,7 +564,10 @@
         else if (a === 'stop') recStop();
         else if (a === 'play') {
           if (playing === at) stopAudio();
-          else playVoice(at, null, function () { recState[at] = { s: 'error', msg: 'This recording couldn’t be played. Try Redo.' }; drawRec(); });
+          else {
+            unlockAudio();
+            playVoice(at, null, function () { recState[at] = { s: 'error', msg: 'This recording couldn’t be played. Try Redo.' }; drawRec(); });
+          }
           drawRec();
         } else if (a === 'delete') voiceDelete(at);
         else if (a === 'clear') voiceDelete(-1);
@@ -456,12 +585,14 @@
         paintOn = !paintOn;
         UI.store.set('painted', paintOn);
         b.classList.toggle('on', paintOn); b.setAttribute('aria-pressed', String(paintOn));
-        if (!colouring) { bookEl.innerHTML = '<div class="rd-page still">' + pageHtml() + '</div>'; preload(); }
+        if (!colouring) { show('<div class="rd-page still">' + pageHtml() + '</div>'); preload(); }
       }
       else if (k === 'rec') setRec(!recMode);
+      else if (k === 'full') setFull(!full);
       else if (k === 'speak') {
         if (reading) return stopSpeak();
         if (recMode) setRec(false);
+        unlockAudio();
         reading = true; b.classList.add('on'); b.querySelector('span').textContent = 'Stop reading'; speak();
       } else if (k === 'music') {
         var mOn = !LH.music.on();
@@ -471,6 +602,7 @@
     el.addEventListener('click', onClick);  // removed in destroy(): a remounted reader reuses the same element
     function key(e) {
       if (e.target.closest && e.target.closest('input, textarea, select') || document.querySelector('.ui-modal-wrap, .anvil-modal-content')) return;
+      if (e.key === 'Escape' && full) { setFull(false); return; }
       if (e.key === 'ArrowRight') go(at + 1);
       if (e.key === 'ArrowLeft') go(at - 1);
     }
@@ -488,21 +620,25 @@
       go: go, at: function () { return at; }, count: pages.length, colouring: function () { return colouring; },
       recording: function () { return recMode; }, voice: function () { return voice; }, audio: function () { return audio; },
       playing: function () { return playing; }, painted: function () { return paintOn; },
+      playingSrc: function () { return playSrc; },  // the server address of the recording playing (it plays from memory)
+      full: function () { return full; }, setFull: setFull,
       /* New painted pictures arrived (the book page checks while the studio works): show them without a page turn. */
       setPaint: function (map) {
         var idx = LH.paintIndex(book, pages[at]), before = LH.paintSrc(book, idx);
         book.paint = map || {};
         var pb = el.querySelector('[data-rd=paint]');
         if (pb) pb.hidden = !LH.hasPaint(book);
-        if (!colouring && paintOn && LH.paintSrc(book, idx) !== before) bookEl.innerHTML = '<div class="rd-page still">' + pageHtml() + '</div>';
+        if (!colouring && paintOn && LH.paintSrc(book, idx) !== before) show('<div class="rd-page still">' + pageHtml() + '</div>');
         preload();
       },
       destroy: function () {
         alive = false;
         document.removeEventListener('keydown', key);
         el.removeEventListener('click', onClick);
-        recStop(true); stopSpeak(); releaseStream();
-        Object.keys(localUrl).forEach(function (k) { URL.revokeObjectURL(localUrl[k].url); });
+        setFull(false);
+        document.removeEventListener('fullscreenchange', fsChange);
+        document.removeEventListener('webkitfullscreenchange', fsChange);
+        recStop(true); stopSpeak(); releaseStream();  // kept pictures and recordings stay in LH.media for the visit
         LH.music.stop();
       }
     };
@@ -533,12 +669,14 @@
       img.src = src;
     });
   }
+  /* A painted picture for a canvas: the copy kept for the visit (downloaded once), else straight from the server. */
+  function keptImage(src) { return LH.media.load(src).then(urlImage, function () { return urlImage(src); }); }
   /* The painted picture of a page when the PDF asks for them (opts.painted, not the colouring book), else the
      drawing (also when a painted picture fails to load). Resolves {img, painted}. */
   function pictureOf(book, p, opts, drawn) {
     var plain = function () { return drawn().then(function (img) { return { img: img, painted: false }; }); };
     var src = opts.painted && !opts.outline ? LH.paintSrc(book, LH.paintIndex(book, p)) : '';
-    return src ? urlImage(src).then(function (img) { return { img: img, painted: true }; }, plain) : plain();
+    return src ? keptImage(src).then(function (img) { return { img: img, painted: true }; }, plain) : plain();
   }
   function rrect(ctx, x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -798,7 +936,7 @@
   }
   LH.skinCheck = function (book, idx, src) {
     if (!book.hero || !book.hero.look) return Promise.resolve(JSON.stringify({ skipped: 'no hero' }));
-    return Promise.all([pageCanvas(book, idx), pageCanvas(book, idx, '#00FF00'), urlImage(src)]).then(function (r) {
+    return Promise.all([pageCanvas(book, idx), pageCanvas(book, idx, '#00FF00'), keptImage(src)]).then(function (r) {
       var a = r[0], w = a.width, h = a.height, pc = document.createElement('canvas');
       pc.width = w; pc.height = h; pc.getContext('2d').drawImage(r[2], 0, 0, w, h);
       var A = a.getContext('2d').getImageData(0, 0, w, h).data, B = r[1].getContext('2d').getImageData(0, 0, w, h).data,

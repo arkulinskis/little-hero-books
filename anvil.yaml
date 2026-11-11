@@ -3,10 +3,14 @@ db_schema:
   app_settings:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: key
       type: string
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: value
       type: simpleObject
     indexes: []
@@ -15,33 +19,51 @@ db_schema:
   books:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: owner
       target: users
       type: link_single
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: hero
       target: heroes
       type: link_single
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       name: story
       type: string
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       name: dedication
       type: string
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       name: created
       type: datetime
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       name: times_read
       type: number
-    - admin_ui: {order: 6, width: 200}
+    - admin_ui:
+        order: 6
+        width: 200
       name: last_read
       type: datetime
-    - admin_ui: {order: 7, width: 200}
+    - admin_ui:
+        order: 7
+        width: 200
       name: share_key
       type: string
-    - admin_ui: {order: 8, width: 200}
+    - admin_ui:
+        order: 8
+        width: 200
       name: is_demo
       type: bool
     indexes: []
@@ -50,32 +72,50 @@ db_schema:
   feedback:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: user
       target: users
       type: link_single
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: name
       type: string
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       name: email
       type: string
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       name: kind
       type: string
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       name: message
       type: string
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       name: context
       type: simpleObject
-    - admin_ui: {order: 6, width: 200}
+    - admin_ui:
+        order: 6
+        width: 200
       name: status
       type: string
-    - admin_ui: {order: 7, width: 200}
+    - admin_ui:
+        order: 7
+        width: 200
       name: note
       type: string
-    - admin_ui: {order: 8, width: 200}
+    - admin_ui:
+        order: 8
+        width: 200
       name: created
       type: datetime
     indexes: []
@@ -84,26 +124,40 @@ db_schema:
   heroes:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: owner
       target: users
       type: link_single
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: name
       type: string
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       name: pronoun
       type: string
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       name: look
       type: simpleObject
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       name: created
       type: datetime
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       name: updated
       type: datetime
-    - admin_ui: {order: 6, width: 200}
+    - admin_ui:
+        order: 6
+        width: 200
       name: is_demo
       type: bool
     indexes: []
@@ -112,65 +166,105 @@ db_schema:
   paintings:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: book
       target: books
       type: link_single
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: page
       type: number
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       name: style
       type: string
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       name: source
       type: media
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       name: picture
       type: media
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       name: picture_style
       type: string
-    - admin_ui: {order: 6, width: 200}
+    - admin_ui:
+        order: 6
+        width: 200
       name: key
       type: string
-    - admin_ui: {order: 7, width: 200}
+    - admin_ui:
+        order: 7
+        width: 200
       name: job_id
       type: string
-    - admin_ui: {order: 8, width: 200}
+    - admin_ui:
+        order: 8
+        width: 200
       name: status
       type: string
-    - admin_ui: {order: 9, width: 200}
+    - admin_ui:
+        order: 9
+        width: 200
       name: error
       type: string
-    - admin_ui: {order: 10, width: 200}
+    - admin_ui:
+        order: 10
+        width: 200
       name: eta
       type: datetime
-    - admin_ui: {order: 11, width: 200}
+    - admin_ui:
+        order: 11
+        width: 200
       name: attempts
       type: number
-    - admin_ui: {order: 12, width: 200}
+    - admin_ui:
+        order: 12
+        width: 200
       name: created
       type: datetime
-    - admin_ui: {order: 13, width: 200}
+    - admin_ui:
+        order: 13
+        width: 200
       name: updated
       type: datetime
-    - admin_ui: {order: 14, width: 200}
+    - admin_ui:
+        order: 14
+        width: 200
       name: checked
       type: datetime
-    - admin_ui: {order: 15, width: 200}
+    - admin_ui:
+        order: 15
+        width: 200
       name: look
       type: string
-    - admin_ui: {order: 16, width: 200}
+    - admin_ui:
+        order: 16
+        width: 200
       name: fresh
       type: bool
-    - admin_ui: {order: 17, width: 200}
+    - admin_ui:
+        order: 17
+        width: 200
       name: verified
       type: bool
-    - admin_ui: {order: 18, width: 200}
+    - admin_ui:
+        order: 18
+        width: 200
       name: auto_retries
       type: number
-    - admin_ui: {order: 19, width: 200}
+    - admin_ui:
+        order: 19
+        width: 200
       name: skin_check
       type: simpleObject
     indexes: []
@@ -179,23 +273,35 @@ db_schema:
   saved_paintings:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: book
       target: books
       type: link_single
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: page
       type: number
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       name: style
       type: string
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       name: look
       type: string
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       name: picture
       type: media
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       name: created
       type: datetime
     indexes: []
@@ -204,63 +310,93 @@ db_schema:
   users:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       client_hidden: false
       name: email
       type: string
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       client_hidden: true
       name: enabled
       type: bool
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       client_hidden: true
       name: last_login
       type: datetime
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       client_hidden: true
       name: password_hash
       type: string
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       client_hidden: true
       name: n_password_failures
       type: number
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       client_hidden: true
       name: confirmed_email
       type: bool
-    - admin_ui: {order: 6, width: 200}
+    - admin_ui:
+        order: 6
+        width: 200
       client_hidden: true
       name: signed_up
       type: datetime
-    - admin_ui: {order: 7, width: 200}
+    - admin_ui:
+        order: 7
+        width: 200
       client_hidden: false
       name: display_name
       type: string
-    - admin_ui: {order: 8, width: 200}
+    - admin_ui:
+        order: 8
+        width: 200
       client_hidden: false
       name: is_admin
       type: bool
-    - admin_ui: {order: 9, width: 200}
+    - admin_ui:
+        order: 9
+        width: 200
       client_hidden: false
       name: is_demo
       type: bool
-    - admin_ui: {order: 10, width: 200}
+    - admin_ui:
+        order: 10
+        width: 200
       client_hidden: false
       name: last_seen
       type: datetime
-    - admin_ui: {order: 11, width: 200}
+    - admin_ui:
+        order: 11
+        width: 200
       client_hidden: false
       name: legal_version
       type: string
-    - admin_ui: {order: 12, width: 200}
+    - admin_ui:
+        order: 12
+        width: 200
       client_hidden: false
       name: legal_accepted_at
       type: datetime
-    - admin_ui: {order: 13, width: 200}
+    - admin_ui:
+        order: 13
+        width: 200
       client_hidden: false
       name: legal_source
       type: string
-    - admin_ui: {order: 14, width: 200}
+    - admin_ui:
+        order: 14
+        width: 200
       client_hidden: true
       name: remembered_logins
       type: simpleObject
@@ -270,32 +406,45 @@ db_schema:
   voice_pages:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: book
       target: books
       type: link_single
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: page
       type: number
-    - admin_ui: {order: 2, width: 200}
+    - admin_ui:
+        order: 2
+        width: 200
       name: audio
       type: media
-    - admin_ui: {order: 3, width: 200}
+    - admin_ui:
+        order: 3
+        width: 200
       name: seconds
       type: number
-    - admin_ui: {order: 4, width: 200}
+    - admin_ui:
+        order: 4
+        width: 200
       name: key
       type: string
-    - admin_ui: {order: 5, width: 200}
+    - admin_ui:
+        order: 5
+        width: 200
       name: created
       type: datetime
     indexes: []
     server: full
     title: Voice pages
 metadata:
-  description: "Design a cartoon look-alike of your child, then read, colour, paint or print classic fairy tales starring them. Twelve tales retold for ages 3 to 6."
-  logo_img: "asset:icon-512.png"
-  title: "Little Hero Books: picture books starring your child"
+  description: Design a cartoon look-alike of your child, then read, colour, paint or print classic fairy tales starring them.
+    Twelve tales retold for ages 3 to 6.
+  logo_img: asset:icon-512.png
+  title: 'Little Hero Books: picture books starring your child'
 name: Little Hero Books
 native_deps:
   head_html: |
@@ -345,33 +494,48 @@ native_deps:
 
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qgsqghg" data-button="false" data-label="Submit feedback" async></script>
-    <link rel="stylesheet" href="_/theme/icons.css?v=025d9df016">
-    <link rel="stylesheet" href="_/theme/app.css?v=43a230d91b">
-    <script src="_/theme/lh-kit.js?v=bae378e051"></script>
+    <link rel="stylesheet" href="_/theme/icons.css?v=6b26c299be">
+    <link rel="stylesheet" href="_/theme/app.css?v=2355d8f91d">
+    <script src="_/theme/lh-kit.js?v=308d905bc9"></script>
     <script src="_/theme/ark-music.js?v=6d0ae6dcf6"></script>
     <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>
     <script src="_/theme/lh-scenes.js?v=2edce843d3"></script>
-    <script src="_/theme/lh-book.js?v=324a603013"></script>
+    <script src="_/theme/lh-book.js?v=cc253251ac"></script>
 package_name: Little_Hero_Books
 runtime_options:
   client_version: '3'
-  server_spec: {base: python314}
+  server_spec:
+    base: python314
   version: 3
 secrets:
   image_enhancer_key:
     type: secret
     value:
-      773OKZPRGET6ZXWD: {? '' : 20avChphA+LDctOIdhj20PnKCizwILosrTD/6l/GvAkLfjor+6gzBJte+SXNzmuo/oR0gX3lb39K2TkgUNkGVj/Wrgse9G7GwJSG2r/lOfN2j6TlkC/W0SEthq4teHCcds++MW4AXz7P9Y2IeJxYcct80i8HsosPPvJwU7q0eIXQ6IoIczAb284k5Qr+axCpdpn9u1EU7dy3k/+pyBOSe368raB16XZIOkNl+gOR3peWqJ+aDlZnWEbYIP8h5g==}
+      773OKZPRGET6ZXWD:
+        ? ''
+        : 20avChphA+LDctOIdhj20PnKCizwILosrTD/6l/GvAkLfjor+6gzBJte+SXNzmuo/oR0gX3lb39K2TkgUNkGVj/Wrgse9G7GwJSG2r/lOfN2j6TlkC/W0SEthq4teHCcds++MW4AXz7P9Y2IeJxYcct80i8HsosPPvJwU7q0eIXQ6IoIczAb284k5Qr+axCpdpn9u1EU7dy3k/+pyBOSe368raB16XZIOkNl+gOR3peWqJ+aDlZnWEbYIP8h5g==
   image_enhancer_webhook_secret:
     type: secret
     value:
-      773OKZPRGET6ZXWD: {? '' : th+7H2wCTDmV/R1jjLApsBO/DviXfyeb4brzTpolMD8+sZ1pu7HkqRQOofszG/lfIMdrdyKs785SbpLgMM+yQw8ZVZQg3SzecIJ45taH4MZtuh0v3Em8BMGcE9c2IYM5sFCymdLaZ2wsa2RNQp65VFQEvNvbftm+EwegYQgq6FXO/ZDOjmDoJoFJePth1H45ocJ32rihg1Bl2uhvxrHfT17v1h5KFm6erZMiZ0K8xH4kWrNrm3dI1G+PGw/3BBnQ/UdWAg==}
+      773OKZPRGET6ZXWD:
+        ? ''
+        : th+7H2wCTDmV/R1jjLApsBO/DviXfyeb4brzTpolMD8+sZ1pu7HkqRQOofszG/lfIMdrdyKs785SbpLgMM+yQw8ZVZQg3SzecIJ45taH4MZtuh0v3Em8BMGcE9c2IYM5sFCymdLaZ2wsa2RNQp65VFQEvNvbftm+EwegYQgq6FXO/ZDOjmDoJoFJePth1H45ocJ32rihg1Bl2uhvxrHfT17v1h5KFm6erZMiZ0K8xH4kWrNrm3dI1G+PGw/3BBnQ/UdWAg==
 services:
-- client_config: {enable_v2: true}
+- client_config:
+    enable_v2: true
   server_config: {}
   source: /runtime/services/tables.yml
-- client_config: {allow_remember_me: true, allow_signup: true, confirm_email: false, enable_automatically: true, remember_me_days: 30, require_secure_passwords: true, use_email: true, use_google: true}
-  server_config: {user_table: users}
+- client_config:
+    allow_remember_me: true
+    allow_signup: true
+    confirm_email: false
+    enable_automatically: true
+    remember_me_days: 30
+    require_secure_passwords: true
+    use_email: true
+    use_google: true
+  server_config:
+    user_table: users
   source: /runtime/services/anvil/users.yml
 - client_config: {}
   server_config: {}
@@ -379,4 +543,6 @@ services:
 - client_config: {}
   server_config: {}
   source: /runtime/services/anvil/secrets.yml
-startup: {module: startup, type: module}
+startup:
+  module: startup
+  type: module

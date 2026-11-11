@@ -72,7 +72,9 @@
     mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21M8.5 21h7"/>',
     play: '<path d="M7.5 5.5v13l11-6.5z"/>',
     stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/>',
-    redo: '<path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>'
+    redo: '<path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>',
+    expand: '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>',
+    shrink: '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>'
   };
   /* Light / dark: applied here, in <head>, so the first paint already has the right colours.
      Python (client_code/state.py) calls UI.setTheme when someone picks Auto / Light / Dark. */

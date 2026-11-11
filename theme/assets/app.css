@@ -976,6 +976,81 @@ anvil-dropzone { display: contents; }
 .rd-page.still { animation: none; }
 .rd-tools [hidden] { display: none !important; }
 
+/* ===================================================================== Full screen reading (lh-book.js setFull)
+   The reader fills the screen (the browser's full screen, or the whole window where there is none) on a dark
+   reading-room backdrop. Landscape screens get a spread: picture left, words right, so a page fits without scrolling.
+   The page's own buttons (PDF, family link...) and recording stay on the normal page: dialogs can't show here. */
+html.rd-full-on { overflow: hidden; }
+.rd-exit { display: none; }
+.rd.rd-full { position: fixed; inset: 0; z-index: 800; overflow: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+  padding: max(68px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse at 50% 28%, #463a78, #231c3d 72%); color: #f4f0ff;
+  --rd-w: min(100%, 760px); animation: kit-fade var(--dur-base) var(--ease-out); }
+.rd.rd-full:fullscreen { width: 100%; height: 100%; }
+.rd.rd-full::backdrop { background: #231c3d; }
+.rd-full .rd-exit { position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 6;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px 0 14px; border: 0; border-radius: 999px;
+  background: #fffaf0; color: #2b2350; font: 800 .95rem/1 var(--font-body); box-shadow: 0 6px 18px rgba(0, 0, 0, .32); cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.rd-full .rd-exit[hidden] { display: none; }
+.rd-full .rd-exit:hover { background: #ffe7a3; }
+.rd-full .rd-exit:active { transform: scale(.96); }
+.rd-full .rd-exit:focus-visible { outline: 3px solid #ffc93c; outline-offset: 3px; }
+.rd-full .rd-exit :is(.ui-ic, .ic) { width: 20px; height: 20px; stroke-width: 2.6; }
+.rd-full .rd-extra, .rd-full [data-rd=rec] { display: none !important; }
+.rd-full .rd-tools .rd-full-btn { background: #fffaf0; border-color: #fffaf0; color: #2b2350; }
+.rd-full .rd-crayons .hint { color: #e9e4ff; }
+.rd-full .rd-dots button:not(.on):not(.seen) { background: rgba(255, 255, 255, .22); box-shadow: none; }
+.rd-full .rd-book { box-shadow: 0 30px 70px rgba(0, 0, 0, .45); }
+@media (orientation: landscape) and (min-width: 640px) {
+  .rd.rd-full { --rd-w: min(100%, 1280px, calc((100dvh - 190px) * 2.15)); --rd-ph: calc(min((100vw - 32px) * .4, 512px, (100dvh - 190px) * .86) + 20px); }
+  .rd-full .rd-page { display: grid; align-content: center; min-height: var(--rd-ph); }  /* every page as tall as a story page: no jumping */
+  .rd-full .rd-page:has(> .rd-text) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-rows: 1fr auto; column-gap: 28px; align-items: center; }
+  .rd-full .rd-page:has(> .rd-text) .rd-pic { grid-row: 1 / 3; }
+  .rd-full .rd-text { align-self: end; margin: 0; min-height: 0; font-size: clamp(1.05rem, 1.9vw, 1.75rem); }
+  .rd-full .rd-num { align-self: start; margin-top: 14px; }
+  .rd-full .rd-cov { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: center; min-height: calc(var(--rd-ph) - 40px); }
+  .rd-full .rd-cov h2 { margin: 0; }
+  .rd-full .rd-ded, .rd-full .rd-end { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 32px; align-items: center; align-content: center; }
+  .rd-full .rd-ded .frame { grid-row: 1 / 4; width: min(100%, 300px); margin: 0 auto; }
+  .rd-full .rd-end .fig { grid-row: 1 / 5; width: min(80%, 260px); }
+}
+@media (orientation: landscape) and (min-width: 1000px) {
+  .rd.rd-full { --rd-w: min(100% - 170px, 1280px, calc((100dvh - 190px) * 2.15)); --rd-ph: calc(min((100vw - 202px) * .4, 512px, (100dvh - 190px) * .86) + 20px); }
+}
+/* smaller landscape screens: the arrows sit beside the book, the toolbar is one row */
+@media (orientation: landscape) and (min-width: 640px) and (max-width: 999px) {
+  .rd.rd-full { --rd-w: min(100% - 120px, calc((100dvh - 190px) * 2.15)); --rd-ph: calc(min((100vw - 152px) * .4, (100dvh - 190px) * .86) + 20px); }
+  .rd-full .rd-nav { top: 50%; bottom: auto; transform: translateY(-50%); width: 46px; height: 46px; }
+  .rd-full .rd-nav.prev { left: -58px; } .rd-full .rd-nav.next { right: -58px; }
+  .rd-full .rd-nav:hover { transform: translateY(-50%); }
+  @media (hover: hover) { .rd-full .rd-nav:hover { transform: translateY(-50%) scale(1.08); } }
+  .rd-full .rd-bar { flex-direction: row; align-items: center; margin-top: 12px; }
+  .rd-full .rd-dots { padding: 0; }
+  .rd-full .rd-tools { margin-top: 0; }
+}
+/* phones on their side: little height, so compact words, the book as wide as the arrows allow, a round exit button */
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 560px) {
+  .rd.rd-full { padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom)); --rd-w: min(100% - 120px, 760px); }
+  .rd-full .rd-exit { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); width: 46px; min-height: 46px; padding: 0; justify-content: center; }
+  .rd-full .rd-exit span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .rd-full .rd-page { min-height: 0; padding: 14px 18px 14px 26px; }
+  .rd-full .rd-page:has(> .rd-text) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); column-gap: 20px; }
+  .rd-full .rd-pic { border-width: 5px; border-radius: 18px; }
+  .rd-full .rd-text { font-size: 15px; line-height: 1.45; }
+  .rd-full .rd-num { width: 28px; height: 28px; margin-top: 8px; font-size: .8rem; }
+  .rd-full .rd-cov { min-height: 0; margin: -14px -18px -14px -26px; padding: 16px 18px 16px 30px; }
+  .rd-full .rd-cov h2 { font-size: 1.6rem !important; padding: 12px; }
+  .rd-full .rd-ded .frame { width: min(100%, 190px); border-width: 6px; }
+  .rd-full .rd-ded .who { font-size: 2.1rem; margin: 4px 0 8px; }
+  .rd-full .rd-ded .msg { font-size: 1rem; }
+  .rd-full .rd-end .fig { width: min(70%, 180px); }
+  .rd-full .rd-end h2 { font-size: 2.3rem !important; }
+  .rd-full .rd-bar { margin-top: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .rd.rd-full { animation: none; } }
+
 .anvil-role-badge-paint { background: #e2f4ea; color: #17633f; }
 :root[data-theme="dark"] .anvil-role-badge-paint { background: #173528; color: #b9ecd0; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .anvil-role-badge-paint { background: #173528; color: #b9ecd0; } }

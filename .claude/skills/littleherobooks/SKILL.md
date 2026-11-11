@@ -101,12 +101,29 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
 - **Engine (lh-book.js)**: the record panel `[data-rd-rec]` above the page (like the crayons), states empty / starting /
   recording / saving / saved / error, buttons `[data-rec=start|stop|play|redo|delete|next|clear]`. The mic stream is
   kept while record mode is on (one permission prompt) and released when it closes. Turning the page while recording
-  stops and saves it. A fresh recording plays from a blob URL; after a reload from the server. Pages without a
-  recording use speech synthesis. Python callbacks return JSON strings (`onVoiceSave`, `onVoiceDelete`).
+  stops and saves it. A fresh recording goes straight into `LH.media` (below), so it plays with no download. Pages
+  without a recording use speech synthesis. Python callbacks return JSON strings (`onVoiceSave`, `onVoiceDelete`).
+- **Kept for the visit (`LH.media` in lh-book.js, 2026-11-10, the user's ask):** painted pictures and recordings are
+  fetched once and kept as blob: URLs until the tab closes (cap ~200 MB, least recently used out first). Safe because
+  every key changes with its content (repaint, Redo, new family link). `paintedImg` writes `data-lh-src` for pictures
+  not kept yet and the reader's `show()` calls `LH.media.fill()`; the PDF and skin check use `keptImage()`; voice plays
+  via `playVoice` (from memory, or downloads first). Cross-address URLs from `get_api_origin()` are fetched from the
+  current origin's `/_/api/` (no CORS); if a fetch fails it falls back to the plain address. Safari: `unlockAudio()`
+  plays a silent WAV inside the tap so the later (post-download) `play()` is allowed. A deleted recording stops at once
+  in the owner's tab (`setVoice` drops it); a family member's open tab keeps what it already downloaded until reload.
+  Tests: `LH.media.stats()` (downloads, reuses, kept, bytes) in flow.js; the reader's `playingSrc()` is the server
+  address of the recording playing (`audio().src` is a blob:).
+- **Full screen (2026-11-10):** `setFull(on)` in the reader: class `rd-full` on `.rd` + `requestFullscreen` (refused or
+  missing, e.g. iPhone or a script's click in headless Chrome: the fixed, window-filling CSS still applies). Exit:
+  `.rd-exit` (top right; icon-only on short landscape phones), the toolbar's `.rd-full-btn`, Esc, or the browser's own
+  exit (`fullscreenchange`). The page's own Anvil buttons (`.rd-extra`) and Record are hidden there, and entering
+  closes record mode, because Anvil dialogs open on `body` and can't show above a full-screen element. Confetti
+  goes into the full-screen element. Screen wake lock while on. CSS: "Full screen reading" in app.css (spread layout
+  for landscape, `--rd-ph` keeps every page as tall as a story page).
 - **Tests**: server tests cover every rule above; flow.js records with Chrome's fake microphone (drive.mjs passes
   `--use-fake-device-for-media-stream` etc.; `FAKE_AUDIO=<wav>` for real speech), plays back, redoes, checks the 206,
   reloads, plays via Read to me, checks the family link, deletes one page and all. The reader's controller is
-  `document.querySelector('.rd').parentNode.lhReader` (voice(), audio(), playing(), at()).
+  `document.querySelector('.rd').parentNode.lhReader` (voice(), audio(), playing(), playingSrc(), at(), full(), setFull()).
 - Not verified here: a real iPhone/Safari recording and playback (MediaRecorder MP4/AAC is expected there).
 
 ## Paint this book (2026-11-08)

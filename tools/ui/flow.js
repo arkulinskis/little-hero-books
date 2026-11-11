@@ -33,7 +33,7 @@
   }
   const ok = (cond, msg) => { if (!cond) throw new Error('FAILED: ' + msg); say('ok   ' + msg); };
   const rdr = () => { const r = $('.rd'); return r && r.parentNode.lhReader; };  // the reader's controller (lh-book.js)
-  const playing = (part) => { const a = rdr() && rdr().audio(); return a && !a.paused && a.currentTime > 0.15 && a.src.indexOf(part) >= 0; };
+  const playing = (part) => { const a = rdr() && rdr().audio(); return a && !a.paused && a.currentTime > 0.15 && (a.src.indexOf(part) >= 0 || rdr().playingSrc().indexOf(part) >= 0); };  // recordings play from memory (blob:)
   const voiceUrl = (key) => location.origin + '/_/api/voice/' + key;
 
   try {
@@ -99,6 +99,28 @@
     await until(() => $('.rd-end'), 'last page');
     ok(true, 'reader: turned to The End');
 
+    // ---- full screen (headless Chrome refuses the real one for a script's click, so this is the window-filling one)
+    await click('[data-rd=full]');
+    await until(() => rdr().full() && $('.rd.rd-full') && $('.rd-exit').offsetWidth > 0, 'full screen');
+    const fr = $('.rd').getBoundingClientRect();
+    ok(getComputedStyle($('.rd')).position === 'fixed' && fr.width >= innerWidth - 1 && fr.height >= innerHeight - 1 &&
+      /Exit full screen/.test($('.rd-exit').textContent) && document.activeElement === $('.rd-exit') &&
+      /Exit full screen/.test($('.rd-full-btn').textContent) && $('.rd-full-btn').getAttribute('aria-pressed') === 'true',
+      'full screen: the book fills the screen, "Exit full screen" button top right (focused)');
+    ok($('.rd-tools .anvil-role-ic-download').offsetParent === null && $('.rd-book').offsetWidth > 300,
+      'full screen: the page buttons (PDF, family link...) step aside');
+    $('.rd-nav.prev').click();
+    await until(() => rdr().at() === rdr().count - 2, 'page turn in full screen');
+    await click('.rd-exit');
+    await until(() => !rdr().full() && !$('.rd.rd-full') && !document.documentElement.classList.contains('rd-full-on') && $('.rd-exit').offsetWidth === 0, 'exit full screen');
+    ok(getComputedStyle($('.rd')).position !== 'fixed' && $('.rd-tools .anvil-role-ic-download').offsetParent !== null,
+      'full screen: Exit full screen brings the page back');
+    await click('[data-rd=full]');
+    await until(() => rdr().full(), 'full screen again');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await until(() => !rdr().full() && !$('.rd.rd-full'), 'Esc leaves full screen');
+    ok(true, 'full screen: Esc leaves it too');
+
     // ---- family link
     await click('.anvil-role-ic-link button');
     await click('.anvil-modal-content .anvil-role-btn-primary button', 'Make a family link');
@@ -161,9 +183,10 @@
     const v1 = rdr().voice()['2'];
     ok(v1 && v1.key && v1.seconds >= 1 && $$('.rd-dots button.vo').length === 1 && /Your voice on 1 page/.test($('.bk-head').innerText),
       'record: page 1 recorded and saved (marked dot, "Your voice" badge)');
+    const d0 = LH.media.stats().downloads;
     await click('[data-rec=play]');
     await until(() => playing('blob:'), 'plays back from memory', 15000);
-    ok(true, 'record: Play plays the new recording straight away');
+    ok(LH.media.stats().downloads === d0, 'record: Play plays the new recording straight from memory (nothing downloaded)');
     await click('[data-rec=redo]');
     await until(() => $('.rd-rec[data-state=recording]'), 'recording again', 20000);
     await sleep(1300);
@@ -187,6 +210,10 @@
     res = await fetch(voiceUrl(key2));
     ok(res.status === 200 && (await res.arrayBuffer()).byteLength > 1000, 'voice address: the whole recording');
     ok((await fetch(voiceUrl(v1.key))).status === 404, 'voice address: a replaced recording is gone');
+    const vsrc = voiceUrl(key2) + '?t=cache';
+    const dl = LH.media.stats().downloads, u1 = await LH.media.load(vsrc), u2 = await LH.media.load(vsrc);
+    ok(u1 === u2 && /^blob:/.test(u1) && LH.media.stats().downloads === dl + 1, 'kept for the visit: a recording is downloaded once, then reused');
+    LH.media.drop(vsrc);
     await click('[data-rd=rec]');
     await until(() => !$('.rd-rec'), 'panel closes');
     ok($('[data-rd=rec]').textContent.trim() === 'Record my voice', 'record: Done recording closes the panel');
@@ -197,11 +224,13 @@
     ok(Object.keys(rdr().voice()).sort().join() === '2,3' && $$('.rd-dots button.vo').length === 2, 'reload: the recorded pages are back');
     $$('.rd-dots button')[2].click();
     await until(() => rdr().at() === 2, 'page 1');
+    const d1 = LH.media.stats().downloads;
     await click('[data-rd=speak]');
     await until(() => playing('/_/api/voice/' + key2), 'Read to me plays the recorded voice', 20000);
     ok(true, 'Read to me: plays the recorded voice from the server');
     await until(() => rdr().at() === 3 && playing('/_/api/voice/'), 'turns the page and plays the next recording', 20000);
     ok(true, 'Read to me: turns the page by itself and plays the next one');
+    ok(LH.media.stats().downloads === d1 && /^blob:/.test(rdr().audio().src), 'Read to me: recordings already received this visit play from memory (nothing downloaded again)');
     await click('[data-rd=speak]');
     await until(() => !rdr().playing(), 'stops');
 
