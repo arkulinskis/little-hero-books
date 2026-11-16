@@ -85,7 +85,7 @@ Keep this list current: it is the first thing read before every change.
 - **Family link** per book (on/off), edit the dedication, remove a book (and its recordings and paintings), edit or
   remove a hero (removes their books).
 
-**For admins** (`#admin`; arkulinskis@gmail.com becomes an admin on first sign-in):
+**For admins** (`#admin`; your admin email (App Secret `admin_emails`) becomes an admin on first sign-in):
 - **Feedback inbox:** New / Read / Done, private notes.
 - **Users:** search, make admin, disable an account.
 - **Library:** the 12 stories with word counts, how many real books each became and how many reads.
@@ -99,7 +99,7 @@ Keep this list current: it is the first thing read before every change.
 1. In the Anvil editor: **Create app → Clone from GitHub**, and paste `https://github.com/arkulinskis/little-hero-books`.
 2. **Users** service: email + password and "Continue with Google", sign-up allowed (already set in `anvil.yaml`; check it).
 3. Open the app in the editor. If it shows a **Schema Mismatch** alert, choose **"The schema of the source code is correct"** so Anvil creates the tables.
-4. **Run** it and sign up with **arkulinskis@gmail.com** straight away (that account becomes the admin).
+4. **Run** it and sign up with **your admin email** (App Secret `admin_emails`) straight away (that account becomes the admin).
 5. **Publish** (Publish → public URL, or your own domain).
 6. **Painting (optional):** in Image Enhancer's console make a key for Little Hero Books (Apps & keys). In this app's
    **App Secrets** add `image_enhancer_key` (the key) and `image_enhancer_webhook_secret` (the secret shown with it).

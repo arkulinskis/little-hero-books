@@ -63,7 +63,7 @@ def start(restart=False):
             secrets += ["--secret", pair.strip()]
         sh("docker", "create", "--name", NAME, "-p", "%d:%d" % (PORT, PORT), "-v", "lhb-app:/apps/MainApp",
            "-v", "lhb-data:/anvil-data", IMAGE, "--app", "MainApp", "--origin", URL,
-           "--auto-migrate", *secrets)  # new tables/columns apply to the local database (--ignore-invalid-schema would block that)
+           "--auto-migrate", "--secret", "admin_emails=admin@example.com", *secrets)  # new tables/columns apply to the local database (--ignore-invalid-schema would block that)
         copy_app()
         sh("docker", "start", NAME)
         print("starting the App Server ...")
