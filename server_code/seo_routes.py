@@ -17,7 +17,7 @@ SEO = {
  "name": "Little Hero Books",
  "title": "Little Hero Books: picture books starring your child",
  "tagline": "Design your child as a cartoon, then read stories starring them",
- "description": "Design a cartoon look-alike of your child, then read, colour, paint or print classic fairy tales starring them. Twelve tales retold for ages 3 to 6.",
+ "description": "Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Eighteen stories for ages 3 to 6.",
  "keywords": [
   "personalised children's book",
   "custom picture book",
@@ -35,14 +35,15 @@ SEO = {
  "category": "EducationalApplication",
  "audience": "Parents and grandparents of children aged about 3 to 6",
  "about": [
-  "Little Hero Books makes personalised picture books. A parent designs a cartoon look-alike of their child (ages 1 to 12; face, skin tone, hair, eyes, clothes, hats and head coverings, glasses, name and pronouns), then picks from twelve public-domain fairy tales retold short for ages 3 to 6.",
+  "Little Hero Books makes personalised picture books. A parent designs a cartoon look-alike of their child (ages 1 to 12; face, skin tone, hair, eyes, clothes, hats and head coverings, glasses, name and pronouns), then picks from eighteen short stories for ages 3 to 6 (fifteen public-domain fairy tales and fables, three brand-new ones), or writes their own story, starting blank or from any story in the library.",
   "Every illustration has a space where the child goes, and the app draws the child into it. The finished 12-page book can be read on screen with page turns and Read to me, coloured in with on-screen crayons, or downloaded as an 8 x 8 inch PDF, a print-ready PDF with bleed for photo-book printers, or a colour-me-in book.",
   "Parents can record their own voice reading each page, share a family link so grandparents can read along, and have the whole book repainted in one of six art styles, from watercolour to clay, while the child keeps the look they designed."
  ],
  "features": [
   "A hero studio for ages 1 to 12 with 20 skin tones, 30 hairstyles and 20 outfits",
   "Head coverings including hijab, patka and kippah",
-  "Twelve classic fairy tales retold for ages 3 to 6, with your child drawn into every picture",
+  "Eighteen stories for ages 3 to 6 (fifteen classic tales and three new ones), with your child drawn into every picture",
+  "Write your own story: start blank or change any story, and pick a library picture for every page",
   "Read on screen with Read to me, or record your own voice page by page",
   "Colour me in: every picture becomes an outline to colour with on-screen crayons",
   "Paint this book: repaint every picture in one of six art styles",
@@ -52,7 +53,7 @@ SEO = {
  "faq": [
   [
    "Which stories are included?",
-   "Twelve public-domain fairy tales, such as The Three Bears, Jack and the Beanstalk, The Gingerbread Man and The Ugly Duckling, retold in 300 to 500 words for children aged 3 to 6."
+   "Eighteen stories: fifteen public-domain fairy tales and fables, such as The Three Bears, Jack and the Beanstalk, The Lion and the Mouse and Stone Soup, and three brand-new ones (The Lost Little Star, The Puddle Parade, The Hiccupy Dragon), each 300 to 500 words for children aged 3 to 6. Parents can also write their own stories."
   ],
   [
    "Can I print the book?",
@@ -68,7 +69,7 @@ SEO = {
   ]
  ],
  "site": "https://littleheroapp.com",
- "updated": "2026-11-16",
+ "updated": "2026-11-18",
  "icon": "icon-512.png",
  "colors": {
   "bg": "#fff8ec",
