@@ -18,7 +18,10 @@ STORIES = [("bears", "{name} and the Three Bears", "#ef5a36"), ("beanstalk", "{n
            ("emperor", "{name} and the Emperor’s New Clothes", "#8a6bd8"), ("hen", "{name} and the Little Red Hen", "#ff8fb8"),
            ("elves", "{name} and the Elves", "#2fa39b"), ("pea", "{name} and the Pea", "#5b8def"),
            ("gingerbread", "{name} and the Gingerbread Man", "#d9823b"), ("duckling", "{name} and the Ugly Duckling", "#5fb8e0"),
-           ("goats", "{name} and the Billy Goats Gruff", "#8cc04b"), ("tortoise", "{name} and the Great Race", "#e9a23b")]
+           ("goats", "{name} and the Billy Goats Gruff", "#8cc04b"), ("tortoise", "{name} and the Great Race", "#e9a23b"),
+           ("lion", "{name}, the Lion and the Mouse", "#f0a04b"), ("stonesoup", "{name} and the Stone Soup", "#8a6bd8"),
+           ("mice", "{name}, the Town Mouse and the Country Mouse", "#4ea8f5"), ("star", "{name} and the Lost Little Star", "#463e8c"),
+           ("puddles", "{name}’s Puddle Parade", "#3dbe8b"), ("dragon", "{name} and the Hiccupy Dragon", "#59b45e")]
 # The app's video on the Addanapp YouTube channel (APP_MAKER/youtube/manifest.json), shown in the Watch section.
 YT_VIDEO = "GGIkFuY4_pc"
 PAGE = ("{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too cold!” Then the wee bowl. “Just right!” "
@@ -26,7 +29,7 @@ PAGE = ("{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too 
 
 
 class Landing(LandingTemplate):
-    """The front page: the promise, an open book starring an example kid (they take turns), the twelve covers
+    """The front page: the promise, an open book starring an example kid (they take turns), the eighteen covers
     redrawn with whoever you tap, features, safety, FAQ."""
 
     def __init__(self, args=(), **properties):

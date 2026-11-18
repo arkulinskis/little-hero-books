@@ -34,7 +34,7 @@
     const tick = $('.au-card input[type=checkbox]'); if (tick && !tick.checked) tick.click();
     $$('.anvil-role-btn-block button').find((b) => /Create account/.test(b.textContent)).click();
     await until(() => location.hash === '#home' && window.UI_READY, 'signed in', 30000);
-    for (const h of ['#home', '#library', '#studio/new', '#profile', '#story/bears/blank']) await check(h);
+    for (const h of ['#home', '#library', '#studio/new', '#profile', '#story/bears/blank', '#write', '#write/new/bears']) await check(h);
     log.push(bad.length ? 'PROBLEMS: ' + bad.join(' | ') : 'PASSED');
     return { ok: !bad.length, log: log };
   } catch (e) {

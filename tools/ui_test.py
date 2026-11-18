@@ -156,7 +156,7 @@ def main():
         guest = [("landing", "#landing"), ("library", "#library"), ("studio", "#studio/new"), ("story", "#story/bears/blank"),
                  ("auth", "#auth/signup")]
         member = [("shelf", "#home"), ("book", "window.SEED.book"), ("edit", "window.SEED.hero"), ("library_in", "#library"),
-                  ("profile", "#profile")]
+                  ("profile", "#profile"), ("write", "#write"), ("write_new", "#write/new/bears")]
         for window, tag in (("1280,1000", ""), ("390,844", "_phone")):
             for theme in ("light", "dark"):
                 js = "UI.setTheme(%s)" % json.dumps(theme)

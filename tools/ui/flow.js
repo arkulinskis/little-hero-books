@@ -38,8 +38,8 @@
 
   try {
     // ---- landing
-    await page('#landing', () => $$('.lh-cover').length >= 12, 'landing covers');
-    ok($$('.lp-pal').length === 5, 'landing: 12 covers and 5 example kids');
+    await page('#landing', () => $$('.lh-cover').length >= 18, 'landing covers');
+    ok($$('.lp-pal').length === 5, 'landing: 18 covers and 5 example kids');
     $$('.lp-pal')[2].click();
     await until(() => $('.lpx-sticker.s1') && /Amara/.test($('.lpx-sticker.s1').textContent), 'landing switches hero');
     ok(true, 'landing: tapping a kid redraws the shelf');
@@ -49,10 +49,12 @@
     ok(true, 'landing: pressing play loads the YouTube player');
 
     // ---- library as a guest
-    await page('#library', () => $$('.lb-card').length === 12, 'library');
+    await page('#library', () => $$('.lb-card').length === 18, 'library');
+    ok(!/Your stories/.test($('.ui-wrap').innerText) && $('.wr-cta a[href="#write"]') && $$('.anvil-role-badge-new').filter((b) => b.offsetParent && /New story/.test(b.textContent)).length === 3,
+      'library: 18 stories, 3 marked New story, a Write your own story card');
     ok($$('.lb-pick').length >= 2, 'library: starring chips');
     $$('.lb-star button.lb-pick').pop().click();
-    await until(() => $$('.lb-card').length === 12, 'library redraw');
+    await until(() => $$('.lb-card').length === 18, 'library redraw');
     ok(true, 'library: picking the blank book redraws the covers');
 
     // ---- studio as a guest
@@ -219,7 +221,9 @@
     ok($('[data-rd=rec]').textContent.trim() === 'Record my voice', 'record: Done recording closes the panel');
 
     // ---- reload: the recordings come from the server and Read to me plays them
-    await page('#library', () => $$('.lb-card').length === 12, 'library');
+    await page('#library', () => $$('.lb-card').length === 18, 'library');
+    ok(!/Your stories/.test($('.ui-wrap').innerText) && $('.wr-cta a[href="#write"]') && $$('.anvil-role-badge-new').filter((b) => b.offsetParent && /New story/.test(b.textContent)).length === 3,
+      'library: 18 stories, 3 marked New story, a Write your own story card');
     await page(bookHash, () => $('.rd-book') && rdr(), 'book reloaded');
     ok(Object.keys(rdr().voice()).sort().join() === '2,3' && $$('.rd-dots button.vo').length === 2, 'reload: the recorded pages are back');
     $$('.rd-dots button')[2].click();
@@ -266,6 +270,60 @@
     await click('.pf-grid .anvil-role-btn-primary button', 'Save');
     await until(() => /Flow Tester Two/.test($('.pf-head').textContent), 'name saved');
     ok(true, 'profile: name saved');
+
+    // ---- write a story: start from a library story, change it, save, preview, make a book, delete
+    await page('#write', () => $$('.wr-start').length === 18, 'write hub');
+    ok(!$('.wr-start').closest('[style*="display: none"]') && /A blank page/.test(document.body.innerText), 'write: the hub offers a blank page and 18 stories to start from');
+    $$('.wr-start button')[0].click();
+    await until(() => window.UI_READY && /^#write\/new\/bears$/.test(location.hash) && $$('.wr-page').length === 9, 'editor with 9 pages', 30000);
+    ok(/Starting from/.test($('.anvil-role-bk-intro').textContent) && $$('.wr-page svg').length === 9, 'write: starting from The Three Bears copies its 9 pages and pictures');
+    type($('.wr-meta input'), '{name} and the Brave Bears');
+    const ta0 = $$('.wr-page textarea')[0];
+    type(ta0, 'Hello there.');
+    ta0.focus(); ta0.setSelectionRange(ta0.value.length, ta0.value.length);
+    await click('.wr-tokens button', '+ she / he');
+    await until(() => /Hello there\. \{He\}/.test($$('.wr-page textarea')[0].value), 'token inserted');
+    ok(/Reads: Hello there\. (He|She|They)/.test($$('.wr-page')[0].innerText), 'write: + she / he puts a capital {He} after a full stop, and the page shows how it reads');
+    $$('.wr-page .anvil-role-ic-trash button')[8].click();
+    const rm = await until(() => $$('.anvil-modal button, .modal button').find((b) => b.textContent.trim() === 'Remove' && b.offsetParent), 'remove confirm');
+    rm.click();
+    await until(() => $$('.wr-page').length === 8, 'page removed');
+    ok(true, 'write: removing a page with words asks first');
+    const pic0 = $$('.wr-page .wr-pic-art')[0].innerHTML;
+    $$('.wr-page .anvil-role-ic-image button')[0].click();
+    await until(() => $$('.wr-tile').length === 10, 'picture tiles');
+    const sel = $('.wr-picker select');
+    sel.value = Array.from(sel.options).find((o) => /Hiccupy/.test(o.textContent)).value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await until(() => /Page 4/.test($$('.wr-tile')[4].textContent) && $$('.wr-tile').length === 10, 'dragon tiles');
+    $$('.wr-tile')[4].click();
+    await until(() => !$('.wr-picker') && $$('.wr-page .wr-pic-art')[0].innerHTML !== pic0, 'picture changed');
+    ok(true, 'write: Pick a picture shows any story\'s cover + pages and swaps the page picture');
+    await click('.wr-add button', 'Add a page');
+    await until(() => $$('.wr-page').length === 9, 'page added');
+    type($$('.wr-page textarea')[8], 'And they all lived happily ever after.');
+    ok(/Not saved yet/.test($('.anvil-role-wr-status').textContent), 'write: adding a page; the bar says Not saved yet');
+    await click('.wr-bar button', 'Save');
+    await until(() => /^#write\/u-/.test(location.hash) && /All changes saved/.test($('.anvil-role-wr-status').textContent), 'saved', 30000);
+    const storyHash = location.hash;
+    ok(true, 'write: Save stores the story and the address becomes ' + storyHash);
+    await click('.wr-bar button', 'Preview');
+    await until(() => $('.wr-preview .rd-book') && rdr(), 'preview reader');
+    ok(/Brave Bears/.test($('.wr-preview').innerText), 'write: Preview opens the reader with the new title');
+    await click('.wr-bar button', 'Make it a book');
+    await click('.mk-dialog .anvil-role-btn-primary button', 'Make my book');
+    await until(() => /^#book\//.test(location.hash) && window.UI_READY && $('.rd-book'), 'book from the written story', 30000);
+    ok(/Brave Bears/.test(document.body.innerText), 'write: Make it a book puts it on the shelf and opens it');
+    await page('#library', () => $$('.lb-card').length === 19, 'library with your story');
+    ok(/Your stories/.test($('.ui-wrap').innerText) && $$('.anvil-role-badge-new').some((b) => b.offsetParent && /Your story/.test(b.textContent)), 'library: Your stories shows the written story');
+    await page(storyHash, () => $$('.wr-page').length === 9, 'editor again');
+    ok(/\{He\}/.test($$('.wr-page textarea')[0].value) && $('.wr-meta input').value === '{name} and the Brave Bears', 'write: reopening keeps the words and title');
+    await click('.wr-bar button', 'Delete');
+    const del = await until(() => $$('.anvil-modal button, .modal button').find((b) => b.textContent.trim() === 'Delete' && b.offsetParent), 'delete confirm');
+    ok(/1 book made from it/.test(document.body.innerText), 'write: Delete warns about the book made from it');
+    del.click();
+    await until(() => location.hash === '#write' && window.UI_READY && $$('.wr-start').length === 18 && !/Your stories/.test($('.ui-wrap').innerText), 'deleted', 30000);
+    ok(true, 'write: Delete removes the story (and its book)');
 
     // ---- back to the book: shelf shows it, then remove it
     await page('#home', () => $$('.sh-book').length >= 1, 'book on the shelf');

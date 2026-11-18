@@ -1,36 +1,5 @@
 allow_embedding: false
 db_schema:
-  error_log:
-    client: none
-    columns:
-    - admin_ui: {order: 0, width: 200}
-      name: when
-      type: datetime
-    - admin_ui: {order: 1, width: 120}
-      name: source
-      type: string
-    - admin_ui: {order: 2, width: 160}
-      name: kind
-      type: string
-    - admin_ui: {order: 3, width: 300}
-      name: message
-      type: string
-    - admin_ui: {order: 4, width: 300}
-      name: traceback
-      type: string
-    - admin_ui: {order: 5, width: 200}
-      name: page
-      type: string
-    - admin_ui: {order: 6, width: 120}
-      name: session
-      type: string
-    - admin_ui: {order: 7, width: 200}
-      name: user
-      target: users
-      type: link_single
-    indexes: []
-    server: full
-    title: Error log
   app_settings:
     client: none
     columns:
@@ -100,6 +69,53 @@ db_schema:
     indexes: []
     server: full
     title: Books
+  error_log:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: when
+      type: datetime
+    - admin_ui:
+        order: 1
+        width: 120
+      name: source
+      type: string
+    - admin_ui:
+        order: 2
+        width: 160
+      name: kind
+      type: string
+    - admin_ui:
+        order: 3
+        width: 300
+      name: message
+      type: string
+    - admin_ui:
+        order: 4
+        width: 300
+      name: traceback
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: page
+      type: string
+    - admin_ui:
+        order: 6
+        width: 120
+      name: session
+      type: string
+    - admin_ui:
+        order: 7
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    indexes: []
+    server: full
+    title: Error log
   feedback:
     client: none
     columns:
@@ -338,6 +354,63 @@ db_schema:
     indexes: []
     server: full
     title: Saved paintings
+  user_stories:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: owner
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: key
+      type: string
+    - admin_ui:
+        order: 2
+        width: 200
+      name: title
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: blurb
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: color
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: cover
+      type: string
+    - admin_ui:
+        order: 6
+        width: 200
+      name: pages
+      type: simpleObject
+    - admin_ui:
+        order: 7
+        width: 200
+      name: base
+      type: string
+    - admin_ui:
+        order: 8
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 9
+        width: 200
+      name: updated
+      type: datetime
+    indexes: []
+    server: full
+    title: User stories
   users:
     client: none
     columns:
@@ -472,9 +545,10 @@ db_schema:
     server: full
     title: Voice pages
 metadata:
-  description: "Design a cartoon look-alike of your child, then read, colour, paint or print classic fairy tales starring them. Twelve tales retold for ages 3 to 6."
-  logo_img: "asset:icon-512.png"
-  title: "Little Hero Books: picture books starring your child"
+  description: Design a cartoon look-alike of your child, then read, colour, paint or print classic fairy tales starring them.
+    Twelve tales retold for ages 3 to 6.
+  logo_img: asset:icon-512.png
+  title: 'Little Hero Books: picture books starring your child'
 name: Little Hero Books
 native_deps:
   head_html: |
@@ -536,12 +610,12 @@ native_deps:
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qgsqghg" data-button="false" data-label="Submit feedback" async></script>
     <link rel="stylesheet" href="_/theme/icons.css?v=6b26c299be">
-    <link rel="stylesheet" href="_/theme/app.css?v=2355d8f91d">
+    <link rel="stylesheet" href="_/theme/app.css?v=e7be0a7372">
     <script src="_/theme/lh-kit.js?v=308d905bc9"></script>
     <script src="_/theme/ark-music.js?v=6d0ae6dcf6"></script>
     <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>
-    <script src="_/theme/lh-scenes.js?v=2edce843d3"></script>
-    <script src="_/theme/lh-book.js?v=cc253251ac"></script>
+    <script src="_/theme/lh-scenes.js?v=5f74f2774e"></script>
+    <script src="_/theme/lh-book.js?v=1dbb9df8b7"></script>
 package_name: Little_Hero_Books
 runtime_options:
   client_version: '3'

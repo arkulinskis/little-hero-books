@@ -5,7 +5,7 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import DemoData, Feedback, Stories
+from . import DemoData, Feedback, Stories, UserStories
 
 
 @anvil.server.callable(require_user=True)
@@ -17,6 +17,7 @@ def admin_overview():
             "heroes": len(app_tables.heroes.search(is_demo=False)),
             "books": len(app_tables.books.search(is_demo=False)),
             "shared": len([b for b in app_tables.books.search(is_demo=False) if b["share_key"]]),
+            "written": UserStories.count_all(),
             "demo": {"state": DemoData.state(), "counts": DemoData.counts()}}
 
 

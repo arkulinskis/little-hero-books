@@ -1,0 +1,18 @@
+<article class="ui-card wr-page">
+  <div class="wr-pic">
+    <div class="wr-pic-art" anvil:name="pic" anvil:on-dom:click="self.pic_click"></div>
+    <anvil-component type="Button" name="pic_button" prop:text="Change picture" prop:role='["btn", "btn-sm", "ic-image"]'></anvil-component>
+  </div>
+  <div class="wr-body">
+    <div class="wr-page-head">
+      <anvil-component type="Label" name="num_label" prop:role='["wr-num"]'></anvil-component>
+      <span class="ui-row wr-page-tools">
+        <anvil-component type="Button" name="up_button" prop:text="Move up" prop:tooltip="Move this page earlier" prop:role='["btn", "btn-icon", "btn-sm", "ic-back", "wr-up"]'></anvil-component>
+        <anvil-component type="Button" name="down_button" prop:text="Move down" prop:tooltip="Move this page later" prop:role='["btn", "btn-icon", "btn-sm", "ic-arrow", "wr-down"]'></anvil-component>
+        <anvil-component type="Button" name="remove_button" prop:text="Remove page" prop:tooltip="Remove this page" prop:role='["btn", "btn-icon", "btn-sm", "btn-danger", "ic-trash"]'></anvil-component>
+      </span>
+    </div>
+    <anvil-component type="TextArea" name="text_box" prop:height="120" prop:placeholder="What happens on this page?" prop:role='["wr-text"]'></anvil-component>
+    <anvil-component type="Label" name="reads_label" prop:role='["fine-print", "wr-reads"]'></anvil-component>
+  </div>
+</article>

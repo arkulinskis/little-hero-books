@@ -5,7 +5,7 @@ description: Context, workflow and recipes for Little Hero Books (folder little-
 
 # Little Hero Books (native Anvil Forms)
 
-**What it is:** personalised picture books (hero studio, 12 tales, reader, PDF, family links; README.md lists every
+**What it is:** personalised picture books (hero studio, 18 stories, write your own, reader, PDF, family links; README.md lists every
 feature). Since 2026-11-02 the interface is native Anvil Forms: one Python Form per page with an HTML template, a layout
 Form for the frame, custom components, RepeatingPanels with item templates. The drawing engines (cartoon people, story
 pictures, reader, PDF writer) stay JavaScript and are called from Python. The product, look and story/avatar recipes are
@@ -86,6 +86,37 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   `self.raise_event("x-close-alert", value=...)` and alert returns the value.
 - **Server calls** = `state.call("fn", ...)`: expected problems come back as `{"ok": False, "error"}` -> toast + None.
   Pages that show a friendly state instead (private book, broken family link) call anvil.server.call and check ok.
+
+## More stories + Write your own (2026-11-17, the user's ask)
+
+- **Six new library stories**: lion, stonesoup, mice (Aesop / folk, public domain) and star, puddles, dragon (made up:
+  `"original": True` in Stories.py, source "A brand-new story, written for Little Hero Books.", shown with a "New
+  story" badge). Pictures in lh-scenes.js, block "kits for the tales added 2026-11-17" (lion, net, acacia/savanna,
+  well, vegetables, oak, cake/cheese/jelly/teapot, mouseHole, starFriend, owl, kite, torch, frog, umbrella, puddle,
+  splash, rainbow, bench, boots, dragon, popcorn, flame, marshmallow, cave, peak, dragonTown; extra LH.PEOPLE traveller,
+  villager, townboy). lion/dragon/frog scale themselves up (`s *= 1.2x`). Heroes "ride" by being drawn first, so the
+  animal's body hides their legs. Landing STORIES, lh.STORY_KEYS and the tests' counts (18) list them.
+- **Contact sheet** for checking pictures without the app: a scratch HTML page that loads lh-kit.js, lh-avatar.js,
+  lh-scenes.js by file:// and writes `LH.sceneSvg(key, p, hero)` for cover + 0..8, screenshot with Chrome headless
+  `--allow-file-access-from-files --screenshot`.
+- **Written stories** (table `user_stories`: owner, key "u-<hex>", title, blurb, color, cover, pages [{text, pic}],
+  base, created, updated; server `UserStories.py`: my_stories, get_user_story (+ books count), start_story(base),
+  save_story, delete_story (deletes its books with recordings and paintings)). `Stories.get(key)` finds library or
+  written stories; `Stories.owner_of`; `get_story` shows a written one only to its owner; make_book accepts only your
+  own; get_shared_book opens any via the family link. Limits: 50 stories, 16 pages, 700 characters a page, unknown
+  `{tokens}` lose their braces, bad picture refs fall back to `star:<n>`, colours from `UserStories.COLORS`.
+- **Pictures are borrowed by reference**: `pics[i]` / `cover` = "bears:3" / "bears:cover". `LH.sceneSvg` takes a
+  story *object* too (`LH.picRef`), so lh-book.js passes `st` (not `st.key`) everywhere: reader, PDF, paintPicture.
+  `lh.pic_svg(ref, hero)` draws one reference. Painting's `look_key` adds the pics of written stories (swap a picture
+  = paint again).
+- **Client**: `Pages/Write` (hub = blank page + your stories + StartTile per library story; editor = meta card, token
+  card, `Items/WritePage` per page, sticky `.wr-bar`, Reader preview), `Dialogs/PickPicture` (story DropDown +
+  `Items/PicTile`), StoryCard `edit` item flag + `kind_badge`, Library "Write your own story" card + "Your stories",
+  Story page "Change this story" (guests go to sign-up first), Shell nav "Write" (not in the phone tab bar).
+  Token insertion: `WritePage.insert(token)` at the textarea cursor, capital {He}/{His} after `.!?` or at the start.
+  Unsaved edits: store "writeDraft" (offered back when the same story / same base opens; cleared on save/delete).
+- Tests: test_server.py "stories people write"; flow.js "write a story" (start from bears, token, remove, pick a
+  picture, add, save, preview, make a book, library, reopen, delete).
 
 ## Record my voice (Prepsto idea, 2026-11-05)
 

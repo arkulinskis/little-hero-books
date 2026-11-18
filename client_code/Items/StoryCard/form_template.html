@@ -5,11 +5,13 @@
     <div class="facts">
       <anvil-component type="Label" name="pages_badge" prop:role='["badge"]'></anvil-component>
       <anvil-component type="Label" name="minutes_badge" prop:role='["badge"]'></anvil-component>
-      <span class="ui-badge brand">Ages 3–6</span>
+      <anvil-component type="Label" name="kind_badge" prop:role='["badge", "badge-new"]'></anvil-component>
+      <span class="ui-badge brand" anvil:name="ages_badge">Ages 3–6</span>
     </div>
     <div class="ui-row">
       <anvil-component type="Button" name="read_button" prop:text="Read" prop:role='["btn", "btn-sm", "ic-book"]'></anvil-component>
       <anvil-component type="Button" name="make_button" prop:text="Add to shelf" prop:role='["btn", "btn-sm", "btn-primary", "ic-plus"]' bind:visible="self.item['own']"></anvil-component>
+      <anvil-component type="Button" name="edit_button" prop:text="Edit" prop:role='["btn", "btn-sm", "btn-primary", "ic-edit"]'></anvil-component>
     </div>
   </div>
 </article>

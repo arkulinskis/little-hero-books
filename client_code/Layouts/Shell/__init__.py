@@ -7,7 +7,7 @@ from anvil.js import window
 from ._anvil_designer import ShellTemplate
 from ... import auth, router, state
 
-NAV = ["home", "studio", "library"]
+NAV = ["home", "studio", "library", "write"]
 THEMES = ["auto", "light", "dark"]
 
 
@@ -60,15 +60,17 @@ class Shell(ShellTemplate):
         self._paint_me()
         for name in NAV:
             self.get_nav(name).classes["on"] = name == self._active
-            self.get_tab(name).classes["on"] = name == self._active
+            tab = self.get_tab(name)
+            if tab is not None:
+                tab.classes["on"] = name == self._active
         self.tab_profile.classes["on"] = self._active == "profile"
         self.guest_actions.visible = not state.me() and self._active != "auth"
 
     def get_nav(self, name):
-        return {"home": self.nav_home, "studio": self.nav_studio, "library": self.nav_library}[name]
+        return {"home": self.nav_home, "studio": self.nav_studio, "library": self.nav_library, "write": self.nav_write}[name]
 
     def get_tab(self, name):
-        return {"home": self.tab_home, "studio": self.tab_studio, "library": self.tab_library}[name]
+        return {"home": self.tab_home, "studio": self.tab_studio, "library": self.tab_library}.get(name)
 
     # ---- account menu
     @handle("avatar_button", "click")

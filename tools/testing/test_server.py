@@ -129,12 +129,13 @@ assert bob["is_admin"] is False
 # ---------------------------------------------------------------------------------- the stories
 import re  # noqa: E402
 St = M["Stories"]
-assert len(St.STORIES) == 12 and len({s["key"] for s in St.STORIES}) == 12
+assert len(St.STORIES) == 18 and len({s["key"] for s in St.STORIES}) == 18
+assert len([s for s in St.STORIES if s.get("original")]) == 3
 for s in St.STORIES:
     assert len(s["pages"]) == 9, s["key"]
     assert 300 <= St.words(s) <= 500, (s["key"], St.words(s))
     assert set(re.findall(r"\{(\w+)\}", " ".join(s["pages"]) + s["title"])) <= St.TOKENS, s["key"]
-    assert "{name}" in s["title"] and "public domain" in s["source"]
+    assert "{name}" in s["title"] and ("public domain" in s["source"] or (s.get("original") and "brand-new" in s["source"]))
 bad(call("get_story", "nope"))
 bad(call("get_story", None))
 assert len(ok(call("get_story", "bears"))["story"]["text"]) == 9
@@ -144,7 +145,7 @@ DD = M["DemoData"]
 as_user(None)
 lib = call("get_library")
 assert DD.state() == "loaded", "demo loads on first visit"
-assert len(lib["stories"]) == 12 and lib["heroes"] == [] and len(lib["examples"]) == len(DD.DEMO_HEROES)
+assert len(lib["stories"]) == 18 and lib["mine"] == [] and lib["heroes"] == [] and len(lib["examples"]) == len(DD.DEMO_HEROES)
 assert denied("get_shelf") and denied("save_hero", None, "X", "she", {}) and denied("make_book", "x", "bears")
 ex = lib["examples"][0]
 assert ok(call("get_hero", ex["id"]))["mine"] is False, "example heroes can be copied by anyone"
@@ -601,6 +602,55 @@ bad(call("admin_painting_check"), "no key")
 S.SECRETS["image_enhancer_key"] = "ie_test_key"
 as_user(ana)
 
+# ---------------------------------------------------------------------------------- stories people write (UserStories.py)
+as_user(None)
+assert denied("save_story", "", "T", "", "", "", [{"text": "x"}]) and denied("start_story", "bears") and denied("my_stories")
+as_user(ana)
+d = ok(call("start_story", "bears"))["story"]
+assert d["key"] == "" and d["base"] == "bears" and len(d["text"]) == 9 and d["pics"][3] == "bears:3" and d["cover"] == "bears:cover"
+blank = ok(call("start_story", None))["story"]
+assert len(blank["text"]) == 1 and blank["base"] == ""
+bad(call("save_story", "", "   ", "", "", "", [{"text": "Hi"}]), "needs a title")
+bad(call("save_story", "", "My story", "", "", "", []), "needs a page")
+bad(call("save_story", "", "My story", "", "", "", [{"text": "  "}]), "no empty pages")
+bad(call("save_story", "", "My story", "", "", "", [{"text": "x"}] * 17), "16 pages at most")
+pages = [{"text": "{name} met a {dragon} and <b>{he}</b> laughed.", "pic": "dragon:2"}, {"text": "The end of {his} day.", "pic": "nope:1"},
+         {"text": "Bye!", "pic": "bears:99"}]
+s1 = ok(call("save_story", "", "{name} and the Kind Dragon", "A gentle one", "#3DBE8B", "lion:cover", pages, "dragon"))["story"]
+k1 = s1["key"]
+assert k1.startswith("u-") and s1["custom"] and s1["color"] == "#3dbe8b" and s1["cover"] == "lion:cover" and s1["base"] == "dragon"
+assert s1["text"][0] == "{name} met a dragon and <b>{he}</b> laughed.", "unknown tokens lose their braces"
+assert s1["pics"][0] == "dragon:2" and s1["pics"][1] == "star:1" and s1["pics"][2] == "star:2", "unknown pictures fall back"
+assert s1["plain"] == "The Kind Dragon" and "Hiccupy" in s1["source"]
+assert [m["key"] for m in call("my_stories")["stories"]] == [k1] and [m["key"] for m in call("get_library")["mine"]] == [k1]
+assert ok(call("get_story", k1))["story"]["text"][1] == "The end of {his} day."
+assert ok(call("get_user_story", k1))["books"] == 0
+s1b = ok(call("save_story", k1, "{name} and the Kind Dragon", "", "#nothex", "", pages[:2]))["story"]
+assert s1b["key"] == k1 and len(s1b["text"]) == 2 and s1b["color"] == "#ef5a36" and s1b["cover"] == "dragon:2"
+wb = ok(call("make_book", T.heroes.search(owner=ana)[0].get_id(), k1))["book"]
+gb = ok(call("get_book", wb["id"]))
+assert gb["story"]["custom"] and gb["story"]["pics"] == ["dragon:2", "star:1"] and len(gb["story"]["text"]) == 2
+assert M["Voice"].page_count(T.books.get_by_id(wb["id"])) == 5, "cover + dedication + 2 pages + The End"
+wsh = ok(call("share_book", wb["id"], True))["book"]["share_key"]
+as_user(None)
+assert ok(call("get_shared_book", wsh))["story"]["text"][0].startswith("{name} met"), "family links open written stories"
+bad(call("get_story", k1), "written stories are private")
+as_user(bob)
+bad(call("get_story", k1))
+bad(call("get_user_story", k1))
+bad(call("save_story", k1, "Mine now", "", "", "", pages))
+bad(call("delete_story", k1))
+assert call("get_library")["mine"] == [] and call("my_stories")["stories"] == []
+bob_hero = ok(call("save_hero", None, "Bo", "he", {"hair": "crop"}))["hero"]
+bad(call("make_book", bob_hero["id"], k1), "books only from your own written stories")
+ok(call("delete_hero", bob_hero["id"]))
+as_user(ana)
+assert ok(call("get_user_story", k1))["books"] == 1
+assert ok(call("delete_story", k1))["books"] == 1
+assert not T.user_stories.search() and not T.books.search(story=k1), "deleting a story deletes its books"
+bad(call("get_book", wb["id"]))
+ok(call("delete_story", k1), "deleting twice is fine")
+
 # limits, and removing a hero removes their books
 as_user(ana)
 for i in range(11):
@@ -621,7 +671,7 @@ ok(call("delete_book", pea["id"]), "deleting twice is fine")
 as_user(ana)
 assert denied("admin_library")
 as_user(admin)
-assert len(call("admin_library")["stories"]) == 12
+assert len(call("admin_library")["stories"]) == 18
 ov = call("admin_overview")
 assert ov["heroes"] == 11 and ov["books"] == 0 and ov["shared"] == 0
 ok(call("demo_remove"))

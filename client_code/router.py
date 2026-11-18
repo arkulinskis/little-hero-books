@@ -19,6 +19,7 @@ PAGES = {
     "library": (None, "Story library"),
     "book": (None, "Book"),
     "story": (None, "Story"),
+    "write": ("user", "Write a story"),
     "read": (None, "A book for you"),
     "profile": ("user", "Your profile"),
     "admin": ("admin", "Admin"),
@@ -50,6 +51,9 @@ def _form(name):
     if name == "story":
         from .Pages.Story import Story
         return Story
+    if name == "write":
+        from .Pages.Write import Write
+        return Write
     if name == "read":
         from .Pages.Read import Read
         return Read

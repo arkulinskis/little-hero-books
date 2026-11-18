@@ -1146,6 +1146,470 @@
       }
     ]
   };
+  /* ================================================================== kits for the tales added 2026-11-17
+     (The Lion and the Mouse, Stone Soup, Town Mouse and Country Mouse, and the brand-new Lost Little Star,
+     Puddle Parade and Hiccupy Dragon). Same rules as above: literal colours, feet at (0,0), tube() for thick lines. */
+  LH.PEOPLE.traveller = { size: 'adult', skin: 's4', face: 'oval', hair: 'tufts', hairColor: 'white', eyes: 'dot', facial: 'beard', outfit: 'tunic', outfitColor: 'brown', hat: 'none' };
+  LH.PEOPLE.villager = { size: 'adult', skin: 's2', face: 'round', hair: 'bob', hairColor: 'blonde', eyes: 'round', outfit: 'dress', outfitColor: 'teal', hat: 'none' };
+  LH.PEOPLE.townboy = { size: 'kid', skin: 's6', face: 'round', hair: 'crop', hairColor: 'black', eyes: 'round', outfit: 'jumper', outfitColor: 'red', hat: 'beanie' };
+
+  /* the lion: facing right, head at the front; mood sleep|roar|sad|laugh|happy, lie = lying down */
+  function lion(x, y, s, o) {
+    o = o || {}; s *= 1.22;
+    var f = '#E9A94B', lt = '#F8D58E', mn = '#B8622E', b = '', lie = !!o.lie, dy = lie ? 70 : 0;
+    b += tube('M-150 ' + (-100 + dy) + ' Q-240 ' + (-110 + dy) + ' -228 ' + (-190 + dy * .6), 12, f) + blob([[-228, -200 + dy * .6, 18], [-240, -188 + dy * .6, 13], [-216, -188 + dy * .6, 13]], mn, INK, 3.5);
+    if (!lie) b += rect(-150, -100, 42, 100, LH.shade(f, -.12), INK, 4, 16) + rect(-90, -100, 42, 100, LH.shade(f, -.12), INK, 4, 16);
+    b += ell(-30, -130 + dy, 150, 74, f, INK, 4.5) + ell(-20, -100 + dy, 100, 30, lt);
+    if (!lie) b += rect(48, -112, 44, 112, f, INK, 4, 16) + rect(102, -112, 44, 112, f, INK, 4, 16);
+    else b += ell(160, -14, 46, 18, f, INK, 4) + ell(84, -12, 46, 18, f, INK, 4);
+    var hx = 130, hy = -205 + dy * 1.15, ring = [];
+    if (o.bow) hy += 40;
+    for (var i = 0; i < 12; i++) { var a = i * Math.PI / 6; ring.push([hx + Math.cos(a) * 72, hy + Math.sin(a) * 72, 36]); }
+    b += blob(ring, mn, INK, 4) + circ(hx, hy, 70, mn);
+    b += circ(hx - 44, hy - 50, 16, f, INK, 3.5) + circ(hx + 44, hy - 50, 16, f, INK, 3.5) + circ(hx, hy, 58, f, INK, 4) + ell(hx, hy + 26, 32, 22, lt, INK, 3) +
+      path('M' + (hx - 12) + ' ' + (hy + 6) + ' L' + (hx + 12) + ' ' + (hy + 6) + ' L' + hx + ' ' + (hy + 18) + 'Z', '#7A4E30', INK, 2.5);
+    if (o.mood === 'sleep') b += path('M' + (hx - 32) + ' ' + (hy - 14) + ' q10 8 20 0 M' + (hx + 12) + ' ' + (hy - 14) + ' q10 8 20 0', 'none', INK, 4);
+    else b += circ(hx - 22, hy - 14, 7, INK) + circ(hx + 22, hy - 14, 7, INK) + circ(hx - 20, hy - 16, 2.5, '#FFFFFF') + circ(hx + 24, hy - 16, 2.5, '#FFFFFF');
+    if (o.mood === 'sad') b += path('M' + (hx - 36) + ' ' + (hy - 34) + ' l18 8 M' + (hx + 36) + ' ' + (hy - 34) + ' l-18 8', 'none', INK, 3.5);
+    if (o.mood === 'roar') b += ell(hx, hy + 38, 18, 15, '#7A2638', INK, 3) + path('M' + (hx - 10) + ' ' + (hy + 25) + ' l4 8 l4 -8 M' + (hx + 2) + ' ' + (hy + 25) + ' l4 8 l4 -8', '#FFFFFF', INK, 1.5);
+    else if (o.mood === 'sad') b += path('M' + (hx - 12) + ' ' + (hy + 38) + ' Q' + hx + ' ' + (hy + 30) + ' ' + (hx + 12) + ' ' + (hy + 38), 'none', INK, 3.5);
+    else if (o.mood === 'laugh') b += path('M' + (hx - 16) + ' ' + (hy + 26) + ' Q' + hx + ' ' + (hy + 52) + ' ' + (hx + 16) + ' ' + (hy + 26) + 'Z', '#7A2638', INK, 3);
+    else b += path('M' + hx + ' ' + (hy + 18) + ' q-8 12 -16 6 M' + hx + ' ' + (hy + 18) + ' q8 12 16 6', 'none', INK, 3);
+    b += circ(hx - 40, hy + 16, 9, C.pink, null, 0, ' opacity=".45"') + circ(hx + 40, hy + 16, 9, C.pink, null, 0, ' opacity=".45"');
+    return at(x, y, s, b, o.flip);
+  }
+  /* an old rope net thrown over something: a dome w wide, h high, standing on y */
+  function net(x, y, w, h) {
+    var id = LH.uid('net'), d = 'M' + (x - w / 2) + ' ' + y + ' Q' + (x - w / 2) + ' ' + (y - h) + ' ' + x + ' ' + (y - h) + ' Q' + (x + w / 2) + ' ' + (y - h) + ' ' + (x + w / 2) + ' ' + y, l = '';
+    for (var i = -h; i < w; i += 48) l += 'M' + (x - w / 2 + i) + ' ' + y + ' l' + h + ' ' + (-h) + ' M' + (x + w / 2 - i) + ' ' + y + ' l' + (-h) + ' ' + (-h) + ' ';
+    return '<clipPath id="' + id + '"><path d="' + d + 'Z"/></clipPath><g clip-path="url(#' + id + ')">' + path(l, 'none', INK, 9) + path(l, 'none', '#D8B57A', 4) + '</g>' + tube(d, 6, '#D8B57A');
+  }
+  function ropeBits(x, y) { return tube('M' + (x - 160) + ' ' + y + ' q30 -20 60 -4 t50 0', 5, '#D8B57A') + tube('M' + (x + 40) + ' ' + (y + 6) + ' q30 -24 70 -8', 5, '#D8B57A') + tube('M' + (x - 40) + ' ' + (y - 4) + ' l40 -16', 5, '#D8B57A'); }
+  function acacia(x, y, s) {
+    return at(x, y, s, tube('M0 0 L-4 -150 L-50 -200 M-4 -150 L40 -215', 18, C.wood2) + blob([[-70, -225, 40], [-10, -245, 50], [55, -228, 44], [-125, -212, 30], [110, -215, 30]], '#7DBB55', INK, 4));
+  }
+  var savanna = function (o) {
+    o = o || {};
+    var sk = o.sunset ? sky('#FFC08A') + circ(500, 470, 120, '#FFB020', INK, 4) : sky('#FFE7B5') + sun(o.sunX || 880, 100, 44) + cloud(380, 90, .7);
+    return sk + hills('#E3BC5E', '#F0CF73', o.dy || 0) + (o.tree === false ? '' : acacia(o.treeX || 180, 520, o.treeS || 1.1)) + grassTufts(22, 560, 690, o.sd || 71);
+  };
+
+  /* Stone Soup: a well, vegetables, a basket, a smooth stone */
+  function well(x, y, s) {
+    var st = '';
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 4; c++) st += rect(-64 + c * 32, -86 + r * 28, 28, 24, (r + c) % 2 ? '#B9B2C9' : '#D3CDE0', INK, 2.5, 5);
+    return at(x, y, s, rect(-70, -92, 140, 92, '#C9C3D9', INK, 4, 10) + st + rect(-62, -210, 14, 120, C.wood2, INK, 3.5, 4) + rect(48, -210, 14, 120, C.wood2, INK, 3.5, 4) +
+      path('M-96 -196 L0 -260 L96 -196Z', C.red, INK, 4) + path('M-50 -170 h100', 'none', INK, 5) + path('M0 -170 v40', 'none', INK, 3) + rect(-16, -134, 32, 28, C.wood, INK, 3, 4));
+  }
+  function stone(x, y, s) { return ell(x, y, 26 * s, 18 * s, '#A9A2C0', INK, 3.5) + ell(x - 8 * s, y - 6 * s, 9 * s, 4 * s, '#D3CDE0'); }
+  function onion(x, y, s) { return at(x, y, s, path('M0 -50 Q-34 -40 -30 -16 Q-26 0 0 0 Q26 0 30 -16 Q34 -40 0 -50Z', '#C77DB5', INK, 3.5) + path('M0 -50 q-4 -16 -10 -22 M0 -50 q4 -18 12 -22', 'none', '#3E8E4E', 4) + path('M-10 -40 q-6 20 0 36 M10 -40 q6 20 0 36', 'none', '#A35D93', 2.5)); }
+  function potato(x, y, s) { return ell(x, y - 18 * s, 30 * s, 20 * s, '#D2A268', INK, 3.5) + circ(x - 10 * s, y - 22 * s, 2.5 * s, '#9E7442') + circ(x + 12 * s, y - 14 * s, 2.5 * s, '#9E7442'); }
+  function cabbage(x, y, s) { return blob([[x - 22 * s, y - 26 * s, 24 * s], [x + 22 * s, y - 26 * s, 24 * s], [x, y - 42 * s, 28 * s]], '#8FD37A', INK, 3.5) + path('M' + x + ' ' + (y - 64 * s) + ' Q' + (x - 10 * s) + ' ' + (y - 36 * s) + ' ' + x + ' ' + (y - 14 * s), 'none', '#5EA84E', 3); }
+  function basket(x, y, s, inner) { return at(x, y, s, path('M-50 -34 Q0 -96 50 -34', 'none', INK, 7) + path('M-50 -34 Q0 -96 50 -34', 'none', '#C98B4E', 3) + (inner || '') + path('M-56 -34 L-44 0 L44 0 L56 -34Z', '#D9A26C', INK, 4) + path('M-50 -20 h100 M-30 -34 l6 34 M0 -34 v34 M30 -34 l-6 34', 'none', '#A86B3A', 2.5)); }
+  function soupPot(x, y, s, o) { o = o || {}; return pot(x, y, s, { steam: o.steam, full: false }) + (o.soup ? ell(x, y - 70 * s, 52 * s, 10 * s, '#E9A23B', INK, 2.5) + circ(x - 20 * s, y - 72 * s, 7 * s, '#FF9A3C', INK, 2) + circ(x + 16 * s, y - 70 * s, 6 * s, '#8FD37A', INK, 2) : ''); }
+  var village = function (o) { o = o || {}; return town({ lit: o.lit, sky: o.sky || '#CFE3F0' }) + (o.leaves === false ? '' : leaves(12, o.sd || 33)); };
+
+  /* Town Mouse and Country Mouse */
+  function oak(x, y, s, o) {
+    o = o || {};
+    return tree(x, y, s * 1.6, { c: o.c || '#5DAE52' }) + path('M' + (x - 60 * s) + ' ' + y + ' q20 -30 34 -10 M' + (x + 60 * s) + ' ' + y + ' q-20 -30 -34 -10', 'none', C.wood2, 10) +
+      path('M' + (x - 18 * s) + ' ' + y + ' L' + (x - 18 * s) + ' ' + (y - 26 * s) + ' A' + 18 * s + ' ' + 18 * s + ' 0 0 1 ' + (x + 18 * s) + ' ' + (y - 26 * s) + ' L' + (x + 18 * s) + ' ' + y + 'Z', o.lit ? '#FFC24A' : '#3A2C40', INK, 3.5);
+  }
+  function bee(x, y, s) { return at(x, y, s, ell(-6, -16, 9, 7, '#FFFFFF', INK, 2) + ell(6, -16, 9, 7, '#FFFFFF', INK, 2) + ell(0, 0, 16, 11, C.sun, INK, 2.5) + path('M-4 -10 v20 M5 -10 v20', 'none', INK, 3) + circ(12, -2, 2, INK)); }
+  function berries(x, y, s) { var b = ''; [[0, 0], [12, -4], [6, -14], [-10, -6], [18, 8]].forEach(function (p) { b += circ(x + p[0] * s, y + p[1] * s, 7 * s, '#8A3B9E', INK, 2); }); return b; }
+  function seedBowl(x, y, s) { return bowl(x, y, s, '#E9C77A', { full: false }) + circ(x - 10 * s, y - 34 * s, 4 * s, '#C99A2E') + circ(x + 8 * s, y - 36 * s, 4 * s, '#C99A2E') + circ(x, y - 30 * s, 4 * s, '#C99A2E'); }
+  function cake(x, y, s) { return at(x, y, s, ell(0, 0, 70, 12, '#FFFFFF', INK, 3) + rect(-54, -50, 108, 50, '#FF8FB8', INK, 3.5, 10) + rect(-54, -50, 108, 14, '#FFF1DE', INK, 3, 6) + rect(-40, -92, 80, 42, '#FFF1DE', INK, 3.5, 10) + path('M-40 -82 q10 12 20 0 t20 0 t20 0 t20 0', 'none', '#FF8FB8', 4) + circ(0, -102, 10, C.red, INK, 2.5)); }
+  function cheese(x, y, s) { return at(x, y, s, path('M-50 0 L50 0 L50 -40 L-50 -14Z', '#FFD34A', INK, 3.5) + path('M50 -40 L-50 -14 L-34 -34Z', '#FFE58A', INK, 3) + circ(-16, -10, 6, '#E9B92E') + circ(24, -16, 8, '#E9B92E')); }
+  function jelly(x, y, s) { return at(x, y, s, ell(0, 0, 54, 10, '#FFFFFF', INK, 3) + path('M-40 -2 Q-44 -70 0 -72 Q44 -70 40 -2Z', '#EF5A36', INK, 3.5) + path('M-20 -60 q-6 20 0 44', 'none', '#FFFFFF', 5, ' opacity=".55"')); }
+  function teapot(x, y, s) { return at(x, y, s, path('M40 -40 q40 -6 46 -44', 'none', INK, 12) + path('M40 -40 q40 -6 46 -44', 'none', '#8FC8F0', 6) + path('M-40 -60 q-40 0 -30 34', 'none', INK, 8) + ell(0, -40, 50, 40, '#8FC8F0', INK, 4) + ell(0, -78, 26, 8, '#8FC8F0', INK, 3) + circ(0, -90, 7, '#FFC93C', INK, 2.5) + path('M-30 -36 q30 14 60 0', 'none', '#FFFFFF', 4)); }
+  function mouseHole(x, y, s) { return path('M' + (x - 34 * s) + ' ' + y + ' L' + (x - 34 * s) + ' ' + (y - 34 * s) + ' A' + 34 * s + ' ' + 34 * s + ' 0 0 1 ' + (x + 34 * s) + ' ' + (y - 34 * s) + ' L' + (x + 34 * s) + ' ' + y + 'Z', '#3A2C40', INK, 4); }
+  function mushroom(x, y, s) { return at(x, y, s, rect(-16, -50, 32, 50, '#FFF1DE', INK, 3.5, 8) + path('M-60 -46 Q-60 -110 0 -112 Q60 -110 60 -46Z', C.red, INK, 4) + circ(-24, -76, 9, '#FFFFFF') + circ(16, -90, 7, '#FFFFFF') + circ(34, -62, 6, '#FFFFFF')); }
+  function feastRoom() {
+    return room({ wall: '#FFE1EC', floor: '#C98B4E', dot: '#FFC2D6', window: [700, 80, 170, 150], curtain: '#8A6BD8', picture: [120, 90] });
+  }
+
+  /* The Lost Little Star */
+  function starFriend(x, y, r, o) {
+    o = o || {};
+    var e = r * .22, s = circ(x, y, r * 1.5, '#FFF3B0', null, 0, ' opacity=".4"') + star(x, y, r, '#FFE36B', INK, 4);
+    s += o.mood === 'sleep' ? path('M' + P(x - e * 1.6) + ' ' + P(y - e * .4) + ' q' + P(e * .6) + ' ' + P(e * .5) + ' ' + P(e * 1.2) + ' 0 M' + P(x + e * .4) + ' ' + P(y - e * .4) + ' q' + P(e * .6) + ' ' + P(e * .5) + ' ' + P(e * 1.2) + ' 0', 'none', INK, 3)
+      : circ(x - e, y - e * .4, e * .4, INK) + circ(x + e, y - e * .4, e * .4, INK) + circ(x - e * .85, y - e * .6, e * .15, '#FFFFFF') + circ(x + e * 1.15, y - e * .6, e * .15, '#FFFFFF');
+    s += o.mood === 'sad' ? path('M' + P(x - e * .7) + ' ' + P(y + e * 1.1) + ' q' + P(e * .7) + ' ' + P(-e * .6) + ' ' + P(e * 1.4) + ' 0', 'none', INK, 3) + ell(x - e * 1.5, y + e * .6, e * .22, e * .34, '#7FC8F8', INK, 1.5)
+      : path('M' + P(x - e * .8) + ' ' + P(y + e * .5) + ' q' + P(e * .8) + ' ' + P(e * .9) + ' ' + P(e * 1.6) + ' 0', 'none', INK, 3);
+    return s + circ(x - e * 1.9, y + e * .4, e * .35, C.pink, null, 0, ' opacity=".6"') + circ(x + e * 1.9, y + e * .4, e * .35, C.pink, null, 0, ' opacity=".6"');
+  }
+  function owl(x, y, s, o) {
+    o = o || {};
+    var b = path('M-40 -20 Q-56 -70 -36 -110 L-30 -150 L-14 -126 Q0 -132 14 -126 L30 -150 L36 -110 Q56 -70 40 -20 Q0 0 -40 -20Z', '#9B6B43', INK, 4) +
+      ell(0, -54, 26, 34, '#E8CFA6') + path('M-6 -48 q6 6 12 0 M-6 -36 q6 6 12 0 M-6 -60 q6 6 12 0', 'none', '#B8946A', 3) +
+      circ(-16, -104, 17, '#FFFFFF', INK, 3) + circ(16, -104, 17, '#FFFFFF', INK, 3) + path('M-6 -92 L6 -92 L0 -80Z', '#FFB020', INK, 2.5) + path('M-30 -12 h10 M18 -12 h10', 'none', '#E9A23B', 5);
+    b += o.wink ? circ(-16, -104, 8, INK) + path('M8 -104 q8 -6 16 0', 'none', INK, 3.5) : circ(-16, -104, 8, INK) + circ(16, -104, 8, INK) + circ(-14, -107, 2.5, '#FFFFFF') + circ(18, -107, 2.5, '#FFFFFF');
+    return at(x, y, s, b, o.flip);
+  }
+  function kite(x, y, s, rot, o) {
+    o = o || {};
+    var tail = path('M0 90 Q-30 140 0 190 Q30 240 0 290', 'none', INK, 3), bows = '';
+    [[-14, 140, C.red], [14, 215, C.sky3], [-6, 280, '#3DBE8B']].forEach(function (b) { bows += path('M' + b[0] + ' ' + b[1] + ' l-16 -10 v20Z M' + b[0] + ' ' + b[1] + ' l16 -10 v20Z', b[2], INK, 2.5); });
+    return g('translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')', tail + bows + path('M0 -90 L62 -10 L0 90 L-62 -10Z', o.c || C.red, INK, 4) +
+      path('M0 -90 L0 90 M-62 -10 L62 -10', 'none', C.wood2, 4) + path('M0 -90 L62 -10 L0 -10Z', 'rgba(255,255,255,.3)') + (o.star ? starFriend(0, 290, 34, { mood: 'happy' }) : ''));
+  }
+  function torch(x, y, rot) { return g('translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ')', path('M0 -10 L320 -90 L320 90 L0 10Z', 'rgba(255,240,170,.35)') + rect(-34, -12, 40, 24, C.sky3, INK, 3.5, 6) + rect(4, -16, 12, 32, '#FFE36B', INK, 3, 4)); }
+  var nightGarden = function (o) {
+    o = o || {};
+    return sky(C.night) + moon(o.moonX || 840, 110, 44) + stars(34, 380, o.sd || 5) + hills('#3E6E5A', '#4E8A62') + (o.house === false ? '' : house(40, 520, 220, 170, { wall: '#FFE1B0', roof: C.sky3, lit: true })) +
+      (o.flowers === false ? '' : flowers(8, 610, 690, 15).split('#FFFFFF').join('#FFF3B0'));
+  };
+  function heartOfStars(cx, cy, r) {
+    var s = '';
+    for (var i = 0; i < 18; i++) { var t = i / 18 * Math.PI * 2, hx = 16 * Math.pow(Math.sin(t), 3), hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); s += star(cx + hx * r / 16, cy + hy * r / 16, 10, '#FFE9A8', INK, 2); }
+    return s;
+  }
+  function streak(x0, y0, x1, y1) { return path('M' + x0 + ' ' + y0 + ' Q' + ((x0 + x1) / 2) + ' ' + (y0 - 30) + ' ' + x1 + ' ' + y1, 'none', '#FFF3B0', 10, ' opacity=".6" stroke-dasharray="2 18"'); }
+
+  /* The Puddle Parade */
+  function frog(x, y, s, o) {
+    o = o || {}; s *= 1.3;
+    var f = '#6CC46A', b = ell(-40, -10, 26, 14, f, INK, 3.5) + ell(40, -10, 26, 14, f, INK, 3.5) + ell(0, -44, 50, 40, f, INK, 4) + ell(0, -34, 30, 22, '#D8F0B0') +
+      circ(-24, -84, 17, f, INK, 3.5) + circ(24, -84, 17, f, INK, 3.5) + circ(-24, -86, 10, '#FFFFFF', INK, 2.5) + circ(24, -86, 10, '#FFFFFF', INK, 2.5) + circ(-22, -86, 5, INK) + circ(26, -86, 5, INK) +
+      path('M-26 -58 Q0 -40 26 -58', 'none', INK, 3.5) + circ(-34, -60, 6, C.pink, null, 0, ' opacity=".6"') + circ(34, -60, 6, C.pink, null, 0, ' opacity=".6"');
+    if (o.drum) b += rect(-26, -40, 52, 36, C.red, INK, 3.5, 6) + ell(0, -40, 26, 8, '#FFF8EC', INK, 3) + path('M-26 -30 L26 -10 M26 -30 L-26 -10', 'none', C.sun, 3) + path('M34 -74 L8 -44', 'none', C.wood2, 5) + circ(34, -76, 6, '#FFFFFF', INK, 2.5);
+    return at(x, y, s, b, o.flip);
+  }
+  function umbrella(x, y, s, c, rot) {
+    var cc = c || C.red;
+    return g('translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ') scale(' + s + ')', path('M0 -10 L0 150 q0 22 -22 18', 'none', INK, 6) +
+      path('M-110 0 Q-110 -100 0 -110 Q110 -100 110 0 Q82 -20 55 0 Q27 -20 0 0 Q-27 -20 -55 0 Q-82 -20 -110 0Z', cc, INK, 4) + path('M0 -110 Q-30 -60 -55 0 M0 -110 Q30 -60 55 0', 'none', LH.shade(cc, -.2), 3) + circ(0, -114, 6, cc, INK, 3));
+  }
+  function puddle(x, y, w) { return ell(x, y, w, w * .2, '#86CCF2', INK, 4) + ell(x - w * .3, y - w * .05, w * .25, w * .04, '#FFFFFF', null, 0, ' opacity=".7"'); }
+  function splash(x, y, s) { var d = ''; [[-60, -40], [-32, -76], [0, -92], [32, -76], [60, -40]].forEach(function (p) { d += ell(x + p[0] * s, y + p[1] * s, 9 * s, 14 * s, '#9FD3FF', INK, 2.5); }); return d; }
+  function rainbow(cx, cy, r) {
+    var cs = ['#EF5A36', '#FF9A3C', '#FFC93C', '#6CC46A', '#4EA8F5', '#8A6BD8'], s = '';
+    cs.forEach(function (c, i) { var rr = r - i * 22, d = 'M' + (cx - rr) + ' ' + cy + ' A' + rr + ' ' + rr + ' 0 0 1 ' + (cx + rr) + ' ' + cy; s += path(d, 'none', INK, 26) + path(d, 'none', c, 20); });
+    return s;
+  }
+  function bench(x, y, s) { return at(x, y, s, rect(-110, -70, 16, 70, C.wood2, INK, 3.5, 4) + rect(94, -70, 16, 70, C.wood2, INK, 3.5, 4) + rect(-130, -84, 260, 18, C.wood, INK, 3.5, 6) + rect(-120, -150, 240, 16, C.wood, INK, 3.5, 6) + rect(-120, -122, 240, 16, C.wood, INK, 3.5, 6) + rect(-110, -150, 12, 70, C.wood2, INK, 3, 4) + rect(98, -150, 12, 70, C.wood2, INK, 3, 4)); }
+  function boots(x, y, s) { return at(x, y, s, path('M-50 0 L-50 -60 L-24 -60 L-24 -20 L-6 -16 L-6 0Z', C.red, INK, 3.5) + path('M10 0 L10 -60 L36 -60 L36 -20 L54 -16 L54 0Z', C.red, INK, 3.5) + ell(-20, 2, 30, 4, '#8A5A3B', null, 0, ' opacity=".5"') + ell(36, 2, 30, 4, '#8A5A3B', null, 0, ' opacity=".5"')); }
+  function raincoat(x, y, s) { return at(x, y, s, path('M-40 -150 L40 -150 L64 0 L-64 0Z', '#FFC93C', INK, 4) + path('M0 -150 v150', 'none', INK, 3) + circ(-10, -110, 4, INK) + circ(-10, -70, 4, INK) + path('M-30 -150 Q0 -190 30 -150', '#FFC93C', INK, 4)); }
+  function rainWindow(wx, wy, ww, wh, sd) { seed = sd || 41; var s = ''; for (var i = 0; i < 14; i++) { var x = wx + 10 + rnd() * (ww - 30), y = wy + 10 + rnd() * (wh - 40); s += path('M' + P(x) + ' ' + P(y) + ' l-6 16', 'none', '#7FC8F8', 4); } return s; }
+  var lane = function (o) {
+    o = o || {};
+    var wet = !o.sunny;
+    return sky(wet ? '#CBD5E6' : C.sky) + (wet ? cloud(60, 110, 1, '#E3E8F2') + cloud(420, 80, 1.1, '#E3E8F2') + cloud(760, 120, .9, '#E3E8F2') : sun(880, 100, 44) + cloud(140, 90, .7)) +
+      hills(wet ? '#6FB377' : '#7CCB6E', wet ? '#7DBF74' : C.grass) + path('M300 710 Q420 600 560 540 Q700 490 1010 470 L1010 520 Q760 540 660 590 Q540 650 520 710Z', '#D9CDB8', INK, 4) +
+      grassTufts(14, 560, 690, o.sd || 43) + (wet && o.rain !== false ? rain(36, o.sd || 9) : '');
+  };
+
+  /* The Hiccupy Dragon */
+  function dragon(x, y, s, o) {
+    o = o || {}; s *= 1.18;
+    var f = o.c || '#59B45E', dk = LH.shade(f, -.28), bl = '#FFE7A8', b = '';
+    var wing = o.fly ? 'M-30 -170 Q-150 -330 -200 -170 Q-150 -190 -126 -150 Q-96 -192 -50 -140Z' : 'M-30 -160 Q-120 -240 -140 -150 Q-110 -165 -95 -132 Q-70 -160 -40 -128Z';
+    b += path(wing, '#A8E07A', INK, 4) + tube('M-50 -50 Q-150 -30 -170 -100', 26, f) + path('M-186 -94 L-172 -138 L-150 -100Z', '#FF9A3C', INK, 3);
+    if (!o.fly) b += ell(-30, -6, 30, 14, f, INK, 4) + ell(36, -6, 30, 14, f, INK, 4);
+    b += ell(0, -90, 72, 84, f, INK, 4.5) + ell(14, -80, 44, 62, bl, INK, 3) + path('M-20 -110 q34 8 66 0 M-24 -80 q38 8 74 0 M-20 -50 q34 8 66 0', 'none', '#E9C77A', 3);
+    b += tube('M50 -122 Q84 -112 86 -86', 16, f);
+    var hx = 30, hy = -200;
+    b += path('M' + (hx - 36) + ' ' + (hy - 40) + ' L' + (hx - 52) + ' ' + (hy - 86) + ' L' + (hx - 14) + ' ' + (hy - 54) + 'Z M' + (hx + 20) + ' ' + (hy - 50) + ' L' + (hx + 26) + ' ' + (hy - 96) + ' L' + (hx + 46) + ' ' + (hy - 46) + 'Z', bl, INK, 3.5) +
+      path('M' + (hx - 56) + ' ' + (hy - 6) + ' l-18 -10 l6 20 Z M' + (hx - 54) + ' ' + (hy + 22) + ' l-20 0 l12 16Z', '#FF9A3C', INK, 3) +
+      circ(hx, hy, 58, f, INK, 4.5) + ell(hx + 48, hy + 18, 42, 30, f, INK, 4) + circ(hx + 66, hy + 8, 4, dk) + circ(hx + 80, hy + 12, 4, dk);
+    if (o.mood === 'sleep' || o.mood === 'calm') b += path('M' + (hx - 28) + ' ' + (hy - 12) + ' q10 8 20 0 M' + (hx + 8) + ' ' + (hy - 14) + ' q10 8 20 0', 'none', INK, 4);
+    else b += circ(hx - 16, hy - 14, 16, '#FFFFFF', INK, 3) + circ(hx + 18, hy - 16, 14, '#FFFFFF', INK, 3) + circ(hx - 12, hy - 12, 7, INK) + circ(hx + 21, hy - 14, 6, INK) + circ(hx - 10, hy - 15, 2.4, '#FFFFFF') + circ(hx + 23, hy - 17, 2.2, '#FFFFFF');
+    if (o.mood === 'sad') b += path('M' + (hx - 34) + ' ' + (hy - 40) + ' l20 6 M' + (hx + 34) + ' ' + (hy - 42) + ' l-18 8', 'none', INK, 3.5) + path('M' + (hx + 30) + ' ' + (hy + 40) + ' Q' + (hx + 50) + ' ' + (hy + 30) + ' ' + (hx + 72) + ' ' + (hy + 40), 'none', INK, 3.5);
+    else if (o.mood === 'hic') b += ell(hx + 52, hy + 38, 9, 10, '#7A2638', INK, 3);
+    else if (o.mood === 'puff') b += circ(hx - 4, hy + 24, 24, LH.shade(f, .15), INK, 3) + circ(hx + 70, hy + 30, 18, LH.shade(f, .15), INK, 3) + path('M' + (hx + 40) + ' ' + (hy + 40) + ' h18', 'none', INK, 3.5);
+    else if (o.mood === 'laugh') b += path('M' + (hx + 24) + ' ' + (hy + 30) + ' Q' + (hx + 52) + ' ' + (hy + 64) + ' ' + (hx + 82) + ' ' + (hy + 28) + 'Z', '#7A2638', INK, 3);
+    else b += path('M' + (hx + 26) + ' ' + (hy + 34) + ' Q' + (hx + 52) + ' ' + (hy + 50) + ' ' + (hx + 80) + ' ' + (hy + 30), 'none', INK, 3.5);
+    if (o.mood !== 'puff') b += circ(hx - 22, hy + 20, 10, C.pink, null, 0, ' opacity=".55"');
+    return at(x, y, s, b, o.flip);
+  }
+  function popcorn(n, x0, x1, y0, y1, sd) {
+    seed = sd || 91; var s = '';
+    for (var i = 0; i < n; i++) { var x = x0 + rnd() * (x1 - x0), y = y0 + rnd() * (y1 - y0), r = 7 + rnd() * 5; s += blob([[x, y, r], [x + r, y - r * .6, r * .8], [x + r * 1.1, y + r * .4, r * .75]], '#FFFBEA', INK, 2.5) + circ(x + r * .6, y, r * .3, '#FFD34A'); }
+    return s;
+  }
+  function flame(x, y, s) { return at(x, y, s, path('M0 0 Q-34 -30 -10 -70 Q-6 -40 6 -50 Q14 -80 4 -100 Q46 -60 30 -20 Q22 0 0 0Z', '#FF9A3C', INK, 3.5) + path('M2 -10 Q-12 -28 2 -46 Q10 -30 16 -26 Q18 -10 2 -10Z', '#FFE36B')); }
+  function marshmallow(x, y, rot) { return g('translate(' + x + ' ' + y + ') rotate(' + (rot || 0) + ')', path('M0 0 L130 0', 'none', C.wood2, 6) + rect(126, -16, 40, 32, '#FFF8EC', INK, 3.5, 10) + rect(150, -16, 16, 32, '#E0A458', null, 0, 6)); }
+  function bucket(x, y, s) { return at(x, y, s, path('M-34 -60 Q0 -110 34 -60', 'none', INK, 5) + path('M-38 -60 L-28 0 L28 0 L38 -60Z', '#A9A2C0', INK, 4) + ell(0, -60, 38, 9, '#7FC8F8', INK, 3)); }
+  function cave(x, y, w, h) { return path('M' + (x - w / 2 - 40) + ' ' + y + ' Q' + (x - w / 2 - 20) + ' ' + (y - h - 70) + ' ' + x + ' ' + (y - h - 80) + ' Q' + (x + w / 2 + 30) + ' ' + (y - h - 70) + ' ' + (x + w / 2 + 40) + ' ' + y + 'Z', '#8F84AE', INK, 4) + path('M' + (x - w / 2) + ' ' + y + ' Q' + (x - w / 2) + ' ' + (y - h) + ' ' + x + ' ' + (y - h) + ' Q' + (x + w / 2) + ' ' + (y - h) + ' ' + (x + w / 2) + ' ' + y + 'Z', '#3A2F55', INK, 4); }
+  function rocks(x, y, s) { return blob([[x - 30 * s, y - 20 * s, 26 * s], [x + 10 * s, y - 30 * s, 32 * s], [x + 44 * s, y - 18 * s, 22 * s]], '#B9B2D3', INK, 4); }
+  var peak = function (o) {
+    o = o || {};
+    return sky(o.sky) + (o.sun === false ? '' : sun(880, 90, 40)) + cloud(120, 90, .7) + mountains() + path('M-10 520 Q300 470 620 500 T1010 490 L1010 710 L-10 710Z', '#A99BC9', INK, 4) + grassTufts(10, 560, 690, o.sd || 81);
+  };
+  var dragonTown = function (o) {
+    o = o || {};
+    return sky(o.sky) + path('M260 330 L470 90 L560 200 L640 140 L800 330Z', '#A99BC9', INK, 4) + path('M430 136 L470 90 L512 140 L490 150 L470 138 L450 152Z', '#FFFFFF', INK, 3) + cloud(80, 100, .8) +
+      house(-20, 520, 170, 210, { wall: '#FFD0B0', roof: '#8A6BD8' }) + house(170, 520, 190, 250, { wall: '#FFE7A8', roof: C.red, lit: o.lit }) + house(390, 520, 160, 190, { wall: '#CDEBFF', roof: '#3DBE8B' }) +
+      house(580, 520, 200, 240, { wall: '#FFD9E6', roof: C.sky3 }) + house(810, 520, 200, 200, { wall: '#E6DCFF', roof: '#FF9A3C' }) + rect(-10, 520, 1020, 200, '#D9CDB8', INK, 4);
+  };
+
+  /* ---------------------------------------------------------------- The Lion and the Mouse */
+  S.lion = {
+    cover: function (h) {
+      return savanna({ treeX: 860, treeS: 1.2 }) + lion(560, 690, .85, { mood: 'happy' }) + mouse(780, 690, 1.09, { flip: true, bow: true }) + h({ x: 230, y: 690, s: .95, pose: 'cheer', mood: 'laugh' });
+    },
+    pages: [
+      function (h) {
+        return savanna({ treeX: 600, treeS: 1.6 }) + lion(560, 690, .8, { lie: true, mood: 'sleep' }) + zzz(700, 400) + h({ x: 170, y: 690, s: .88, pose: 'walk', mood: 'happy' }) + bird(380, 240, .8) + bird(430, 210, .6);
+      },
+      function (h) {
+        return savanna({ treeX: 860, treeS: 1.3 }) + lion(470, 690, .85, { lie: true, mood: 'wow' }) + mouse(640, 690, 0.9, { flip: true }) + path('M560 660 q30 -40 70 -6', 'none', INK, 3, ' stroke-dasharray="6 8"') +
+          h({ x: 140, y: 690, s: .84, pose: 'shrug', mood: 'wow' }) + txt(470, 240, 50, 'SNORT!', '#FFFFFF', -6) + txt(800, 470, 30, 'squeak!', C.sun, 6);
+      },
+      function (h) {
+        return savanna({ treeX: 120, treeS: 1.2 }) + lion(400, 690, .85, { lie: true, mood: 'laugh' }) + mouse(640, 690, 1.01, { flip: true, bow: true }) + h({ x: 820, y: 690, s: .86, pose: 'reach', mood: 'happy', flip: true }) +
+          speech(640, 250, 280, 70, 'Be kind!', 760);
+      },
+      function (h) {
+        return savanna({ treeX: 880, treeS: 1.1, sd: 73 }) + lion(520, 690, .78, { mood: 'roar' }) + net(540, 690, 470, 330) + txt(520, 200, 72, 'ROAR!', C.red, -6) + h({ x: 140, y: 690, s: .88, pose: 'run', mood: 'wow' });
+      },
+      function (h) {
+        return savanna({ treeX: 120, treeS: 1.1, sd: 75 }) + lion(480, 690, .8, { lie: true, mood: 'sad' }) + net(500, 690, 460, 250) + h({ x: 820, y: 690, s: .88, pose: 'reach', mood: 'oops', flip: true });
+      },
+      function (h) {
+        return savanna({ treeX: 880, treeS: 1.2, sd: 77 }) + lion(460, 690, .8, { lie: true, mood: 'wow' }) + net(480, 690, 460, 250) + mouse(470, 450, 1.01, { bow: true }) +
+          h({ x: 150, y: 690, s: .86, pose: 'cheer', mood: 'wow' }) + txt(640, 330, 32, 'nibble, nibble!', '#FFFFFF', -4);
+      },
+      function (h) {
+        return savanna({ treeX: 120, treeS: 1.2, sd: 79 }) + ropeBits(470, 680) + lion(470, 690, .8, { mood: 'laugh' }) + mouse(700, 690, 1.01, { flip: true, bow: true }) +
+          h({ x: 860, y: 690, s: .86, pose: 'cheer', mood: 'laugh', flip: true }) + sparkles(470, 360, 160, 8, 81) + txt(470, 150, 64, 'FREE!', C.sun, -6);
+      },
+      function (h) {
+        return savanna({ treeX: 860, treeS: 1.2, sd: 83 }) + rocks(660, 690, .9) + lion(400, 690, .85, { lie: true, mood: 'happy', bow: true }) + mouse(640, 650, 0.9, { flip: true, bow: true }) +
+          hearts(600, 400, 2) + h({ x: 150, y: 690, s: .86, pose: 'hold', mood: 'happy' });
+      },
+      function (h) {
+        return savanna({ sunset: true, tree: false, sd: 85 }) + acacia(150, 540, 1) + h({ x: 400, y: 560, s: .7, pose: 'cheer', mood: 'laugh' }) + lion(500, 690, .82, { mood: 'happy' }) +
+          mouse(630, 392, 0.72, { bow: true }) + bird(300, 200, .8) + bird(350, 230, .6);
+      }
+    ]
+  };
+
+  /* ---------------------------------------------------------------- Stone Soup */
+  S.stonesoup = {
+    cover: function (h) {
+      return village({ sd: 31 }) + per('traveller', 150, 660, .72, { pose: 'wave', mood: 'happy' }) + soupPot(520, 670, 1.25, { steam: true, soup: true }) + stone(520, 586, 1) +
+        h({ x: 320, y: 680, s: .92, pose: 'cheer', mood: 'laugh' }) + per('villager', 720, 660, .7, { pose: 'hold', mood: 'happy', flip: true }) + per('townboy', 860, 680, .8, { pose: 'cheer', mood: 'laugh', flip: true }) + carrot(760, 560, .6, 30);
+    },
+    pages: [
+      function (h) {
+        return village({ sd: 35 }) + per('traveller', 560, 660, .74, { pose: 'walk', mood: 'happy' }) + soupPot(700, 670, .7) + h({ x: 380, y: 680, s: .9, pose: 'walk', mood: 'oops' }) + txt(380, 300, 40, 'rumble…', '#FFFFFF', -6);
+      },
+      function (h) {
+        return village({ sd: 37 }) + per('traveller', 300, 660, .74, { pose: 'shrug', mood: 'sad' }) + h({ x: 470, y: 680, s: .9, pose: 'shrug', mood: 'sad' }) + soupPot(160, 680, .6) +
+          speech(700, 210, 300, 64, 'Sorry!', 640) + per('villager', 690, 520, .5, { pose: 'shrug', mood: 'oops' });
+      },
+      function (h) {
+        return village({ sd: 39 }) + well(800, 660, .95) + soupPot(480, 680, 1) + stone(480, 540, 1.1) + path('M480 520 v-40', 'none', INK, 3, ' stroke-dasharray="4 8"') + txt(480, 430, 56, 'PLOP!', C.sun, -6) +
+          h({ x: 260, y: 690, s: .9, pose: 'cheer', mood: 'laugh' }) + per('traveller', 640, 670, .72, { pose: 'hold', mood: 'wow', flip: true });
+      },
+      function (h) {
+        return village({ sd: 41, lit: true }) + soupPot(480, 680, 1, { steam: true }) + h({ x: 280, y: 690, s: .9, pose: 'hold', mood: 'laugh' }) + per('v5', 680, 690, .82, { pose: 'hold', mood: 'wow', flip: true }) +
+          carrot(640, 520, .7, -20) + carrot(670, 520, .7, 10) + carrot(700, 520, .7, 30) + speech(700, 180, 340, 64, 'Stone soup?', 650);
+      },
+      function (h) {
+        return village({ sd: 43 }) + soupPot(500, 680, 1.05, { steam: true, soup: true }) + per('grandpa', 220, 680, .72, { pose: 'hold', mood: 'laugh' }) + onion(260, 520, .8) +
+          per('lady', 760, 680, .72, { pose: 'hold', mood: 'happy', flip: true }) + basket(700, 560, .7, potato(-14, -30, .8) + potato(16, -34, .8)) + per('townboy', 900, 690, .72, { pose: 'cheer', mood: 'laugh', flip: true }) + cabbage(880, 470, .8) +
+          h({ x: 380, y: 690, s: .82, pose: 'cheer', mood: 'laugh' }) + txt(500, 400, 46, 'BUBBLE!', '#FFFFFF', -6);
+      },
+      function (h) {
+        return village({ sd: 45 }) + soupPot(480, 680, 1.1, { steam: true, soup: true }) + per('dad', 760, 680, .74, { pose: 'hold', mood: 'laugh', flip: true }) + loaf(720, 540, .8) + cat(600, 690, 0.57) +
+          h({ x: 260, y: 690, s: .88, pose: 'hold', mood: 'happy' }) + sparkles(480, 420, 120, 6, 47);
+      },
+      function (h) {
+        return village({ sd: 47, leaves: false }) + bunting(140, -20, 1020) + table(500, 690, 700, '#C98B4E') + bowl(300, 572, .6, C.sky3) + bowl(420, 572, .6, C.red) + bowl(580, 572, .6, '#3DBE8B') + bowl(700, 572, .6, C.sun) +
+          soupPot(100, 690, .8, { steam: true, soup: true }) + h({ x: 880, y: 690, s: .84, pose: 'hold', mood: 'laugh', flip: true }) + per('v5', 240, 700, .6, { pose: 'cheer', mood: 'wow' });
+      },
+      function (h) {
+        return village({ sd: 49, leaves: false, lit: true }) + bunting(140, -20, 1020) + per('grandpa', 160, 690, .66, { pose: 'hold', mood: 'laugh' }) + per('lady', 330, 690, .66, { pose: 'hold', mood: 'laugh' }) +
+          per('traveller', 820, 690, .66, { pose: 'wave', mood: 'laugh', flip: true }) + h({ x: 650, y: 690, s: .76, pose: 'hold', mood: 'laugh', flip: true }) + table(480, 700, 860, '#C98B4E') +
+          bowl(200, 582, .55, C.sky3) + bowl(340, 582, .55, C.red) + loaf(480, 580, .6) + bowl(620, 582, .55, '#3DBE8B') + bowl(780, 582, .55, C.sun) + hearts(480, 220, 3);
+      },
+      function (h) {
+        return village({ sd: 51, leaves: false }) + bunting(120, -20, 1020) + crowd(650, .55, ['v1', 'v2', 'grandpa', 'lady', 'dad'], 560, 100) + per('v5', 420, 690, .82, { pose: 'cheer', mood: 'laugh', flip: true }) +
+          stone(330, 470, 1.2) + sparkles(330, 470, 70, 6, 53) + h({ x: 200, y: 690, s: .9, pose: 'hold', mood: 'laugh' });
+      }
+    ]
+  };
+
+  /* ---------------------------------------------------------------- The Town Mouse and the Country Mouse */
+  var COUNTRY = { bow: true };
+  function townMouse(x, y, s, flip) { return mouse(x, y, s, { flip: flip }) + at(x, y, s, path('M0 -38 l-14 -9 v18Z M0 -38 l14 -9 v18Z', C.red, INK, 2.5) + circ(0, -38, 4, C.red, INK, 2), flip); }
+  S.mice = {
+    cover: function (h) {
+      return meadow({ sd: 101 }) + oak(700, 600, 1) + mouse(620, 690, 1.3, COUNTRY) + townMouse(780, 690, 1.3, true) + h({ x: 300, y: 690, s: .95, pose: 'cheer', mood: 'laugh' });
+    },
+    pages: [
+      function (h) {
+        return meadow({ sd: 103 }) + oak(720, 600, 1) + bush(520, 640, .9) + berries(500, 590, 1.2) + mouse(640, 690, 1.23, COUNTRY) + bee(380, 260, 1) + bee(470, 300, .8) +
+          h({ x: 260, y: 690, s: .9, pose: 'hold', mood: 'laugh' }) + txt(420, 200, 36, '♪', '#FFFFFF');
+      },
+      function (h) {
+        return meadow({ sd: 105 }) + oak(700, 600, 1) + seedBowl(560, 690, .7) + berries(600, 650, 1) + mouse(470, 690, 1.23, COUNTRY) + townMouse(680, 690, 1.23, true) +
+          h({ x: 200, y: 690, s: .86, pose: 'shrug', mood: 'wow' }) + speech(680, 260, 300, 64, 'Is that all?', 690);
+      },
+      function (h) {
+        return sky() + sun(860, 100, 40) + cloud(200, 100, .8) + hills('#7CCB6E', C.grass, -10) + path('M-10 610 Q500 580 1010 610 L1010 660 Q500 630 -10 660Z', '#D9CDB8', INK, 4) +
+          h({ x: 470, y: 560, s: .72, pose: 'cheer', mood: 'laugh' }) + cart(470, 660, 1.2) + mouse(400, 470, 0.8, COUNTRY) + townMouse(560, 470, 0.8, true) + horse(800, 670, .8) + txt(260, 300, 44, 'BUMP!', C.sun, -8) + txt(330, 230, 34, 'rattle!', '#FFFFFF', 6);
+      },
+      function (h) {
+        return feastRoom() + table(500, 690, 780, '#A86B3A') + cake(340, 572, .8) + cheese(500, 572, .8) + jelly(650, 572, .8) + loaf(800, 572, .55) + mouse(430, 572, 0.8, COUNTRY) + townMouse(570, 572, 0.8, true) +
+          h({ x: 110, y: 690, s: .82, pose: 'cheer', mood: 'wow' });
+      },
+      function (h) {
+        return feastRoom() + table(560, 690, 700, '#A86B3A') + cake(420, 572, .7) + teapot(640, 572, .8) + mouse(700, 572, 0.65, COUNTRY) + townMouse(740, 572, 0.65) + cat(260, 690, 1.03, { c: '#F0A04B' }) + txt(260, 440, 56, 'MEOW!', C.sun, -6) +
+          h({ x: 880, y: 690, s: .82, pose: 'cheer', mood: 'oops', flip: true });
+      },
+      function (h) {
+        return feastRoom() + mouseHole(820, 520, 1.6) + mouse(800, 520, 0.58, COUNTRY) + townMouse(840, 520, 0.58, true) + dog(380, 690, 1, { c: '#D09A5C' }) + txt(380, 420, 56, 'WOOF!', '#FFFFFF', -6) +
+          h({ x: 620, y: 690, s: .82, pose: 'shrug', mood: 'wow', flip: true }) + hearts(830, 380, 2);
+      },
+      function (h) {
+        return room({ wall: '#FFE1EC', floor: '#C98B4E', dot: '#FFC2D6', picture: [700, 100] }) + mouseHole(560, 520, 2.4) + mouse(540, 520, 1.01, COUNTRY) + townMouse(610, 520, 0.87, true) +
+          h({ x: 240, y: 690, s: .86, pose: 'reach', mood: 'happy' }) + speech(560, 200, 400, 64, 'No place like home', 560);
+      },
+      function (h) {
+        return sky(C.night) + moon(820, 110, 44) + stars(30, 360, 7) + hills('#3E6E5A', '#4E8A62') + fence(560, -10, 400, '#E3DCEB') + cow(760, 640, .55) + cow(930, 620, .4, { flip: true }) +
+          h({ x: 380, y: 690, s: .9, pose: 'hold', mood: 'happy' }) + mouse(420, 530, 0.65, COUNTRY) + flowers(6, 640, 690, 9).split('#FFFFFF').join('#FFF3B0');
+      },
+      function (h) {
+        return sky('#FFC9A0') + circ(820, 420, 70, '#FFB020', INK, 4) + hills('#6FB377', '#7DBF74') + oak(640, 600, 1, { lit: true }) + mushroom(470, 690, .8) + berries(460, 590, 1) + mouse(400, 690, 1.01, COUNTRY) + townMouse(560, 690, 1.01, true) +
+          h({ x: 210, y: 690, s: .86, pose: 'hold', mood: 'laugh' }) + hearts(480, 380, 3);
+      }
+    ]
+  };
+
+  /* ---------------------------------------------------------------- The Lost Little Star (original) */
+  var PJ = { outfit: 'pyjamas' };
+  var starRoom = function (o) {
+    o = o || {};
+    return room({ wall: '#DCD6FF', floor: '#B9875A', dot: '#C5BCF5', window: [o.wx || 300, 70, o.ww || 330, 260], night: true, curtain: '#FFC93C' });
+  };
+  S.star = {
+    cover: function (h) {
+      return sky(C.night) + moon(160, 110, 46) + stars(40, 420, 3) + hills('#3E6E5A', '#4E8A62') + kite(640, 180, .9, 18, { c: C.red, star: true }) + path('M610 280 Q480 420 380 470', 'none', '#FFFFFF', 3) +
+        h({ x: 330, y: 690, s: .95, pose: 'cheer', mood: 'laugh', look: PJ });
+    },
+    pages: [
+      function (h) {
+        return starRoom() + streak(380, 110, 540, 280) + starFriend(560, 290, 26, { mood: 'wow' }) + bed(820, 690, 220, 110, C.wood2, '#8A6BD8') + h({ x: 200, y: 690, s: .88, pose: 'point', mood: 'wow', look: PJ }) + txt(600, 470, 44, 'WHOOSH!', '#FFFFFF', -6);
+      },
+      function (h) {
+        return nightGarden({ sd: 7 }) + h({ x: 330, y: 690, s: .9, pose: 'hold', mood: 'wow', look: PJ }) + torch(390, 560, 14) + starFriend(700, 640, 40, { mood: 'sad' });
+      },
+      function (h) {
+        return nightGarden({ sd: 9, flowers: false }) + ladder(560, 690, 420, 30) + h({ x: 610, y: 470, s: .72, pose: 'climb', mood: 'oops', look: PJ, flip: true }) + starFriend(680, 190, 28, { mood: 'happy' }) + txt(300, 460, 38, 'so high!', '#FFFFFF', -6);
+      },
+      function (h) {
+        return nightGarden({ sd: 11, house: false }) + tree(720, 690, 1.7, { apples: true, c: '#3E8E4E' }) + owl(700, 360, .9) + starFriend(330, 520, 30) + h({ x: 220, y: 690, s: .88, pose: 'point', mood: 'wow', look: PJ }) +
+          txt(820, 220, 36, 'Hoo-hoo!', '#FFFFFF', 6) + thought(420, 250, kite(420, 230, .4, 10));
+      },
+      function (h) {
+        return room({ wall: '#E3F4E8', floor: '#C98B4E', dot: '#BFE3CA', window: [720, 90, 160, 140], night: true, curtain: C.pink }) + table(480, 690, 560) + kite(480, 470, .55, -70, { c: C.sun }) + candle(260, 572, .8) +
+          starFriend(640, 520, 26) + sparkles(640, 520, 70, 5, 19) + h({ x: 830, y: 690, s: .82, pose: 'hold', mood: 'laugh', look: PJ, flip: true });
+      },
+      function (h) {
+        return sky(C.night) + moon(820, 120, 50) + stars(40, 340, 13) + path('M-10 700 Q300 260 560 300 Q820 340 1010 520 L1010 710 L-10 710Z', '#4E8A62', INK, 4) + grassTufts(12, 400, 680, 17) +
+          h({ x: 470, y: 340, s: .74, pose: 'walk', mood: 'happy', look: PJ }) + kite(560, 200, .45, 20) + starFriend(400, 160, 22) + txt(200, 560, 30, 'chirp!', '#FFFFFF', -8) + txt(820, 600, 30, 'chirp!', '#FFFFFF', 8);
+      },
+      function (h) {
+        return sky(C.night) + stars(30, 600, 21) + cloud(120, 420, 1, '#D7D3F0') + cloud(700, 520, .9, '#D7D3F0') + kite(640, 150, .8, 24, { c: C.red, star: true }) + path('M600 240 Q380 500 230 610', 'none', '#FFFFFF', 3) +
+          path('M-10 700 Q200 600 420 690 L-10 710Z', '#4E8A62', INK, 4) + h({ x: 190, y: 700, s: .7, pose: 'cheer', mood: 'laugh', look: PJ }) + txt(780, 520, 40, 'Higher!', C.sun, -6);
+      },
+      function (h) {
+        return sky(C.night) + stars(36, 600, 23) + heartOfStars(500, 260, 170) + starFriend(500, 250, 40) + path('M-10 640 Q500 560 1010 640 L1010 710 L-10 710Z', '#4E8A62', INK, 4) +
+          h({ x: 500, y: 700, s: .5, pose: 'cheer', mood: 'laugh', look: PJ });
+      },
+      function (h) {
+        return starRoom({ wx: 100, ww: 300 }) + starFriend(250, 190, 28, { mood: 'happy' }) + sparkles(250, 190, 70, 5, 29) + bed(700, 690, 260, 120, C.wood2, '#8A6BD8', { noQuilt: true }) +
+          h({ x: 820, y: 560, s: .66, pose: 'stand', mood: 'sleep', rot: -90, look: PJ }) + quiltOf(700, 690, 260, 120, '#8A6BD8') + zzz(780, 380);
+      }
+    ]
+  };
+
+  /* ---------------------------------------------------------------- The Puddle Parade (original) */
+  var RAIN = { outfit: 'raincoat', outfitColor: 'sun' };
+  var wetRoom = function () { return room({ wall: '#E3F0FF', floor: '#C98B4E', dot: '#C6DCF5', window: [360, 70, 300, 230], curtain: C.sun }) + rect(360, 70, 300, 230, '#9FA9BF', null, 0, 10).replace('/>', ' opacity=".35"/>') + rainWindow(360, 70, 300, 230); };
+  S.puddles = {
+    cover: function (h) {
+      return lane({ sd: 111 }) + puddle(520, 670, 160) + splash(520, 660, 1.2) + umbrella(480, 260, .9, C.red, -10) + h({ x: 500, y: 680, s: .95, pose: 'cheer', mood: 'laugh', look: RAIN }) +
+        duck(760, 690, 0.91) + duck(860, 690, 0.52, { c: '#FFE36B' }) + frog(200, 690, .8, { drum: true });
+    },
+    pages: [
+      function (h) {
+        return wetRoom() + cat(560, 316, 0.52, { c: '#B9B4C9' }) + rect(330, 300, 360, 18, C.wood, INK, 3.5, 6) + h({ x: 470, y: 690, s: .9, pose: 'stand', mood: 'sad' }) + txt(780, 420, 34, 'pitter… patter…', '#FFFFFF', -4);
+      },
+      function (h) {
+        return wetRoom() + per('mum', 700, 690, .74, { pose: 'hold', mood: 'laugh', flip: true }) + raincoat(560, 600, .8) + umbrella(860, 430, .7, C.red, 20) + boots(560, 690, 1) +
+          h({ x: 260, y: 690, s: .9, pose: 'cheer', mood: 'wow' });
+      },
+      function (h) {
+        return lane({ sd: 113 }) + puddle(420, 670, 140) + splash(420, 660, 1.1) + h({ x: 420, y: 670, s: .9, pose: 'cheer', mood: 'laugh', look: RAIN }) + txt(420, 240, 60, 'SPLASH!', '#FFFFFF', -6) +
+          duck(700, 690, 0.91, { flip: true }) + duck(800, 690, 0.49, { c: '#FFE36B', flip: true }) + duck(860, 690, 0.49, { c: '#FFE36B', flip: true }) + duck(920, 690, 0.49, { c: '#FFE36B', flip: true });
+      },
+      function (h) {
+        return lane({ sd: 115 }) + h({ x: 640, y: 690, s: .88, pose: 'walk', mood: 'laugh', look: RAIN }) + duck(440, 690, 0.81) + duck(330, 690, 0.44, { c: '#FFE36B' }) + duck(270, 690, 0.44, { c: '#FFE36B' }) + duck(210, 690, 0.44, { c: '#FFE36B' }) +
+          frog(860, 690, .9, { drum: true, flip: true }) + txt(820, 360, 40, 'BOOM BOOM!', C.sun, -6) + txt(380, 450, 32, 'quack!', '#FFFFFF', 6);
+      },
+      function (h) {
+        return lane({ sd: 117, rain: false }) + rain(18, 5) + puddle(500, 650, 330) + splash(500, 640, 1.6) + splash(320, 650, .8) + splash(700, 650, .8) + h({ x: 500, y: 600, s: .86, pose: 'cheer', mood: 'laugh', look: RAIN }) +
+          duck(200, 690, 0.72) + frog(820, 690, .7, { flip: true }) + txt(500, 180, 70, 'SPLOOSH!', '#FFFFFF', -6);
+      },
+      function (h) {
+        return lane({ sd: 119 }) + bench(620, 690, 1) + cat(620, 690, 0.63, { c: '#B9B4C9' }) + txt(620, 470, 28, 'brrr…', '#FFFFFF', 6) + umbrella(440, 300, .85, C.red, 22) +
+          h({ x: 360, y: 690, s: .88, pose: 'reach', mood: 'happy', look: RAIN });
+      },
+      function (h) {
+        return lane({ sunny: true, sd: 121 }) + rainbow(560, 520, 360) + cloud(60, 140, .9, '#E3E8F2') + puddle(300, 670, 110) + puddle(760, 660, 90) + h({ x: 520, y: 690, s: .9, pose: 'cheer', mood: 'wow', look: RAIN });
+      },
+      function (h) {
+        return lane({ sunny: true, sd: 123 }) + rainbow(560, 520, 360) + h({ x: 620, y: 690, s: .82, pose: 'wave', mood: 'laugh', look: RAIN }) + duck(430, 690, 0.78) + duck(330, 690, 0.42, { c: '#FFE36B' }) +
+          frog(800, 690, .7, { drum: true, flip: true }) + cat(920, 690, 0.52, { c: '#B9B4C9', flip: true }) + txt(500, 140, 60, 'HOORAY!', C.sun, -6);
+      },
+      function (h) {
+        return room({ wall: '#E3F0FF', floor: '#C98B4E', dot: '#C6DCF5', window: [600, 80, 260, 200], curtain: C.sun }) + rainbow(730, 280, 110) + boots(160, 690, 1) + raincoat(150, 560, .7).split(C.sun).join('#FFC93C') +
+          h({ x: 420, y: 690, s: .9, pose: 'hold', mood: 'laugh' }) + mug(470, 560, .9);
+      }
+    ]
+  };
+
+  /* ---------------------------------------------------------------- The Hiccupy Dragon (original) */
+  S.dragon = {
+    cover: function (h) {
+      return peak({ sd: 131 }) + dragon(640, 690, .95, { mood: 'hic' }) + popcorn(14, 560, 980, 140, 420, 133) + txt(780, 160, 60, 'HIC!', C.sun, -8) + h({ x: 300, y: 690, s: .95, pose: 'cheer', mood: 'laugh' });
+    },
+    pages: [
+      function (h) {
+        return peak({ sd: 135 }) + cave(780, 600, 220, 200) + dragon(500, 690, .9, { mood: 'hic' }) + popcorn(12, 420, 760, 200, 440, 137) + txt(560, 170, 64, 'HIC!', C.sun, -8);
+      },
+      function (h) {
+        return dragonTown() + popcorn(40, 0, 1000, 120, 640, 139) + per('villager', 560, 680, .7, { pose: 'shrug', mood: 'wow' }) + per('grandpa', 760, 680, .7, { pose: 'shrug', mood: 'wow', flip: true }) +
+          h({ x: 300, y: 690, s: .88, pose: 'point', mood: 'wow' }) + umbrella(900, 430, .6, '#3DBE8B', -8);
+      },
+      function (h) {
+        return peak({ sd: 141 }) + cave(700, 560, 240, 190) + dragon(700, 640, .85, { mood: 'sad' }) + popcorn(8, 760, 960, 300, 460, 143) + txt(860, 260, 46, 'HIC!', C.sun, 8) + h({ x: 220, y: 690, s: .86, pose: 'walk', mood: 'happy' });
+      },
+      function (h) {
+        return peak({ sd: 145 }) + rocks(860, 690, 1) + dragon(560, 690, .85, { mood: 'hic' }) + bucket(380, 690, 1) + h({ x: 200, y: 690, s: .86, pose: 'hold', mood: 'happy' }) + popcorn(16, 300, 960, 560, 690, 147) + txt(640, 180, 60, 'HIC!', C.sun, -8);
+      },
+      function (h) {
+        return peak({ sd: 149 }) + dragon(620, 690, .85, { mood: 'puff', c: '#A98BE8' }) + h({ x: 260, y: 690, s: .88, pose: 'cheer', mood: 'happy' }) + txt(300, 230, 40, '1, 2, 3, 4, 5…', '#FFFFFF', -4);
+      },
+      function (h) {
+        return peak({ sd: 151 }) + rocks(330, 690, 1.6) + dragon(700, 690, .85, { mood: 'laugh' }) + h({ x: 420, y: 690, s: .88, pose: 'cheer', mood: 'laugh', flip: true }) + txt(420, 220, 70, 'BOO!', C.red, -8) + txt(860, 260, 34, 'hic!', C.sun, 8);
+      },
+      function (h) {
+        return peak({ sd: 153 }) + dragon(640, 690, .85, { mood: 'calm' }) + h({ x: 340, y: 690, s: .88, pose: 'stand', mood: 'happy' }) + flower(200, 420, C.pink, 1.4) + candle(820, 330, .9) + txt(480, 200, 36, 'in… and out…', '#FFFFFF', -4);
+      },
+      function (h) {
+        return peak({ sd: 155 }) + dragon(660, 690, .85, { mood: 'laugh' }) + flame(560, 520, .5) + marshmallow(360, 540, -12) + h({ x: 280, y: 690, s: .88, pose: 'hold', mood: 'laugh' }) + sparkles(560, 470, 90, 6, 157) + txt(500, 190, 46, 'No more HIC!', C.sun, -6);
+      },
+      function (h) {
+        return dragonTown({ sky: '#FFC08A', lit: true }) + bunting(380, 0, 1000) + popcorn(10, 100, 900, 600, 690, 159) + h({ x: 520, y: 290, s: .55, pose: 'cheer', mood: 'laugh' }) + dragon(520, 380, .7, { fly: true, mood: 'laugh' }) +
+          crowd(690, .5, ['v1', 'v2', 'v3', 'v5'], 120, 230);
+      }
+    ]
+  };
   LH.SCENES = S;
 
   /* The main character, or the "your hero here" outline in the generic book. */
@@ -1189,8 +1653,21 @@
       return '<' + tag + attrs + close + '>';
     });
   };
+  /* Which drawing a page shows. key = a story key, or a story object: a story someone wrote borrows its pictures from
+     the library (story.pics[i] / story.cover = "key:page" or "key:cover"); the library's own stories use their key. */
+  LH.picRef = function (key, page) {
+    if (key && typeof key === 'object') {
+      var ref = page === 'cover' ? key.cover : (key.pics || [])[page];
+      if (!ref) return [key.key, page];
+      var bits = String(ref).split(':');
+      return [bits[0], bits[1] === 'cover' ? 'cover' : +bits[1]];
+    }
+    return [key, page];
+  };
   LH.sceneSvg = function (key, page, hero, o) {
     o = o || {};
+    var ref = LH.picRef(key, page);
+    key = ref[0]; page = ref[1];
     var st = S[key];
     if (!st) return '';
     var fn = page === 'cover' ? st.cover : st.pages[page];

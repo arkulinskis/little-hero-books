@@ -18,6 +18,9 @@ class Story(StoryTemplate):
             router.go("library")
             return
         self._story = r["story"]
+        if self._story.get("custom"):
+            self.edit_button.text = "Edit"
+            state.set_attr(self.back_link, "href", "#write")
         self._lib = state.call("get_library")
         books.remember_stories(self._lib)
         self._choices = books.hero_choices(self._lib)
@@ -54,6 +57,17 @@ class Story(StoryTemplate):
     @handle("make_button", "click")
     def make_button_click(self, **event_args):
         books.make_book(self._story, self._lib["heroes"], self._choice["ref"])
+
+    @handle("edit_button", "click")
+    def edit_button_click(self, **event_args):
+        """Change this story: your own opens in the writing page, a library story starts a copy of it."""
+        target = ("write", self._key) if self._story.get("custom") else ("write", "new", self._key)
+        if not state.me():
+            router.remember_after(router.href(*target))
+            state.toast("Make a free account to write your own stories.")
+            router.go("auth", "signup")
+            return
+        router.go(*target)
 
     @handle("pdf_button", "click")
     def pdf_button_click(self, **event_args):

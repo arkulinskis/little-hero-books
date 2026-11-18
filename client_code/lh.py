@@ -9,7 +9,7 @@ from anvil.js import window
 
 LH = window.LH
 STORY_KEYS = ["bears", "beanstalk", "turnip", "porridge", "emperor", "hen", "elves", "pea", "gingerbread", "duckling",
-              "goats", "tortoise"]
+              "goats", "tortoise", "lion", "stonesoup", "mice", "star", "puddles", "dragon"]
 GENERIC = {"name": "Little Hero", "pronoun": "they", "look": None, "generic": True}
 PRONOUN_LABELS = {"she": "she / her", "he": "he / him", "they": "they / them"}
 
@@ -22,6 +22,21 @@ def avatar_svg(look, **opts):
 def scene_svg(story_key, page, hero, **opts):
     """One story picture: page 0..8 or 'cover'. opts: clip (unique id), outline, grain."""
     return LH.sceneSvg(story_key, page, hero, opts)
+
+
+def pic_svg(ref, hero, **opts):
+    """A library picture by reference ("bears:3", "bears:cover"): what a written story's page borrows."""
+    key, _, page = (ref or "star:cover").partition(":")
+    return LH.sceneSvg(key, "cover" if page == "cover" else int(page or 0), hero, opts)
+
+
+def pic_name(ref, stories):
+    """'The Three Bears, page 4' for a picture reference (stories = the library's story list)."""
+    key, _, page = (ref or "").partition(":")
+    s = next((x for x in stories if x["key"] == key), None)
+    if s is None:
+        return "A picture"
+    return s["plain"] + (", cover" if page == "cover" else ", page %d" % (int(page or 0) + 1))
 
 
 def cover_html(story, hero, sub=None, outline=False):

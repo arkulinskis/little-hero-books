@@ -5,7 +5,7 @@ from ... import books, router, state
 
 
 class Library(LibraryTemplate):
-    """#library, #library/<heroRef>: the twelve stories. The "Starring" strip redraws every cover with the chosen
+    """#library, #library/<heroRef>: the eighteen stories (and, signed in, the ones you wrote). The "Starring" strip redraws every cover with the chosen
     hero: one of yours, your unsaved studio draft, an example hero, or nobody (the generic "your hero here" book).
     Read a story (#story/<key>/<heroRef>) or make it into a book on your shelf."""
 
@@ -14,6 +14,8 @@ class Library(LibraryTemplate):
         self.picks_panel.add_event_handler("x-pick", self._pick)
         self.stories_panel.add_event_handler("x-read", self._read)
         self.stories_panel.add_event_handler("x-make", self._make)
+        for name, fn in [("x-read", self._read), ("x-make", self._make), ("x-edit", self._edit)]:
+            self.mine_panel.add_event_handler(name, fn)
         self.guest_text.visible = not state.me()
         self.member_text.visible = bool(state.me())
         if state.me():
@@ -29,6 +31,9 @@ class Library(LibraryTemplate):
         self.picks_panel.items = [{"choice": c, "on": c["ref"] == self._choice["ref"]} for c in self._choices]
         hero, own = self._choice["hero"], self._choice["own"]
         self.stories_panel.items = [{"story": s, "hero": hero, "own": own} for s in self._lib["stories"]]
+        mine = self._lib.get("mine") or []
+        self.mine_part.visible = bool(mine)
+        self.mine_panel.items = [{"story": s, "hero": hero, "own": own, "edit": True} for s in mine]
 
     def _pick(self, ref, **event_args):
         state.store_set("libPick", ref)
@@ -36,6 +41,9 @@ class Library(LibraryTemplate):
 
     def _read(self, story, **event_args):
         router.go("story", story["key"], self._choice["ref"])
+
+    def _edit(self, story, **event_args):
+        router.go("write", story["key"])
 
     def _make(self, story, **event_args):
         books.make_book(story, self._lib["heroes"], self._choice["ref"])

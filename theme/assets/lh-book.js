@@ -29,7 +29,7 @@
 
   LH.coverHtml = function (story, hero, o) {
     o = o || {};
-    return '<div class="lh-cover' + (o.outline ? ' out' : '') + '" style="--cv:' + esc(story.color) + '"><div class="pic">' + LH.sceneSvg(story.key, 'cover', hero, { clip: LH.uid('cv'), outline: o.outline }) + '</div>' +
+    return '<div class="lh-cover' + (o.outline ? ' out' : '') + '" style="--cv:' + esc(story.color) + '"><div class="pic">' + LH.sceneSvg(story, 'cover', hero, { clip: LH.uid('cv'), outline: o.outline }) + '</div>' +
       '<div class="ttl"><span>' + esc(LH.title(story, hero)) + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span></div></div>';
   };
 
@@ -140,7 +140,7 @@
     var hero = book.hero, st = book.story, clip = LH.uid('pg'), out = !!mode.outline, so = { clip: clip, outline: out, grain: !out };
     var src = mode.painted && !out ? LH.paintSrc(book, LH.paintIndex(book, p)) : '';
     if (p.kind === 'cover') {
-      return '<div class="rd-cov" style="--cv:' + esc(st.color) + '"><div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st.key, 'cover', hero, so)) + '</div>' +
+      return '<div class="rd-cov" style="--cv:' + esc(st.color) + '"><div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st, 'cover', hero, so)) + '</div>' +
         '<h2>' + esc(LH.title(st, hero)) + '<small>' + (out ? 'A Little Hero colouring book' : 'A Little Hero Book') + '</small></h2></div>';
     }
     if (p.kind === 'dedication') {
@@ -152,7 +152,7 @@
       return '<div class="rd-end"><div class="fig' + (src ? ' pp' : '') + '">' + (src ? paintedImg(src) : portrait(hero, { pose: 'wave', mood: 'laugh', outline: out })) + '</div>' +
         '<h2>The End</h2><p>' + esc(st.source) + '</p><p>' + esc(LH.madeLine(book)) + '</p></div>';
     }
-    return '<div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st.key, p.i, hero, so)) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
+    return '<div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st, p.i, hero, so)) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
       '<div class="rd-num">' + (p.i + 1) + '</div>';
   };
   LH.pageSpeech = function (book, p) {
@@ -774,7 +774,7 @@
     function sized(svg, w, hgt) { return svg.replace('<svg ', '<svg width="' + Math.round(w * res) + '" height="' + Math.round(hgt * res) + '" '); }
     if (p.kind === 'cover') {
       paper(ctx, st.color);
-      return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st.key, 'cover', hero, sceneOpts(1340))); }).then(function (pic) { restore();
+      return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st, 'cover', hero, sceneOpts(1340))); }).then(function (pic) { restore();
         framed(ctx, pic.img, 80, 80, 1340, 938, 64);
         card(ctx, 80, 1090, 1340, 320, 56);
         textBlock(ctx, LH.title(st, hero), null, { x: 130, y: 1106, w: 1240, h: 214 }, { font: 'Baloo 2', weight: 800, size: 104, lh: 1.02, outlined: OUT });
@@ -816,7 +816,7 @@
       });
     }
     paper(ctx);
-    return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st.key, p.i, hero, sceneOpts(1340))); }).then(function (pic) { restore();
+    return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st, p.i, hero, sceneOpts(1340))); }).then(function (pic) { restore();
       framed(ctx, pic.img, 80, 70, 1340, 938, 64);
       textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 1050, w: 1280, h: 330 }, { size: 56 });
       ctx.save(); ctx.fillStyle = OUT ? '#FFFFFF' : '#FFE7A3'; ctx.beginPath(); ctx.arc(750, 1424, 30, 0, 7); ctx.fill(); if (OUT) { ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); } ctx.restore();
@@ -888,7 +888,7 @@
     try {
       if (idx === 0 || (idx >= 2 && idx < n + 2)) {
         w = 1216; h = 851;
-        svg = LH.sceneSvg(st.key, idx === 0 ? 'cover' : idx - 2, hero, { w: w, clip: LH.uid('pp'), outline: false, grain: false });
+        svg = LH.sceneSvg(st, idx === 0 ? 'cover' : idx - 2, hero, { w: w, clip: LH.uid('pp'), outline: false, grain: false });
       } else if (idx === 1) {
         w = h = 1024;
         svg = withSize(portrait(hero, { crop: 'head', mood: 'laugh', bg: '#FFC93C' }), w, h);

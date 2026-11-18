@@ -1,5 +1,6 @@
-"""The story library: twelve public-domain tales, retold short (300-500 words) for ages 3-6 with the child
-as the main character. The pictures for every page are drawn in the browser (web/pages/_scenes.html,
+"""The story library: fifteen public-domain tales and three brand-new ones (original: True), retold short (300-500
+words) for ages 3-6 with the child as the main character. Stories people write themselves live in the user_stories
+table (UserStories.py); get(key) finds either kind. The pictures for every page are drawn in the browser (web/pages/_scenes.html,
 LH.SCENES[key][page]); keep the page counts in step (the flow test checks it).
 
 Tokens in the text are filled in the browser by LH.fill (web/pages/_avatar.html) from the hero's name and
@@ -10,7 +11,7 @@ import re
 
 import anvil.server
 
-STORIES = [
+STORIES: "list[dict]" = [
     {
         "key": "bears",
         "title": "{name} and the Three Bears",
@@ -239,8 +240,126 @@ STORIES = [
             "The Hare puffed and blushed. “Well done, Tortoise,” he said at last. {name} gave the Tortoise a daisy medal, and the Hare learned that slow and steady can win the race. The next day, they all went for a slow walk together.",
         ],
     },
+    # ---- added 2026-11-17: three more classics and three brand-new stories (original: True)
+    {
+        "key": "lion",
+        "title": "{name}, the Lion and the Mouse",
+        "plain": "The Lion and the Mouse",
+        "source": "Retold from Aesop’s fable “The Lion and the Mouse”, in the public domain.",
+        "blurb": "A mighty roar, a tiny squeak, and a promise kept.",
+        "color": "#f0a04b",
+        "pages": [
+            "Far away, where the grass grew tall and golden, {name} went walking in the warm sunshine. Under a flat-topped tree lay a great big Lion, fast asleep, snoring so loudly that the leaves above him shook.",
+            "A tiny grey Mouse came scampering through the grass. She was in such a hurry that she ran right up the Lion’s tail, over his back and across his nose! The Lion woke with a snort and trapped her under one enormous paw.",
+            "“Please let me go!” squeaked the Mouse. “If you do, one day I will help you.” The Lion laughed a rumbly laugh. “You? Help ME?” {name} knelt down beside them. “Be kind, Lion,” {he} said softly. So the Lion lifted his paw, and the Mouse scurried away.",
+            "The very next morning, {name} heard a mighty ROAR. {He} ran through the grass and found the Lion tangled in an old rope net that someone had left behind. The more he wriggled, the tighter it pulled.",
+            "{name} tugged at the knots with all {his} strength, but they were far too tight. “Don’t worry, Lion,” {he} said. “We will find a way.” The Lion gave a sad little rumble and rested his head on his paws.",
+            "Just then, a small voice called out, “I can help!” It was the tiny grey Mouse. She climbed up onto the net, looked at the thick rope, and began to nibble with her sharp little teeth. Nibble, nibble, nibble.",
+            "Snip went one rope. Snap went another. {name} held the net open while the Mouse nibbled and nibbled. Then, with one last snip, the net fell away. The Lion shook his great golden mane. He was free!",
+            "“Thank you, little friend,” said the Lion, bowing his head until his nose touched the Mouse’s nose. “I laughed at you, and I was wrong.” The Mouse smiled. “Even the smallest friend can be the biggest help,” she said.",
+            "From that day on, the three of them were the best of friends. The Lion gave {name} rides across the golden grass, the Mouse sat in his soft mane like a queen, and every evening they watched the sun go down together.",
+        ],
+    },
+    {
+        "key": "stonesoup",
+        "title": "{name} and the Stone Soup",
+        "plain": "Stone Soup",
+        "source": "Retold from the European folk tale “Stone Soup”, in the public domain.",
+        "blurb": "One big pot, one smooth stone, and a whole village of helpers.",
+        "color": "#8a6bd8",
+        "pages": [
+            "One chilly autumn day, {name} and a kind old traveller came walking into a little village. They had walked a long way, and their tummies were rumbling. All they carried was one big, empty cooking pot.",
+            "They knocked on every door. “Could you spare a little food?” they asked. But everyone shook their heads. “We have hardly anything ourselves,” they said, and one by one the doors closed.",
+            "{name} sat down by the village well and thought very hard. Then {he} smiled. {He} filled the pot with water, picked up a smooth, round stone and dropped it in. Plop! “We are making stone soup!” {he} called out.",
+            "One by one, windows opened and faces peeked out. “Stone soup? What is that?” asked a little girl. “It is delicious,” said {name}, stirring the pot. “But it would be even better with a carrot.” The girl ran home and came back with three.",
+            "“I have an onion!” said a man with a big moustache. “And I have potatoes!” said a lady with a basket. A boy brought a cabbage, and his grandpa brought a bundle of herbs. Into the pot it all went. Bubble, bubble!",
+            "Soon there were beans and peas and a pinch of salt, and the baker brought warm bread for dipping. A wonderful smell drifted through the whole village. Even the cat came to sniff.",
+            "The villagers carried out tables and chairs and hung bright flags across the square. Everybody brought a bowl and a spoon. “Is it ready?” asked the little girl. {name} took a taste. “It is perfect!”",
+            "Everyone ate together, laughing and chatting and passing the bread. “This is the best soup we have ever had,” they said. “And it was made from a stone!” {name} winked at the old traveller.",
+            "When it was time to go, {name} gave the stone to the little girl. “Keep it for the next cold day,” {he} said. “But the real secret was never the stone. It was all of you, sharing.” And the whole village cheered.",
+        ],
+    },
+    {
+        "key": "mice",
+        "title": "{name}, the Town Mouse and the Country Mouse",
+        "plain": "The Town Mouse and the Country Mouse",
+        "source": "Retold from Aesop’s fable “The Town Mouse and the Country Mouse”, in the public domain.",
+        "blurb": "Fancy cakes in town, or peace and berries at home?",
+        "color": "#4ea8f5",
+        "pages": [
+            "At the edge of a sunny meadow, under the roots of an old oak tree, lived a little Country Mouse. {name} visited her every day. Together they gathered seeds and berries and sang to the bees.",
+            "One day her cousin, the Town Mouse, came to visit, wearing a smart bow tie. The Country Mouse served her very best seeds and berries. The Town Mouse sniffed. “Is that all? Come to town with me, and I will show you a real feast!”",
+            "So off they went: the Country Mouse, the Town Mouse and {name}, riding on the back of a farmer’s cart, bumping and rattling all the way to town. The Country Mouse held on tight to {name}’s sleeve.",
+            "In the town there was a tall house, and in the tall house was a long table, and on the long table was the grandest feast: cakes and cheese, jelly and buns. “Help yourselves!” said the Town Mouse.",
+            "But just as they took their first nibble, the door swung open. “MEOW!” In came a big ginger cat! The mice dashed behind the teapot, and {name} waved {his} arms. “Shoo, Cat! Leave them alone!”",
+            "The cat went away, but then a big dog bounded in. “WOOF!” Off ran the mice again, into a little hole in the wall. Their hearts went pitter-patter, pitter-patter, as fast as raindrops.",
+            "The Country Mouse peeped out, shaking from her nose to her tail. “Thank you, cousin,” she said kindly. “Your food is very grand. But I would rather eat seeds and berries in peace than cake with a cat.”",
+            "So {name} carried the Country Mouse home under the twinkling stars. They walked past sleepy cows and quiet fields, and the Country Mouse smiled more with every step.",
+            "Back in her cosy home under the oak tree, they shared a supper of berries. “There is no place like home,” said the Country Mouse. And the Town Mouse? She still comes to visit, and now she loves berries too.",
+        ],
+    },
+    {
+        "key": "star",
+        "title": "{name} and the Lost Little Star",
+        "plain": "The Lost Little Star",
+        "source": "A brand-new story, written for Little Hero Books.",
+        "blurb": "A star fell into the garden. Can your hero help it home before morning?",
+        "color": "#463e8c",
+        "original": True,
+        "pages": [
+            "One summer night, {name} was looking out of {his} bedroom window when a tiny star wobbled in the sky. It wiggled, it jiggled, and then WHOOSH! It tumbled all the way down into the garden.",
+            "{name} pulled on {his} slippers and tiptoed outside with a torch. There, in the flower bed, was the little star, glowing softly and sniffling. “I fell,” it whispered. “And I don’t know how to get home.”",
+            "“Don’t cry,” said {name}. “I will help you.” {He} fetched the tallest ladder in the shed and climbed up and up, holding the star high. But the sky was much, much higher than the ladder.",
+            "Up in the old apple tree sat a wise Owl. “Hoo-hoo,” said the Owl. “Stars ride home on the night wind. What you need is something that flies.” {name} thought for a moment. “A kite!” {he} cried.",
+            "So {name} and the little star made a kite out of paper, sticks and string. They gave it a long tail with bright bows. The star sparkled with happiness, and the paper shone like gold.",
+            "Together they climbed to the top of the big green hill, where the wind blew the strongest. The grass whispered, the crickets sang, and the moon smiled down to light the way.",
+            "Whoosh! A gust of wind lifted the kite. The little star held on tight to the tail. “Higher!” called {name}, letting out the string. Up and up they went, past the treetops, past the clouds.",
+            "With one last wiggle, the little star hopped back into its place in the sky and twinkled brighter than ever. All the other stars twinkled too, and for a moment they made the shape of a heart.",
+            "{name} walked home and snuggled into bed. And from that night on, every evening, one little star twinkles extra bright at {his} window, just to say goodnight.",
+        ],
+    },
+    {
+        "key": "puddles",
+        "title": "{name}’s Puddle Parade",
+        "plain": "The Puddle Parade",
+        "source": "A brand-new story, written for Little Hero Books.",
+        "blurb": "Rain, rain, don’t go away: there is a parade today!",
+        "color": "#3dbe8b",
+        "original": True,
+        "pages": [
+            "Pitter, patter, pitter, patter. It rained all morning long. {name} pressed {his} nose against the window and sighed. “No park today,” {he} said. Even the cat on the windowsill looked grumpy, and the swings in the park were dripping wet.",
+            "Then Mum came in with a bright yellow raincoat, a pair of red boots and a big umbrella. “Rain isn’t for staying in,” she said with a wink. “Rain is for puddles!”",
+            "Outside, the first puddle was waiting. {name} jumped right in. SPLASH! A mother duck and her three ducklings waddled over. “Quack! May we come too?” “Of course,” said {name}. “Let’s have a parade!”",
+            "Off they marched down the lane: {name} in front, the ducks behind, quack, quack, quack. A green frog hopped out of the ditch with a tiny drum. “Every parade needs music!” he croaked. Boom, boom, boom!",
+            "At the bottom of the hill was the biggest puddle of all, as big as a pond and as shiny as a mirror. “One, two, three, JUMP!” called {name}. SPLOOSH! Everyone got wonderfully wet.",
+            "Under a bench sat a little cat who did not like the rain one bit. She was shivering. {name} held out the big umbrella. “Come and walk with us,” {he} said. “You can stay dry under here.”",
+            "Slowly the rain stopped. The clouds rolled away, the sun peeped out, and across the sky stretched an enormous rainbow: red, orange, yellow, green, blue and purple.",
+            "The puddle parade marched all the way to the end of the rainbow. The ducks flapped, the frog drummed, the cat purred, and {name} took a bow. Hooray for the rain!",
+            "Back home, {name} left the muddy boots by the door and sipped a cup of warm cocoa. {He} looked out of the window at the sky and smiled. “I hope it rains again tomorrow,” {he} said.",
+        ],
+    },
+    {
+        "key": "dragon",
+        "title": "{name} and the Hiccupy Dragon",
+        "plain": "The Hiccupy Dragon",
+        "source": "A brand-new story, written for Little Hero Books.",
+        "blurb": "HIC! Every hiccup pops out popcorn. Who can help Pip stop?",
+        "color": "#59b45e",
+        "original": True,
+        "pages": [
+            "High on the purple mountain lived a little green dragon called Pip. Pip had a big problem. For three whole days Pip had the hiccups, and with every HIC! out popped a puff of warm popcorn.",
+            "Down in the village, popcorn was falling everywhere. It landed on roofs, in gardens and on people’s hats. “Where is all this popcorn coming from?” everyone asked. {name} looked up at the mountain. “I think I know,” {he} said.",
+            "{name} climbed all the way up the mountain path and found Pip sitting outside a cave, looking very sorry. “I can’t stop hiccuping,” said Pip. “HIC!” And a shower of popcorn tumbled out.",
+            "“Let’s try a drink of water,” said {name}. Pip drank a whole bucket, gulp, gulp, gulp. Pip waited. Everything was quiet. Then… “HIC!” Popcorn bounced all over the rocks.",
+            "“Try holding your breath while I count to ten,” said {name}. Pip puffed out big green cheeks. One, two, three, four, five… Pip’s face turned from green to purple. “HIC!” Out came even more popcorn.",
+            "“Maybe a surprise will help,” said {name}. {He} hid behind a rock, then jumped out. “BOO!” Pip giggled so much that they both fell over. It was very funny. But… “HIC!”",
+            "{name} sat down next to Pip. “Let’s just breathe slowly,” {he} said. “In through your nose, like smelling a flower. Out through your mouth, like blowing out a candle.” They breathed in, and out, in, and out, together.",
+            "The mountain was quiet. Pip listened. Nothing happened. No HIC! No popcorn! “They’re gone!” cheered Pip, and puffed out a tiny, happy flame that toasted a marshmallow just right for {name}.",
+            "That evening the whole village had a popcorn party with all the popcorn from the hills. Pip flew {name} home across the sunset sky. And if Pip ever gets the hiccups again, they both know just what to do.",
+        ],
+    },
 ]
-BY_KEY = {s["key"]: s for s in STORIES}
+BY_KEY: "dict[str, dict]" = {s["key"]: s for s in STORIES}
 TOKENS = {"name", "he", "He", "him", "his", "His", "child", "royal", "royals"}
 SAMPLE = {"name": "Mila", "he": "she", "He": "She", "him": "her", "his": "her", "His": "Her", "child": "girl",
           "royal": "princess", "royals": "princesses"}
@@ -256,10 +375,16 @@ def words(story):
 
 
 def meta(s):
-    """What the library and the shelf show (no page text)."""
-    return {"key": s["key"], "title": s["title"], "plain": s["plain"], "source": s["source"], "blurb": s["blurb"],
-            "color": s["color"], "pages": len(s["pages"]), "words": words(s),
-            "minutes": max(2, round(words(s) / 110))}
+    """What the library and the shelf show (no page text). Stories people wrote (UserStories.py) also carry the
+    pictures they borrow: pics[i] / cover = "storykey:page" (LH.picRef in lh-scenes.js draws them)."""
+    n = words(s)
+    out = {"key": s["key"], "title": s["title"], "plain": s["plain"], "source": s["source"], "blurb": s["blurb"],
+           "color": s["color"], "pages": len(s["pages"]), "words": n,
+           "minutes": max(1 if s.get("custom") else 2, round(n / 110)), "original": bool(s.get("original"))}
+    if s.get("custom"):
+        out.update(custom=True, pics=list(s["pics"]), cover=s["cover"], base=s.get("base") or "",
+                   updated=s.get("updated"))
+    return out
 
 
 def full(s):
@@ -268,10 +393,42 @@ def full(s):
     return out
 
 
+def is_user_key(key):
+    return isinstance(key, str) and key.startswith("u-")
+
+
+def get(key):
+    """Any story by key: one of the library's, or one somebody wrote (for books, family links, recordings and painting).
+    Callers that show a written story to someone check who owns it (owner_of)."""
+    if not isinstance(key, str):
+        return None
+    if key in BY_KEY:
+        return BY_KEY[key]
+    if is_user_key(key):
+        from . import UserStories
+        return UserStories.story_of(key)
+    return None
+
+
+def owner_of(key):
+    """The users row that wrote this story, or None for the library's own stories."""
+    if not is_user_key(key):
+        return None
+    from . import UserStories
+    row = UserStories.row_of(key)
+    return row["owner"] if row is not None else None
+
+
 @anvil.server.callable
 def get_story(key):
-    """One story with its text (public: they're all public-domain tales)."""
-    s = BY_KEY.get(key if isinstance(key, str) else "")
+    """One story with its text: the library's are public (public-domain tales and our own); a story somebody wrote
+    opens only for them (their books' family links go through get_shared_book instead)."""
+    s = get(key)
+    if s is not None and s.get("custom"):
+        from . import common as C
+        me = C.me()
+        if me is None or owner_of(key) != me:
+            s = None
     if s is None:
         return {"ok": False, "error": "That story isn't in the library."}
     return {"ok": True, "story": full(s)}

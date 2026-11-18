@@ -35,7 +35,7 @@ def _rows(book_row):
 
 
 def page_count(book_row):
-    s = Stories.BY_KEY.get(book_row["story"])
+    s = Stories.get(book_row["story"])
     return (len(s["pages"]) + 3) if s else 0  # cover + dedication + story pages + The End
 
 

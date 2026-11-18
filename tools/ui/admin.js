@@ -38,8 +38,8 @@
     await page('#admin/overview', () => $$('.ad-stat').length === 6);
     ok(/\d/.test($('.ad-stat').textContent), 'overview: 6 numbers');
     ok($('.anvil-role-avatar button') && (document.querySelector('.ui-menu a[href="#admin"]') || {}).offsetParent !== undefined, 'menu has the Admin link');
-    await page('#admin/library', () => $$('.ad-lib-row').length === 12);
-    ok(true, 'library: 12 story rows');
+    await page('#admin/library', () => $$('.ad-lib-row').length === 18);
+    ok(true, 'library: 18 story rows');
     await page('#admin/feedback', () => $('.ad-filter'));
     ok(/New \(\d+\)/.test($('.ad-filter').textContent), 'feedback: filter counts');
     await page('#admin/users', () => $$('.ad-user-row').length >= 1);

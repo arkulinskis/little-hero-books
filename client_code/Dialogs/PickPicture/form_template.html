@@ -1,0 +1,11 @@
+<div class="ui wr-picker">
+  <h2 class="dlg-h">Pick a picture</h2>
+  <p class="fine-print">Every picture from the library. Your hero steps into whichever one you choose.</p>
+  <label class="ui-field"><span>From the story</span>
+    <anvil-component type="DropDown" name="story_drop"></anvil-component>
+  </label>
+  <anvil-component type="RepeatingPanel" name="tiles_panel" prop:item_template="Little_Hero_Books.Items.PicTile" prop:role='["wr-tiles"]'></anvil-component>
+  <div class="ui-row end">
+    <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-ghost"]'></anvil-component>
+  </div>
+</div>

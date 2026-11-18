@@ -13,13 +13,13 @@ from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import DemoData, Heroes, Painting, Stories, Voice
+from . import DemoData, Heroes, Painting, Stories, UserStories, Voice
 
 MAX_BOOKS = 200
 
 
 def book_dict(r, me=None, hero=None):
-    s = Stories.BY_KEY.get(r["story"])
+    s = Stories.get(r["story"])
     mine = me is not None and r["owner"] == me and not r["is_demo"]
     return {"id": r.get_id(), "story": Stories.meta(s) if s else None,
             "hero": hero or Heroes.hero_dict(r["hero"], books=0),
@@ -33,7 +33,7 @@ def _books(rows, me):
     out = []
     for r in rows:
         h = r["hero"]
-        if h is None or Stories.BY_KEY.get(r["story"]) is None:
+        if h is None or Stories.get(r["story"]) is None:
             continue
         key = h.get_id()
         if key not in heroes:
@@ -47,7 +47,7 @@ def get_library():
     """Every story, plus the heroes you can put in them (yours if signed in, and the examples)."""
     DemoData.ensure_loaded()
     me = C.me()
-    return {"stories": [Stories.meta(s) for s in Stories.STORIES],
+    return {"stories": [Stories.meta(s) for s in Stories.STORIES], "mine": UserStories.mine(me),
             "heroes": Heroes.mine(me) if me else [], "examples": Heroes.examples()}
 
 
@@ -72,7 +72,7 @@ def get_book(book_id):
     r = C.row_by_id(app_tables.books, book_id)
     if r is None or not (r["is_demo"] or (me is not None and r["owner"] == me)):
         return C.fail("That book isn't on your shelf.")
-    s = Stories.BY_KEY.get(r["story"])
+    s = Stories.get(r["story"])
     if s is None or r["hero"] is None:
         return C.fail("That book can't be opened any more.")
     b = book_dict(r, me)
@@ -89,7 +89,7 @@ def make_book(hero_id, story_key, dedication=""):
     hero = C.row_by_id(app_tables.heroes, hero_id)
     if hero is None or hero["owner"] != me or hero["is_demo"]:
         return C.fail("Pick one of your own heroes for the book.")
-    if story_key not in Stories.BY_KEY:
+    if Stories.get(story_key) is None or Stories.owner_of(story_key) not in (None, me):
         return C.fail("That story isn't in the library.")
     dedication = C.text(dedication, 160, multiline=True)
     have = app_tables.books.get(owner=me, hero=hero, story=story_key)
@@ -155,13 +155,14 @@ def get_shared_book(key):
     if not isinstance(key, str) or len(key) < 8 or len(key) > 40:
         return C.fail("This link doesn't work. Ask for a new one.")
     r = app_tables.books.get(share_key=key)
-    if r is None or r["hero"] is None or Stories.BY_KEY.get(r["story"]) is None:
+    s = Stories.get(r["story"]) if r is not None else None
+    if r is None or r["hero"] is None or s is None:
         return C.fail("This link doesn't work any more. Ask for a new one.")
     b = book_dict(r)
     b["hero"].pop("id", None)
     b["voice"] = Voice.voice_for(r)
     b["paint"] = Painting.paint_for(r)
-    return C.ok(book=b, story=Stories.full(Stories.BY_KEY[r["story"]]))
+    return C.ok(book=b, story=Stories.full(s))
 
 
 @anvil.server.callable(require_user=True)

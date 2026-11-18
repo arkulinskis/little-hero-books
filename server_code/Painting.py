@@ -46,7 +46,7 @@ from anvil.tables import app_tables
 import anvil.tables.query as q
 
 from . import common as C
-from . import Voice
+from . import Stories, Voice
 from . import enhancer_client as enhancer
 
 STYLES = [
@@ -333,7 +333,11 @@ def look_key(book_row):
     matches (edit the hero, and the book needs painting again)."""
     hero = book_row["hero"]
     look = hero["look"] if hero is not None else None
-    raw = json.dumps({"story": book_row["story"], "look": look or {}, "words": WORDS_VERSION}, sort_keys=True, default=str)
+    fp = {"story": book_row["story"], "look": look or {}, "words": WORDS_VERSION}
+    if Stories.is_user_key(book_row["story"]):  # a written story can swap its pictures: a different picture = paint again
+        s = Stories.get(book_row["story"]) or {}
+        fp["pics"] = [s.get("cover")] + list(s.get("pics") or [])
+    raw = json.dumps(fp, sort_keys=True, default=str)
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 

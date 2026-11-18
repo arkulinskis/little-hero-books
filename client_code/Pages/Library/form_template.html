@@ -3,9 +3,8 @@
     <div class="ui-wrap">
       <div class="ui-page-head">
         <div>
-          <div class="eyebrow">The story library</div>
-          <h1>Twelve classic tales, one little hero</h1>
-          <p class="muted">Fairy tales from the public domain, retold short (about 300 words) for ages 3 to 6. Every picture is drawn so your child can step right in.</p>
+          <h1>Eighteen stories, one little hero</h1>
+          <p class="muted">Classic fairy tales and fables retold short (about 300 words) for ages 3 to 6, plus three brand-new stories of our own. Every picture is drawn so your child can step right in.</p>
         </div>
       </div>
 
@@ -15,12 +14,26 @@
         <a class="lb-pick" href="#studio" anvil:name="new_hero_link"><span class="face ghost">+</span><span anvil:name="guest_text">Make yours</span><span anvil:name="member_text">New hero</span></a>
       </div>
 
+      <div class="ui-card wr-cta">
+        <i class="ic ic-edit"></i>
+        <div><b>Write your own story</b>
+          <p class="muted small">Start from a blank page, or take any story here and change the words, pictures and pages.</p>
+        </div>
+        <a class="ui-btn primary" href="#write" anvil:name="write_link"><i class="ic ic-wand"></i>Write a story</a>
+      </div>
+
+      <div anvil:name="mine_part">
+        <h2 class="wr-h">Your stories</h2>
+        <anvil-component type="RepeatingPanel" name="mine_panel" prop:item_template="Little_Hero_Books.Items.StoryCard" prop:role='["lb-grid"]'></anvil-component>
+        <h2 class="wr-h">The library</h2>
+      </div>
+
       <anvil-component type="RepeatingPanel" name="stories_panel" prop:item_template="Little_Hero_Books.Items.StoryCard" prop:role='["lb-grid"]'></anvil-component>
 
       <div class="ui-card flat lb-note">
         <i class="ic ic-heart"></i>
         <div><b>Where do the stories come from?</b>
-          <p class="muted small">Each tale is over a hundred years old and free for everyone: Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop, St. Nicholas Magazine and folk tales from England, Norway and Russia. We retold them gently for little ones: the bears make friends, the giant is lonely rather than scary, the troll only needed a picnic, nobody eats the Gingerbread Man, and everybody shares the bread.</p>
+          <p class="muted small">Each classic tale is over a hundred years old and free for everyone: Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop, St. Nicholas Magazine and folk tales from England, Norway, Russia and all over Europe. We retold them gently for little ones: the bears make friends, the giant is lonely rather than scary, the troll only needed a picnic, nobody eats the Gingerbread Man, and everybody shares the bread. The Lost Little Star, the Puddle Parade and the Hiccupy Dragon are brand-new stories, written for Little Hero Books.</p>
         </div>
       </div>
     </div>

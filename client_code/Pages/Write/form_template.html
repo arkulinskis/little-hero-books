@@ -1,0 +1,95 @@
+<anvil-form layout="Little_Hero_Books.Layouts.Shell" prop:active="write">
+  <anvil-block slot="content">
+    <div class="ui-wrap wr-wrap">
+
+      <div anvil:name="hub">
+        <div class="ui-page-head">
+          <div>
+            <h1>Write your own story</h1>
+            <p class="muted">Start from a blank page, or take a story from the library and make it yours. Pick a picture for every page: your hero steps into each one.</p>
+          </div>
+        </div>
+        <div class="ui-card wr-blank">
+          <i class="ic ic-edit"></i>
+          <div><b>A blank page</b>
+            <p class="muted small">Your own idea, starting from “Once upon a time”.</p>
+          </div>
+          <anvil-component type="Button" name="new_button" prop:text="Start writing" prop:role='["btn", "btn-primary", "ic-wand"]'></anvil-component>
+        </div>
+        <div anvil:name="mine_part">
+          <h2 class="wr-h">Your stories</h2>
+          <anvil-component type="RepeatingPanel" name="mine_panel" prop:item_template="Little_Hero_Books.Items.StoryCard" prop:role='["lb-grid"]'></anvil-component>
+        </div>
+        <h2 class="wr-h">Or change a story from the library</h2>
+        <p class="muted small wr-h-sub">Change the words, swap pictures, add pages or take some out. The library copy stays as it is.</p>
+        <anvil-component type="RepeatingPanel" name="base_panel" prop:item_template="Little_Hero_Books.Items.StartTile" prop:role='["wr-starts"]'></anvil-component>
+      </div>
+
+      <div anvil:name="editor">
+        <div class="bk-head">
+          <div>
+            <a class="bk-back" href="#write"><i class="ic ic-back"></i>Your stories</a>
+            <anvil-component type="Label" name="head_title" prop:role='["bk-title"]'></anvil-component>
+            <anvil-component type="Label" name="head_sub" prop:role='["bk-intro"]'></anvil-component>
+          </div>
+        </div>
+
+        <div class="wr-grid">
+          <section class="ui-card wr-meta">
+            <label class="ui-field"><span>Title</span>
+              <anvil-component type="TextBox" name="title_box" prop:placeholder="{name} and the Moon Picnic"></anvil-component>
+            </label>
+            <label class="ui-field"><span>What it is about <em>(one line for the library card)</em></span>
+              <anvil-component type="TextBox" name="blurb_box" prop:placeholder="A picnic on the moon, and a very hungry star."></anvil-component>
+            </label>
+            <div class="ui-field"><span>Cover colour</span>
+              <anvil-component type="RepeatingPanel" name="colors_panel" prop:item_template="Little_Hero_Books.Items.Swatch" prop:role='["wr-swatches"]'></anvil-component>
+            </div>
+            <div class="ui-field"><span>Cover picture</span>
+              <div class="wr-cover">
+                <div class="wr-cover-art" anvil:name="cover_art" anvil:on-dom:click="self.cover_art_click"></div>
+                <anvil-component type="Button" name="cover_button" prop:text="Change cover picture" prop:role='["btn", "btn-sm", "ic-image"]'></anvil-component>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-card wr-help">
+            <b>Your hero’s name in the story</b>
+            <p class="small muted">Tap a word to add it where you are typing. It turns into the name and words of whoever stars in the book.</p>
+            <div class="ui-row wr-tokens">
+              <anvil-component type="Button" name="tok_name" prop:text="+ name" prop:role='["btn", "btn-sm", "btn-sun"]'></anvil-component>
+              <anvil-component type="Button" name="tok_he" prop:text="+ she / he" prop:role='["btn", "btn-sm"]'></anvil-component>
+              <anvil-component type="Button" name="tok_him" prop:text="+ her / him" prop:role='["btn", "btn-sm"]'></anvil-component>
+              <anvil-component type="Button" name="tok_his" prop:text="+ her / his" prop:role='["btn", "btn-sm"]'></anvil-component>
+            </div>
+            <p class="small muted wr-token-note">In the text they look like <code>{name}</code> and <code>{he}</code>.</p>
+            <div class="small muted wr-star-lab">Pictures show</div>
+            <anvil-component type="RepeatingPanel" name="picks_panel" prop:item_template="Little_Hero_Books.Items.PickChip" prop:role='["wr-stars"]'></anvil-component>
+          </section>
+        </div>
+
+        <anvil-component type="RepeatingPanel" name="pages_panel" prop:item_template="Little_Hero_Books.Items.WritePage" prop:role='["wr-pages"]'></anvil-component>
+        <div class="wr-add">
+          <anvil-component type="Button" name="add_button" prop:text="Add a page" prop:role='["btn", "ic-plus"]'></anvil-component>
+          <anvil-component type="Label" name="count_label" prop:role='["fine-print"]'></anvil-component>
+        </div>
+
+        <div class="wr-bar">
+          <anvil-component type="Label" name="status_label" prop:role='["wr-status"]'></anvil-component>
+          <div class="ui-row wr-bar-btns">
+            <anvil-component type="Button" name="delete_button" prop:text="Delete" prop:role='["btn", "btn-sm", "btn-ghost", "btn-danger", "ic-trash"]'></anvil-component>
+            <anvil-component type="Button" name="preview_button" prop:text="Preview" prop:role='["btn", "btn-sm", "ic-book"]'></anvil-component>
+            <anvil-component type="Button" name="make_button" prop:text="Make it a book" prop:role='["btn", "btn-sm", "btn-sun", "ic-sparkle"]'></anvil-component>
+            <anvil-component type="Button" name="save_button" prop:text="Save" prop:role='["btn", "btn-sm", "btn-primary", "ic-check"]'></anvil-component>
+          </div>
+        </div>
+
+        <div anvil:name="preview_part" class="wr-preview">
+          <h2 class="wr-h">Preview</h2>
+          <anvil-component type="Little_Hero_Books.Components.Reader" name="reader"></anvil-component>
+        </div>
+      </div>
+
+    </div>
+  </anvil-block>
+</anvil-form>
