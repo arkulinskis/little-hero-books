@@ -2,7 +2,7 @@ from anvil import *
 from anvil.js import window
 
 from ._anvil_designer import LandingTemplate
-from ... import lh, state
+from ... import books, lh, state
 
 # The five example kids who take turns starring on the landing page (looks use the people engine's keys).
 PALS = [
@@ -21,7 +21,29 @@ STORIES = [("bears", "{name} and the Three Bears", "#ef5a36"), ("beanstalk", "{n
            ("goats", "{name} and the Billy Goats Gruff", "#8cc04b"), ("tortoise", "{name} and the Great Race", "#e9a23b"),
            ("lion", "{name}, the Lion and the Mouse", "#f0a04b"), ("stonesoup", "{name} and the Stone Soup", "#8a6bd8"),
            ("mice", "{name}, the Town Mouse and the Country Mouse", "#4ea8f5"), ("star", "{name} and the Lost Little Star", "#463e8c"),
-           ("puddles", "{name}’s Puddle Parade", "#3dbe8b"), ("dragon", "{name} and the Hiccupy Dragon", "#59b45e")]
+           ("puddles", "{name}’s Puddle Parade", "#3dbe8b"), ("dragon", "{name} and the Hiccupy Dragon", "#59b45e"),
+           ("christmas", "{name}’s Night Before Christmas", "#c8372d")]
+SEASON = {"christmas": "christmas"}  # story key -> season (books.SEASONS): it leads the shelf while in season
+WORDS = ("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen "
+         "eighteen nineteen twenty twenty-one twenty-two twenty-three twenty-four twenty-five").split()
+
+
+def number_word(n):
+    return WORDS[n] if 0 <= n < len(WORDS) else str(n)
+
+
+def studio_counts():
+    """The hero studio's real choices, counted from the people engine (LH.OPTIONS), so the landing page never undersells it."""
+    def n(key):
+        return len(lh.options(key))
+    return ("%d hairstyles, %d skin tones, %d face shapes, hijab, patka and kippah, %d kinds of glasses, capes and crowns. "
+            "“Surprise me” for wild ideas." % (n("hair"), n("skin"), n("face"), n("glasses") - 1))
+
+
+def shelf_stories():
+    """Every tale for the shelf, the seasonal one first while it is in season."""
+    items = [{"key": k, "title": t, "color": c, "season": SEASON.get(k, "")} for k, t, c in STORIES]
+    return books.seasonal(items)
 # The app's video on the Addanapp YouTube channel (APP_MAKER/youtube/manifest.json), shown in the Watch section.
 YT_VIDEO = "GGIkFuY4_pc"
 PAGE = ("{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too cold!” Then the wee bowl. “Just right!” "
@@ -29,8 +51,8 @@ PAGE = ("{name} tried the big bowl. “Too hot!” Then the middle bowl. “Too 
 
 
 class Landing(LandingTemplate):
-    """The front page: the promise, an open book starring an example kid (they take turns), the eighteen covers
-    redrawn with whoever you tap, features, safety, FAQ."""
+    """The front page: the promise, an open book starring an example kid (they take turns), the Christmas gift strip (15 Nov
+    to 26 Dec), every cover redrawn with whoever you tap, features (the studio's counts come from LH.OPTIONS), safety, FAQ."""
 
     def __init__(self, args=(), **properties):
         super().__init__(**properties)
@@ -46,6 +68,13 @@ class Landing(LandingTemplate):
         if window.UI.reducedMotion():
             self.pal_timer.interval = 0
         self.dom_nodes["yt_cover"].addEventListener("click", self._play)
+        n = len(STORIES)
+        self.dom_nodes["count_lead"].textContent = number_word(n)
+        self.dom_nodes["count_head"].textContent = number_word(n).capitalize()
+        self.dom_nodes["count_feat"].textContent = str(n)
+        self.dom_nodes["studio_feat"].textContent = studio_counts()
+        self.gift_strip.visible = books.in_span(books.GIFT_SEASON)
+        self._shelf = shelf_stories()
         self._show(0)
 
     def _play(self, event):
@@ -64,7 +93,9 @@ class Landing(LandingTemplate):
         self.dom_nodes["art_text"].innerHTML = window.LH.fillHtml(PAGE, pal)
         self.art_book.classes["lpx-fade"] = False
         window.requestAnimationFrame(lambda t: self.art_book.classes.add("lpx-fade"))
-        self.shelf_panel.items = [{"story": {"key": k, "title": t, "color": c}, "hero": pal} for k, t, c in STORIES]
+        self.shelf_panel.items = [{"story": s, "hero": pal} for s in self._shelf]
+        if self.gift_strip.visible:
+            self.dom_nodes["gift_art"].innerHTML = window.LH.giftSvg(pal, {"wrap": "christmas"})
         self.pals_panel.items = [{"pal": p, "on": n == self._at, "index": n} for n, p in enumerate(PALS)]
 
     def _pick(self, index, **event_args):

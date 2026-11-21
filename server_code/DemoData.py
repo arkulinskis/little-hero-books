@@ -3,6 +3,10 @@ each. Everyone, even signed-out visitors, can read the example books and copy an
 studio. Loaded automatically the first time anyone opens the app (ensure_loaded), removed or reloaded
 from Admin -> Demo data. Removing it is remembered: it doesn't come back.
 
+Since 2026-11-20 Juniper also has "The Night Before Christmas", wrapped as a present from Grandma that opens any time,
+behind a fixed family link (GIFT_KEY): the landing page's "Unwrap an example" opens it. Apps that loaded the demo before
+get it added once (DEMO_V).
+
 Demo users have is_demo=True and @example.com emails; they can't sign in (no password). Every demo row
 is flagged is_demo=True, so remove() deletes exactly what load() added.
 """
@@ -44,6 +48,10 @@ DEMO_BOOKS = [
     (3, "emperor", "For Sasha, who always tells it like it is.", 4),
     (0, "turnip", "", 3),
 ]
+# The example present: Juniper's Christmas book, wrapped by Grandma, open any time, behind a fixed (public) link.
+GIFT_KEY = "demo-gift-juniper"
+GIFT_BOOK = (0, "christmas", "For Juniper, on Christmas Eve. Love you to the moon and back, Grandma", 0)
+DEMO_V = 2  # bump when load() adds something an older demo doesn't have; ensure_loaded() then adds it once
 # Tables that hold demo rows (each has an is_demo column). Children before parents.
 DEMO_TABLES = ["books", "heroes"]
 
@@ -56,6 +64,25 @@ def ensure_loaded():
     """Call from the app's main data callables: loads the demo once, unless an admin removed it."""
     if state() == "never":
         load()
+    elif state() == "loaded" and C.get_setting("demo_v", 1) != DEMO_V:
+        _add_gift()
+        C.set_setting("demo_v", DEMO_V)
+
+
+def _add_gift():
+    """The example present (GIFT_BOOK behind GIFT_KEY, wrapped by Grandma, any time). Skipped while the demo is off."""
+    from . import Gifts
+    book = app_tables.books.get(share_key=GIFT_KEY)
+    if book is None:
+        h, story, dedication, reads = GIFT_BOOK
+        heroes = list(app_tables.heroes.search(is_demo=True, name=DEMO_HEROES[h][1]))
+        if not heroes:
+            return
+        book = app_tables.books.add_row(owner=heroes[0]["owner"], hero=heroes[0], story=story, dedication=dedication,
+                                        created=C.now() - dt.timedelta(days=2), times_read=reads, is_demo=True,
+                                        share_key=GIFT_KEY)
+    if Gifts.available() and Gifts.gift_for(book) is None:
+        Gifts.put(book, "christmas", "Grandma", None)
 
 
 def load():
@@ -75,10 +102,15 @@ def load():
         app_tables.books.add_row(owner=hero["owner"], hero=hero, story=story, dedication=dedication,
                                  created=C.now() - dt.timedelta(days=15 - i), times_read=reads, is_demo=True)
     C.set_setting("demo", "loaded")
+    _add_gift()
+    C.set_setting("demo_v", DEMO_V)
     return counts()
 
 
 def remove(remember=True):
+    from . import Gifts
+    for b in app_tables.books.search(is_demo=True):
+        Gifts.delete_for(b)
     for name in DEMO_TABLES:
         for r in getattr(app_tables, name).search(is_demo=True):
             r.delete()

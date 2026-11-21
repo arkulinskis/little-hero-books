@@ -1,6 +1,10 @@
 /* lh-book.js: books: LH.bookPages, LH.pageHtml, LH.reader (page turns, read aloud, colour me in, record my voice,
    painted pictures), LH.makePdf + LH.writePdf (the PDF made in the browser), LH.paintPicture (a page's picture as a
-   PNG for the painting studio), LH.coverHtml, LH.confetti.
+   PNG for the painting studio), LH.coverHtml, LH.confetti, LH.giftHtml + LH.giftCard (Gift it, 2026-11-20).
+   Bedtime (2026-11-20): the reader's Bedtime switch dims the pages (class rd-night), reads slower, skips the confetti, plays
+   the music quieter and adds a Goodnight page after The End (never in the PDF); Just listen reads to the end on an almost
+   black screen, then goes dark and lets the screen sleep. Verse pages (a story text with line breaks, like the 1823
+   Night Before Christmas) keep their lines on screen and in the PDF.
    The PDF options dialog and its progress window are Python forms (Dialogs.Pdf, Dialogs.PdfProgress). */
 (function () {
   'use strict';
@@ -152,15 +156,27 @@
       return '<div class="rd-end"><div class="fig' + (src ? ' pp' : '') + '">' + (src ? paintedImg(src) : portrait(hero, { pose: 'wave', mood: 'laugh', outline: out })) + '</div>' +
         '<h2>The End</h2><p>' + esc(st.source) + '</p><p>' + esc(LH.madeLine(book)) + '</p></div>';
     }
-    return '<div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st, p.i, hero, so)) + '</div><p class="rd-text">' + LH.fillHtml(st.text[p.i], hero) + '</p>' +
+    if (p.kind === 'goodnight') {
+      var gh = hero || LH.GENERIC;
+      return '<div class="rd-gn"><div class="rd-pic">' + LH.goodnightSvg(hero, { outline: out, grain: !out }) + '</div><h2>Goodnight, ' + esc(gh.name) + '.</h2><p>Sleep tight, little hero.</p></div>';
+    }
+    var words = st.text[p.i] || '', verse = words.indexOf('\n') >= 0;
+    return '<div class="rd-pic">' + (src ? paintedImg(src) : LH.sceneSvg(st, p.i, hero, so)) + '</div><p class="rd-text' + (verse ? ' verse' : '') + '">' +
+      (verse ? LH.fillHtml(words, hero).split('\n').map(function (l) { return '<span class="rd-line">' + l + '</span>'; }).join('') : LH.fillHtml(words, hero)) + '</p>' +
       '<div class="rd-num">' + (p.i + 1) + '</div>';
+  };
+  /* Words a speech voice reads well: the 1823 poem's thro', danc'd, rein-deer and St. Nick, and line breaks. */
+  LH.speakable = function (t) {
+    return String(t).replace(/\bthro’/g, 'through').replace(/([A-Za-z])’d\b/g, '$1ed').replace(/rein-deer/g, 'reindeer').replace(/\bjirk\b/g, 'jerk')
+      .replace(/\bSt\. /g, 'Saint ').replace(/’(Twas|kerchief)/g, '$1').replace(/\s*\n\s*/g, ' ');
   };
   LH.pageSpeech = function (book, p) {
     var h = book.hero || LH.GENERIC;
     if (p.kind === 'cover') return LH.title(book.story, book.hero);
     if (p.kind === 'dedication') return 'This book belongs to ' + h.name + '. ' + LH.dedication(book);
     if (p.kind === 'end') return 'The End.';
-    return LH.fill(book.story.text[p.i], book.hero);
+    if (p.kind === 'goodnight') return 'Goodnight, ' + h.name + '. Sleep tight, little hero.';
+    return LH.speakable(LH.fill(book.story.text[p.i], book.hero));
   };
 
   /* ------------------------------------------------------------------ colour me in (on screen) */
@@ -203,6 +219,7 @@
     if (p.kind === 'cover') return 'The cover';
     if (p.kind === 'dedication') return 'The dedication page';
     if (p.kind === 'end') return 'The End';
+    if (p.kind === 'goodnight') return 'The Goodnight page';
     return 'Page ' + (p.i + 1);
   }
   function micError(err) {
@@ -221,7 +238,8 @@
   LH.music = {
     on: function () { return !!window.ArkMusic && !!UI.store.get('music', false); },
     set: function (v) { UI.store.set('music', !!v); if (v) LH.music.play(); else LH.music.stop(); },
-    play: function () { if (window.ArkMusic) ArkMusic.play(LH.MUSIC, { volume: 0.35, fade: 2 }); },
+    level: function () { return UI.store.get('bedtime', false) === true ? 0.15 : 0.35; },  // quieter at bedtime
+    play: function () { if (window.ArkMusic) ArkMusic.play(LH.MUSIC, { volume: LH.music.level(), fade: 2 }); },
     stop: function () { if (window.ArkMusic) ArkMusic.stop(1.2); },
     duck: function (v) { if (window.ArkMusic) ArkMusic.duck(v ? 0.4 : 1, v ? 0.3 : 1); }
   };
@@ -230,11 +248,18 @@
      onVoiceDelete(page or -1 for all) -> JSON {ok, voice, error} (or null when cancelled), voiceBase.
      Painted pictures (book.paint) show instead of the drawings while the "Painted" switch is on (remembered).
      "Full screen" fills the screen with the book (the browser's full screen, or the whole window where there is none,
-     as on iPhones); "Exit full screen" (top right), the same toolbar button or Esc leave it. */
+     as on iPhones); "Exit full screen" (top right), the same toolbar button or Esc leave it.
+     "Bedtime" (remembered as UI.store "bedtime") dims every page, reads slower, skips the confetti and ends on a
+     Goodnight page; after 18:30 a one-time chip offers it. "Just listen" (in Bedtime) reads to the end on an almost
+     black screen with a small moon, "page 4 of 12" and Stop (or Esc), then goes dark and releases the wake lock. */
   var SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
   LH.reader = function (el, book, opts) {
     opts = opts || {};
-    var pages = LH.bookPages(book), at = Math.min(opts.start || 0, pages.length - 1), seen = {}, reading = false, finished = false;
+    var night = UI.store.get('bedtime', false) === true, listening = false, darkEl = null;
+    var pages = [], at = 0, seen = {}, reading = false, finished = false;
+    function buildPages() { pages = LH.bookPages(book); if (night) pages.push({ kind: 'goodnight' }); }
+    buildPages();
+    at = Math.min(opts.start || 0, pages.length - 1);
     var colouring = false, crayon = LH.CRAYONS[0], painted = {};
     var voice = {}, recMode = false, rec = null, stream = null, recState = {}, audio = null, playing = null, playSrc = '', playId = 0, unlocked = false, recFocus = false, alive = true;
     var full = false, wake = null;
@@ -242,17 +267,20 @@
     var canRec = !!opts.record && LH.canRecord() && !!opts.onVoiceSave;
     var paintOn = UI.store.get('painted', true) !== false;
     var canSpeak = 'speechSynthesis' in window;
-    el.innerHTML = '<div class="rd"><button type="button" class="rd-exit" data-rd="full" hidden>' + UI.icon('shrink') + '<span>Exit full screen</span></button>' +
-      '<div data-rd-crayons></div><div data-rd-rec></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
+    el.innerHTML = '<div class="rd' + (night ? ' rd-night' : '') + '"><button type="button" class="rd-exit" data-rd="full" hidden>' + UI.icon('shrink') + '<span>Exit full screen</span></button>' +
+      '<div data-rd-ask></div><div data-rd-crayons></div><div data-rd-rec></div><div class="rd-stage"><button class="rd-nav prev" data-rd="prev" aria-label="Previous page">' + UI.icon('back') + '</button>' +
       '<div class="rd-book" data-rd-book></div><button class="rd-nav next" data-rd="next" aria-label="Next page">' + UI.icon('arrow') + '</button></div>' +
       '<div class="rd-bar"><div class="rd-dots" data-rd-dots></div><div class="rd-tools">' +
       (canSpeak || canRec || Object.keys(voice).length ? '<button class="ui-btn sm" data-rd="speak">' + UI.icon('chat') + '<span>Read to me</span></button>' : '') +
       (canRec ? '<button class="ui-btn sm" data-rd="rec" aria-pressed="false">' + UI.icon('mic') + '<span>Record my voice</span></button>' : '') +
+      '<button class="ui-btn sm' + (night ? ' on' : '') + '" data-rd="night" aria-pressed="' + night + '">' + UI.icon('moon') + '<span>Bedtime</span></button>' +
+      ((canSpeak || Object.keys(voice).length) ? '<button class="ui-btn sm" data-rd="listen"' + (night ? '' : ' hidden') + '>' + UI.icon('volume') + '<span>Just listen</span></button>' : '') +
       (window.ArkMusic ? '<button class="ui-btn sm' + (LH.music.on() ? ' on' : '') + '" data-rd="music" aria-pressed="' + LH.music.on() + '">' + UI.icon('music') + '<span>Music</span></button>' : '') +
       '<button class="ui-btn sm' + (paintOn ? ' on' : '') + '" data-rd="paint" aria-pressed="' + paintOn + '"' + (LH.hasPaint(book) ? '' : ' hidden') + '>' + UI.icon('palette') + '<span>Painted</span></button>' +
       (opts.colour === false ? '' : '<button class="ui-btn sm" data-rd="colour">' + UI.icon('brush') + '<span>Colour me in</span></button>') +
       '<button class="ui-btn sm rd-full-btn" data-rd="full" aria-pressed="false">' + UI.icon('expand') + '<span>Full screen</span></button>' +
       (opts.tools || '') + '</div></div></div>';
+    var askEl = el.querySelector('[data-rd-ask]');
     var rdEl = el.querySelector('.rd'), bookEl = el.querySelector('[data-rd-book]'), dots = el.querySelector('[data-rd-dots]'), crayEl = el.querySelector('[data-rd-crayons]'), recEl = el.querySelector('[data-rd-rec]');
     function show(html) { bookEl.innerHTML = html; LH.media.fill(bookEl); }
     function drawCrayons() {
@@ -284,7 +312,9 @@
       el.querySelector('[data-rd=next]').disabled = at === pages.length - 1;
       drawDots();
       drawRec();
-      if (at === pages.length - 1 && !finished) { finished = true; LH.confetti(); if (opts.onFinish) opts.onFinish(); }
+      drawDark();
+      var kind = pages[at].kind;
+      if ((kind === 'end' || kind === 'goodnight') && !finished) { finished = true; if (!night) LH.confetti(); if (opts.onFinish) opts.onFinish(); }
       if (opts.onPage) opts.onPage(at, pages[at]);
       if (reading) speak();
     }
@@ -304,7 +334,7 @@
       stopAudio();
       try { speechSynthesis.cancel(); } catch (e) {}
       LH.music.duck(true);
-      var next = function () { if (reading && mine === at) { if (at < pages.length - 1) setTimeout(function () { if (reading && mine === at) go(at + 1); }, 900); else stopSpeak(); } };
+      var next = function () { if (reading && mine === at) { if (at < pages.length - 1) setTimeout(function () { if (reading && mine === at) go(at + 1); }, night ? 1800 : 900); else listenEnd(); } };
       if (voice[at]) playVoice(at, next, function () { if (reading && mine === at) synth(mine, next); });
       else synth(at, next);
       if (voice[at + 1] && !LH.media.has(voiceSrc(at + 1))) LH.media.load(voiceSrc(at + 1)).catch(function () {});  // the next page's voice, ready
@@ -313,7 +343,8 @@
       if (!canSpeak) { setTimeout(next, 1500); return; }
       try {
         var u = new SpeechSynthesisUtterance(LH.pageSpeech(book, pages[p]));
-        u.rate = .9; u.pitch = 1.08;
+        u.rate = night ? .8 : .9; u.pitch = night ? 1 : 1.08;  // slower and calmer at bedtime
+        LH.lastUtterance = { rate: u.rate, pitch: u.pitch, text: u.text };  // for the UI tests
         u.onend = next;
         speechSynthesis.speak(u);
       } catch (e) { stopSpeak(); }
@@ -325,6 +356,84 @@
       LH.music.duck(false);
       var b = el.querySelector('[data-rd=speak]');
       if (b) { b.classList.remove('on'); b.querySelector('span').textContent = 'Read to me'; }
+      if (listening) closeDark();
+    }
+
+    /* ---- Bedtime: dim pages, slower reading, no confetti, quieter music, a Goodnight page at the end */
+    function setNight(on) {
+      on = !!on;
+      UI.store.set('bedtime', on);
+      if (on === night) { drawAsk(); return; }
+      night = on;
+      var kind = pages[at] && pages[at].kind;
+      buildPages();
+      if (at > pages.length - 1 || (!on && kind === 'goodnight')) at = pages.length - 1;
+      rdEl.classList.toggle('rd-night', night);
+      var b = el.querySelector('[data-rd=night]');
+      if (b) { b.classList.toggle('on', night); b.setAttribute('aria-pressed', String(night)); }
+      var lb = el.querySelector('[data-rd=listen]');
+      if (lb) lb.hidden = !night;
+      if (window.ArkMusic) ArkMusic.volume(LH.music.level());
+      drawAsk();
+      draw(1);
+    }
+    /* After 18:30 (or before 5 in the morning) a one-time chip offers Bedtime, until someone picks either way. */
+    function drawAsk() {
+      var d = new Date(), h = d.getHours() + d.getMinutes() / 60;
+      var ask = UI.store.get('bedtime', null) === null && (h >= 18.5 || h < 5) && !opts.noAsk;
+      askEl.innerHTML = ask ? '<div class="rd-ask" role="group" aria-label="Bedtime reading">' + UI.icon('moon') + '<span>Bedtime? Dim the pages for a calm story.</span>' +
+        '<button type="button" class="ui-btn sm primary" data-rd="night-yes">Dim the pages</button><button type="button" class="ui-btn sm ghost" data-rd="night-no">Not tonight</button></div>' : '';
+    }
+    /* ---- Just listen: reads to the end on an almost black screen; then dark, and the screen may sleep */
+    function drawDark() {
+      if (!darkEl) return;
+      var n = darkEl.querySelector('[data-dark-page]');
+      if (n) n.textContent = (pages[at].kind === 'goodnight' ? 'Goodnight' : 'Page ' + (at + 1) + ' of ' + pages.length);
+    }
+    function listen() {
+      if (recMode) setRec(false);
+      if (colouring) setColour(false);
+      if (!night) setNight(true);
+      if (at >= pages.length - 2) go(0);  // at the end: start again from the cover
+      darkEl = document.createElement('div');
+      darkEl.className = 'rd-dark';
+      darkEl.setAttribute('role', 'dialog');
+      darkEl.setAttribute('aria-label', 'Just listen');
+      darkEl.innerHTML = '<div class="rd-dark-in"><svg class="rd-dark-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>' +
+        '<p class="rd-dark-page" data-dark-page aria-live="polite"></p><button type="button" class="rd-dark-stop" data-rd="listen-stop">' + UI.icon('stop') + '<span>Stop</span></button>' +
+        '<p class="rd-dark-bye">Sweet dreams. Tap to wake the screen.</p></div>';
+      rdEl.appendChild(darkEl);
+      listening = true;
+      keepAwake(true);
+      drawDark();
+      unlockAudio();
+      reading = true;
+      var sb = el.querySelector('[data-rd=speak]');
+      if (sb) { sb.classList.add('on'); sb.querySelector('span').textContent = 'Stop reading'; }
+      speak();
+      var st = darkEl.querySelector('.rd-dark-stop');
+      if (st) st.focus();
+    }
+    function listenEnd() {  // the last page has been read
+      if (!listening) { stopSpeak(); return; }
+      listening = false;
+      reading = false;
+      LH.music.duck(false);
+      var sb = el.querySelector('[data-rd=speak]');
+      if (sb) { sb.classList.remove('on'); sb.querySelector('span').textContent = 'Read to me'; }
+      if (darkEl) darkEl.classList.add('rd-dark-end');
+      if (window.ArkMusic) ArkMusic.stop(4);
+      keepAwake(full);  // the screen may sleep now
+    }
+    function closeDark() {
+      var was = darkEl;
+      listening = false;
+      darkEl = null;
+      if (was) was.remove();
+      keepAwake(full);
+      if (reading) stopSpeak();
+      var lb = el.querySelector('[data-rd=listen]');
+      if (lb && rdEl.contains(document.activeElement) === false) lb.focus();
     }
     function voiceSrc(p) { return (opts.voiceBase || '') + voice[p].key; }
     /* Called straight from a tap: Safari only lets an audio element play later (after a download) once it has
@@ -365,7 +474,7 @@
     function keepAwake(on) {  // the screen stays on while the book fills it (where the browser allows)
       if (on && !wake && navigator.wakeLock) {
         wake = 'asking';
-        navigator.wakeLock.request('screen').then(function (w) { if (full && alive) wake = w; else { wake = null; w.release(); } }, function () { wake = null; });
+        navigator.wakeLock.request('screen').then(function (w) { if ((full || listening) && alive) wake = w; else { wake = null; w.release(); } }, function () { wake = null; });
       } else if (!on && wake) {
         if (wake.release) try { wake.release(); } catch (e) {}
         wake = null;
@@ -377,7 +486,7 @@
       var exit = el.querySelector('.rd-exit'), b = el.querySelector('.rd-full-btn');
       exit.hidden = !full;
       if (b) { b.setAttribute('aria-pressed', String(full)); b.querySelector('span').textContent = full ? 'Exit full screen' : 'Full screen'; }
-      keepAwake(full);
+      keepAwake(full || listening);
     }
     function setFull(on) {
       if (on === full) return;
@@ -419,7 +528,7 @@
       stream = null;
     }
     function recStart() {
-      if (rec) return;
+      if (rec || pages[at].kind === 'goodnight') return;
       var page = at;
       stopSpeak(); stopAudio();
       recState[page] = { s: 'starting' };
@@ -516,6 +625,11 @@
       var had = recFocus || (document.activeElement && recEl.contains(document.activeElement));
       recFocus = false;
       var p = at, name = pageName(pages[p]), st = rec && rec.page === p ? 'recording' : (recState[p] && recState[p].s) || 'idle';
+      if (pages[p].kind === 'goodnight') {
+        recEl.innerHTML = '<div class="rd-rec" data-state="empty" role="region" aria-label="Record your voice"><div class="rd-rec-say"><span class="rd-rec-dot" aria-hidden="true"></span>' +
+          '<span role="status"><b>The Goodnight page</b> only shows in Bedtime reading, so it has no recording.</span></div></div>';
+        return;
+      }
       if (st === 'saved' || st === 'idle') st = voice[p] ? 'saved' : 'empty';
       var msg, btns = '';
       if (st === 'recording') {
@@ -574,6 +688,7 @@
         else if (a === 'next') go(at + 1);
         return;
       }
+      if (darkEl && darkEl.contains(e.target) && (darkEl.classList.contains('rd-dark-end') || e.target.closest('[data-rd=listen-stop]'))) { closeDark(); return; }
       var b = e.target.closest('[data-rd],[data-rd-go]');
       if (!b) return;
       if (b.hasAttribute('data-rd-go')) return go(+b.getAttribute('data-rd-go'));
@@ -589,6 +704,10 @@
       }
       else if (k === 'rec') setRec(!recMode);
       else if (k === 'full') setFull(!full);
+      else if (k === 'night') setNight(!night);
+      else if (k === 'night-yes') setNight(true);
+      else if (k === 'night-no') { UI.store.set('bedtime', false); drawAsk(); }
+      else if (k === 'listen') listen();
       else if (k === 'speak') {
         if (reading) return stopSpeak();
         if (recMode) setRec(false);
@@ -602,6 +721,7 @@
     el.addEventListener('click', onClick);  // removed in destroy(): a remounted reader reuses the same element
     function key(e) {
       if (e.target.closest && e.target.closest('input, textarea, select') || document.querySelector('.ui-modal-wrap, .anvil-modal-content')) return;
+      if (e.key === 'Escape' && darkEl) { closeDark(); return; }
       if (e.key === 'Escape' && full) { setFull(false); return; }
       if (e.key === 'ArrowRight') go(at + 1);
       if (e.key === 'ArrowLeft') go(at - 1);
@@ -615,13 +735,16 @@
       if (Math.abs(dx) > 45) go(at + (dx < 0 ? 1 : -1));
     });
     draw(1);
+    drawAsk();
     if (LH.music.on()) LH.music.play();
     var api = {
-      go: go, at: function () { return at; }, count: pages.length, colouring: function () { return colouring; },
+      go: go, at: function () { return at; }, get count() { return pages.length; }, colouring: function () { return colouring; },
       recording: function () { return recMode; }, voice: function () { return voice; }, audio: function () { return audio; },
       playing: function () { return playing; }, painted: function () { return paintOn; },
       playingSrc: function () { return playSrc; },  // the server address of the recording playing (it plays from memory)
       full: function () { return full; }, setFull: setFull,
+      night: function () { return night; }, setNight: setNight, listening: function () { return listening; }, dark: function () { return !!darkEl; },
+      pageKind: function () { return pages[at].kind; },
       /* New painted pictures arrived (the book page checks while the studio works): show them without a page turn. */
       setPaint: function (map) {
         var idx = LH.paintIndex(book, pages[at]), before = LH.paintSrc(book, idx);
@@ -633,6 +756,7 @@
       },
       destroy: function () {
         alive = false;
+        if (darkEl) { darkEl.remove(); darkEl = null; listening = false; }
         document.removeEventListener('keydown', key);
         el.removeEventListener('click', onClick);
         setFull(false);
@@ -735,10 +859,13 @@
   function textBlock(ctx, text, name, box, o) {
     o = o || {};
     var size = o.size || 52, font = o.font || 'Fredoka', weight = o.weight || 500, lh = o.lh || 1.42, lines;
-    var words = text.split(/\s+/).filter(Boolean).map(function (t) { return { t: t, hi: !!(name && t.indexOf(name) >= 0) }; });
-    for (; size > 24; size -= 2) {
+    var paras = String(text).split('\n').map(function (para) {
+      return para.split(/\s+/).filter(Boolean).map(function (t) { return { t: t, hi: !!(name && t.indexOf(name) >= 0) }; });
+    });
+    for (; size > 24; size -= 2) {  // each line of a verse page starts a new line (lines too long for the box wrap)
       ctx.font = fontOf(weight, size, font);
-      lines = wrap(ctx, words, box.w);
+      lines = [];
+      paras.forEach(function (wds) { lines = lines.concat(wrap(ctx, wds, box.w)); });
       if (lines.length * size * lh <= box.h) break;
     }
     var space = ctx.measureText(' ').width, total = lines.length * size * lh, y = box.y + (box.h - total) / 2 + size * .95;
@@ -816,9 +943,15 @@
       });
     }
     paper(ctx);
+    var verse = (st.text[p.i] || '').indexOf('\n') >= 0;  // eight lines of a poem: a smaller picture, more room for the words
     return pictureOf(book, p, opts, function () { return svgImage(LH.sceneSvg(st, p.i, hero, sceneOpts(1340))); }).then(function (pic) { restore();
-      framed(ctx, pic.img, 80, 70, 1340, 938, 64);
-      textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 1050, w: 1280, h: 330 }, { size: 56 });
+      if (verse) {
+        framed(ctx, pic.img, 290, 66, 920, 644, 56);
+        textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 760, w: 1280, h: 620 }, { size: 50, lh: 1.3 });
+      } else {
+        framed(ctx, pic.img, 80, 70, 1340, 938, 64);
+        textBlock(ctx, LH.fill(st.text[p.i], hero), hero ? name : null, { x: 110, y: 1050, w: 1280, h: 330 }, { size: 56 });
+      }
       ctx.save(); ctx.fillStyle = OUT ? '#FFFFFF' : '#FFE7A3'; ctx.beginPath(); ctx.arc(750, 1424, 30, 0, 7); ctx.fill(); if (OUT) { ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); } ctx.restore();
       ctx.font = fontOf(600, 32, 'Fredoka'); ctx.fillStyle = ink(); ctx.textAlign = 'center'; ctx.fillText(String(p.i + 1), 750, 1435); ctx.textAlign = 'left';
       return c;
@@ -954,6 +1087,168 @@
       var round = function (v) { return Math.round(v * 10) / 10; };
       return JSON.stringify({ drawn: round(d), painted: round(p), picture: round(pic), relative: round(p - d - pic), pixels: skinD.length });
     });
+  };
+
+  /* ------------------------------------------------------------------ Gift it (2026-11-20)
+     A family link wrapped as a present. gift = {wrap, sender, open_on ('YYYY-MM-DD' or null = any time), opened}.
+     The lock uses the viewer's own date (LH.today, or window.LH_TODAY in tests): it keeps a surprise, it isn't security.
+     LH.giftHtml(hero, gift, state, story) draws the present (states: locked, ready, unwrapping, open; the Python
+     Components/GiftBox switches them and plays the unwrap); LH.giftCard(book, gift, url) -> PNG Blob of the 5 x 7 in
+     printable card with a QR code (qrcode-generator, theme/assets/lh-qr.js, loaded the first time a card is made). */
+  LH.GIFT_WRAPS = {
+    christmas: { bg: '#D8433A', rib: '#FFD25E', label: 'Christmas' },
+    birthday: { bg: '#4EA8F5', rib: '#FF8FB8', label: 'Birthday' },
+    stars: { bg: '#2E2A63', rib: '#E6E1F5', label: 'Starry night' },
+    crayons: { bg: '#FFF3D6', rib: '#EF5A36', label: 'Crayons' }
+  };
+  function two(n) { return ('0' + n).slice(-2); }
+  LH.today = function () {
+    if (window.LH_TODAY) return window.LH_TODAY;
+    var d = new Date();
+    return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
+  };
+  /* Sleeps (nights) until the day it opens: 0 = today or any time. */
+  LH.giftSleeps = function (openOn) {
+    if (!openOn) return 0;
+    var a = LH.today().split('-'), b = String(openOn).split('-');
+    return Math.max(0, Math.round((Date.UTC(+b[0], b[1] - 1, +b[2]) - Date.UTC(+a[0], a[1] - 1, +a[2])) / 86400000));
+  };
+  LH.giftDay = function (openOn, long) {
+    if (!openOn) return '';
+    var b = String(openOn).split('-'), d = new Date(+b[0], b[1] - 1, +b[2]);
+    return d.toLocaleDateString('en-GB', long ? { weekday: 'long', day: 'numeric', month: 'long' } : { day: 'numeric', month: 'short' });
+  };
+  function starPath(cx, cy, r) {
+    var d = '';
+    for (var i = 0; i < 10; i++) {
+      var a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * .45 : r;
+      d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1);
+    }
+    return d + 'Z';
+  }
+  /* The wrapping paper as an SVG <pattern> (id given). */
+  function paperPattern(id, wrap, k) {
+    k = k || 1;
+    var w = LH.GIFT_WRAPS[wrap] || LH.GIFT_WRAPS.christmas, m = '', size = 60;
+    if (wrap === 'birthday') {
+      size = 50;
+      m = '<rect x="6" y="8" width="10" height="5" rx="2" fill="#FFD25E" transform="rotate(30 11 10)"/><circle cx="34" cy="14" r="4" fill="#FFFFFF"/>' +
+        '<rect x="28" y="34" width="10" height="5" rx="2" fill="#FF8FB8" transform="rotate(-25 33 36)"/><circle cx="12" cy="38" r="3.5" fill="#3DBE8B"/>';
+    } else if (wrap === 'stars') {
+      size = 56;
+      m = '<path d="' + starPath(14, 14, 7) + '" fill="#FFD25E"/><path d="' + starPath(42, 40, 5) + '" fill="#FFE9A8"/><circle cx="40" cy="12" r="1.8" fill="#FFFFFF"/><circle cx="12" cy="44" r="1.5" fill="#FFFFFF"/>';
+    } else if (wrap === 'crayons') {
+      size = 80;
+      m = '<path d="M6 16 l10 -8 l10 8 l10 -8 l10 8" fill="none" stroke="#EF5A36" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M34 46 q8 -10 16 0 t16 0" fill="none" stroke="#4EA8F5" stroke-width="3.5" stroke-linecap="round"/><circle cx="16" cy="48" r="5" fill="none" stroke="#3DBE8B" stroke-width="3.5"/>';
+    } else {
+      m = '<path d="M15 7 v16 M8 11 l14 8 M22 11 l-14 8" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>' +
+        '<ellipse cx="41" cy="44" rx="8" ry="4" fill="#3E9E5E" transform="rotate(-30 41 44)"/><ellipse cx="52" cy="44" rx="8" ry="4" fill="#3E9E5E" transform="rotate(30 52 44)"/><circle cx="46" cy="47" r="3.5" fill="#FFD25E"/>';
+    }
+    return '<pattern id="' + id + '" width="' + size * k + '" height="' + size * k + '" patternUnits="userSpaceOnUse"><rect width="' + size * k + '" height="' + size * k + '" fill="' + w.bg + '"/>' +
+      '<g transform="scale(' + k + ')">' + m + '</g></pattern>';
+  }
+  /* The present: lid, two halves of the box (they fall away when it is unwrapped), the bow and the "To <name>" tag. */
+  LH.giftSvg = function (hero, gift, o) {
+    o = o || {};
+    var wrap = (gift && gift.wrap) || 'christmas', w = LH.GIFT_WRAPS[wrap] || LH.GIFT_WRAPS.christmas, id = LH.uid('gp'), fill = 'url(#' + id + ')', rib = w.rib;
+    var name = (hero && hero.name) || 'You', fs = Math.max(18, Math.min(34, Math.floor(230 / Math.max(3, name.length + 1))));
+    var face = hero && hero.look ? LH.avatarSvg(hero.look, { crop: 'head', mood: 'laugh' }).replace(' class="lh-av"', '').replace('<svg ', '<svg x="244" y="50" width="62" height="62" ') : '';
+    var ln = 'stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"';
+    return '<svg class="gf-svg" viewBox="0 0 400 430" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>' + paperPattern(id, wrap) + '</defs>' +
+      '<ellipse cx="200" cy="404" rx="150" ry="14" fill="rgba(43,35,80,.18)"/>' +
+      '<g class="gf-left"><rect x="70" y="204" width="130" height="194" rx="10" fill="' + fill + '" ' + ln + '/><rect x="182" y="204" width="18" height="194" fill="' + rib + '" stroke="' + INK + '" stroke-width="3"/>' +
+      '<rect x="70" y="288" width="130" height="32" fill="' + rib + '" stroke="' + INK + '" stroke-width="3"/></g>' +
+      '<g class="gf-right"><rect x="200" y="204" width="130" height="194" rx="10" fill="' + fill + '" ' + ln + '/><rect x="200" y="204" width="18" height="194" fill="' + rib + '" stroke="' + INK + '" stroke-width="3"/>' +
+      '<rect x="200" y="288" width="130" height="32" fill="' + rib + '" stroke="' + INK + '" stroke-width="3"/></g>' +
+      '<g class="gf-lid"><rect x="52" y="160" width="296" height="60" rx="12" fill="' + fill + '" ' + ln + '/><rect x="181" y="160" width="38" height="60" fill="' + rib + '" stroke="' + INK + '" stroke-width="3"/></g>' +
+      '<g class="gf-bow"><path d="M200 160 C160 112 118 118 128 146 C136 168 176 166 200 160Z" fill="' + rib + '" ' + ln + '/><path d="M200 160 C240 112 282 118 272 146 C264 168 224 166 200 160Z" fill="' + rib + '" ' + ln + '/>' +
+      '<path d="M192 166 L170 206 L184 204 L190 216 L200 170Z M208 166 L230 206 L216 204 L210 216 L200 170Z" fill="' + rib + '" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/><circle cx="200" cy="158" r="15" fill="' + rib + '" ' + ln + '/></g>' +
+      (o.tag === false ? '' : '<g class="gf-tag"><path d="M212 150 C240 120 246 96 256 70" fill="none" stroke="' + INK + '" stroke-width="3"/>' +
+      '<g transform="rotate(-8 310 92)"><rect x="236" y="40" width="148" height="112" rx="16" fill="#FFFAF0" ' + ln + '/><circle cx="252" cy="56" r="5" fill="none" stroke="' + INK + '" stroke-width="3"/>' +
+      '<circle cx="275" cy="81" r="31" fill="#FFC93C" stroke="' + INK + '" stroke-width="3"/>' + face +
+      '<text x="346" y="74" text-anchor="middle" font-family="Fredoka, Nunito, sans-serif" font-weight="600" font-size="20" fill="#6D6490">To</text>' +
+      '<text x="310" y="138" text-anchor="middle" font-family="\'Baloo 2\', Nunito, sans-serif" font-weight="800" font-size="' + fs + '" fill="#D9532E">' + esc(name) + '</text></g></g>') +
+      '</svg>';
+  };
+  LH.giftHtml = function (hero, gift, state, story) {
+    var wrap = (gift && gift.wrap) || 'christmas';
+    return '<div class="gf gf-' + esc(wrap) + '" data-state="' + esc(state || 'locked') + '"><div class="gf-stage">' +
+      (story ? '<div class="gf-book">' + LH.coverHtml(story, hero) + '</div>' : '') +
+      '<button type="button" class="gf-hit" aria-label="' + esc(state === 'ready' ? 'Tap the bow to unwrap the present' : 'The wrapped present') + '">' + LH.giftSvg(hero, gift) + '</button></div></div>';
+  };
+
+  /* ---- the printable gift card: 5 x 7 in at 300 dpi, with a QR code that opens the family link */
+  var qrLoading = null;
+  LH.qrReady = function () {
+    if (window.qrcode) return Promise.resolve(true);
+    if (qrLoading) return qrLoading;
+    return (qrLoading = new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = '_/theme/lh-qr.js';
+      sc.onload = function () { resolve(true); };
+      sc.onerror = function () { qrLoading = null; reject(new Error('The QR code maker could not load. Check your connection and try again.')); };
+      document.head.appendChild(sc);
+    }));
+  };
+  function qrMatrix(text) {
+    var q = window.qrcode(0, 'M');
+    if (window.qrcode.stringToBytesFuncs && window.qrcode.stringToBytesFuncs['UTF-8']) window.qrcode.stringToBytes = window.qrcode.stringToBytesFuncs['UTF-8'];
+    q.addData(String(text));
+    q.make();
+    return q;
+  }
+  function fitText(ctx, s, x, y, maxW, size, weight, font, colour) {
+    for (; size > 20; size -= 2) { ctx.font = fontOf(weight, size, font); if (ctx.measureText(s).width <= maxW) break; }
+    ctx.fillStyle = colour; ctx.textAlign = 'center'; ctx.fillText(s, x, y); ctx.textAlign = 'left';
+  }
+  LH.giftCard = function (book, gift, url) {
+    var W = 1500, H = 2100, hero = book.hero || LH.GENERIC, st = book.story, wrap = (gift && gift.wrap) || 'christmas';
+    var fonts = document.fonts && document.fonts.load ? Promise.all(['800 60px "Baloo 2"', '500 50px Fredoka', '600 50px Fredoka', '800 40px Nunito', '700 40px Nunito'].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : Promise.resolve();
+    var paperSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '"><defs>' + paperPattern('cardp', wrap, 2.4) + '</defs><rect width="' + W + '" height="' + H + '" fill="url(#cardp)"/></svg>';
+    return Promise.all([fonts, LH.qrReady(), svgImage(paperSvg), svgImage(LH.sceneSvg(st, 'cover', book.hero, { w: 1100, clip: 'gcard', grain: true })),
+      svgImage(LH.giftSvg(book.hero, gift, { tag: false }).replace('<svg ', '<svg width="200" height="215" '))]).then(function (r) {
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      var ctx = c.getContext('2d');
+      OUT = false; PRINT = false; K = 1;
+      ctx.drawImage(r[2], 0, 0);
+      ctx.save(); shadow(ctx, 40, 14, .35); ctx.fillStyle = '#FFFAF0'; rrect(ctx, 80, 80, W - 160, H - 160, 60); ctx.fill(); ctx.restore();
+      framed(ctx, r[3], 200, 170, 1100, 770, 48);
+      ctx.drawImage(r[4], 1130, 820, 200, 215);  // a little present on the corner of the picture
+      ctx.textBaseline = 'alphabetic';
+      fitText(ctx, 'A book starring ' + hero.name, W / 2, 1070, 1180, 96, 800, 'Baloo 2', SOFT);
+      fitText(ctx, LH.title(st, book.hero), W / 2, 1145, 1180, 50, 500, 'Fredoka', '#6D6490');
+      fitText(ctx, 'From ' + ((gift && gift.sender) || 'your family') + ', with love', W / 2, 1250, 1180, 66, 600, 'Fredoka', '#D9532E');
+      fitText(ctx, gift && gift.open_on ? 'Open on ' + LH.giftDay(gift.open_on, true) : 'Open it any time', W / 2, 1328, 1180, 46, 800, 'Nunito', SOFT);
+      var q = qrMatrix(url), n = q.getModuleCount(), cell = Math.floor(400 / (n + 2)), size = cell * (n + 2), x0 = (W - size) / 2, y0 = 1390;
+      ctx.save(); shadow(ctx, 24, 8, .2); ctx.fillStyle = '#FFFFFF'; rrect(ctx, x0 - 22, y0 - 22, size + 44, size + 44, 30); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#1E1A33';
+      for (var row = 0; row < n; row++) for (var col = 0; col < n; col++) if (q.isDark(row, col)) ctx.fillRect(x0 + (col + 1) * cell, y0 + (row + 1) * cell, cell, cell);
+      fitText(ctx, 'Scan to unwrap the book', W / 2, y0 + size + 100, 1180, 48, 600, 'Fredoka', SOFT);
+      fitText(ctx, 'Little Hero Books', W / 2, y0 + size + 166, 1180, 36, 700, 'Nunito', '#6D6490');
+      LH.lastQrText = String(url);
+      return new Promise(function (resolve, reject) {
+        c.toBlob(function (b) { if (b) { window.LH_LAST_CARD = b; resolve(b); } else reject(new Error('The card could not be made.')); }, 'image/png');
+      });
+    });
+  };
+
+  /* Phones (a finger-first screen that can share files): the share sheet with the picture, so it goes straight to
+     WhatsApp, Messages or Photos. Elsewhere it downloads. Resolves 'shared', 'cancelled' or 'saved'. */
+  LH.shareOrSave = function (blob, name, title) {
+    try {
+      var file = new File([blob], name, { type: blob.type || 'image/png' });
+      var coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+      if (coarse && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: title }).then(function () { return 'shared'; }, function () { return 'cancelled'; });
+      }
+    } catch (e) {}
+    LH.saveBlob(blob, name);
+    return Promise.resolve('saved');
+  };
+  LH.shareLink = function (url, title, text) {
+    if (!navigator.share) return Promise.resolve('none');
+    return navigator.share({ url: url, title: title, text: text }).then(function () { return 'shared'; }, function () { return 'cancelled'; });
   };
 
   LH.DPI = DPI;

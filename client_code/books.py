@@ -29,6 +29,33 @@ def remember_stories(lib):
     _cache["stories"] = lib["stories"]
 
 
+# Seasonal stories sort first while they are in season (the viewer's own date): (first month, day), (last month, day).
+SEASONS = {"christmas": ((11, 15), (12, 31))}
+GIFT_SEASON = ((11, 15), (12, 26))  # the landing page's "A Christmas gift that can't arrive late" strip
+
+
+def _month_day():
+    from . import lh
+    bits = lh.today().split("-")
+    return int(bits[1]), int(bits[2])
+
+
+def in_span(span):
+    md = _month_day()
+    return span[0] <= md <= span[1]
+
+
+def in_season(story):
+    span = SEASONS.get((story or {}).get("season") or "")
+    return bool(span) and in_span(span)
+
+
+def seasonal(stories):
+    """The same stories with the ones in season first (The Night Before Christmas from 15 Nov to 31 Dec)."""
+    first = [s for s in stories if in_season(s)]
+    return first + [s for s in stories if not in_season(s)]
+
+
 def hero_choices(lib):
     """Heroes you can read with: yours, your unsaved studio draft, the examples, and the blank book.
     Each choice is {ref, hero, label, note, own}; ref = a hero id, 'draft' or 'blank'."""

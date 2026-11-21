@@ -98,9 +98,11 @@ def delete_hero(hero_id):
     if r["owner"] != me or r["is_demo"]:
         return C.fail("You can only remove your own heroes.")
     books = list(app_tables.books.search(hero=r))
+    from . import Gifts
     for b in books:
         Voice.delete_for(b)
         Painting.delete_for(b)
+        Gifts.delete_for(b)
         b.delete()
     r.delete()
     return C.ok(removed_books=len(books))

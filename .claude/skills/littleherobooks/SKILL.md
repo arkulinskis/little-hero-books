@@ -5,7 +5,7 @@ description: Context, workflow and recipes for Little Hero Books (folder little-
 
 # Little Hero Books (native Anvil Forms)
 
-**What it is:** personalised picture books (hero studio, 18 stories, write your own, reader, PDF, family links; README.md lists every
+**What it is:** personalised picture books (hero studio, 19 stories, write your own, reader, PDF, family links, Gift it, Bedtime; README.md lists every
 feature). Since 2026-11-02 the interface is native Anvil Forms: one Python Form per page with an HTML template, a layout
 Form for the frame, custom components, RepeatingPanels with item templates. The drawing engines (cartoon people, story
 pictures, reader, PDF writer) stay JavaScript and are called from Python. The product, look and story/avatar recipes are
@@ -117,6 +117,47 @@ tools/ui_test.py                 the real app in the Anvil App Server (Docker) +
   Unsaved edits: store "writeDraft" (offered back when the same story / same base opens; cleared on save/delete).
 - Tests: test_server.py "stories people write"; flow.js "write a story" (start from bears, token, remove, pick a
   picture, add, save, preview, make a book, library, reopen, delete).
+
+## Christmas story, Gift it, Bedtime (2026-11-20 improvement round)
+
+- **The Night Before Christmas** (`christmas`, Stories.py, 19th story): `season: "christmas"` + `verse: True` (both in
+  `meta`). Pages 2-8 are the 1823 Troy Sentinel text exactly (curly quotes only; "jirk", "Dunder and Blixem", the pipe
+  couplet all kept), 8 lines each joined with `\n`; pages 1 and 9 are new framing pages (the hero is the listener). ~645
+  words, so the server test allows 700 for verse stories. Pictures: lh-scenes.js block "The Night Before Christmas"
+  (xtree, stocking/mantelStockings, gifts, sack, sleigh, reindeer, sleighTeam, roofTop + windowFront (a hero at a lit
+  window: draw the hero, then windowFront hides the legs), armchair, milkCookies, bell, sugarplums, soot,
+  `LH.PEOPLE.stnick` = robe + new EXTRA hat `nickhat` in lh-avatar.js). The hero never goes on the roof.
+  Verse pages: `.rd-text.verse` + `.rd-line` spans (hanging indent); the PDF keeps the lines (textBlock splits on `\n`)
+  and gives verse pages a smaller picture (920 wide) and a taller text box. `LH.speakable` turns thro', danc'd, rein-deer,
+  jirk and "St." into words a speech voice reads well (Read to me only; the page text is unchanged).
+- **Seasons**: `books.SEASONS` ({"christmas": (15 Nov, 31 Dec)}) + `books.seasonal(stories)` sort a seasonal story first
+  by the viewer's own date (`LH.today()`, `window.LH_TODAY` overrides it in tests): Library, Shelf "Next adventures",
+  Landing shelf. The Write hub keeps the plain order. StoryCard shows a "Christmas" badge (role badge-xmas).
+- **Gift it**: table `gifts` (book, wrap, sender, open_on date, opened datetime, created, updated); server
+  `Gifts.py` (WRAPS, SENDERS fixed list = no free text; `set_gift` owner only, makes the family link if missing,
+  open_on yesterday..+400 days or None; `remove_gift`; public `gift_opened(key)` rate-limited, sets `opened` once, never
+  for demo books, allows the date one day early for time zones). Everything survives the table not existing yet
+  (gift_for None, set_gift answers `later: True`). `get_book` adds `gift` (owner) + `gifts_ready`; `get_shared_book`
+  adds `gift`. Book, hero, written-story and demo deletes call `Gifts.delete_for`. Demo: Juniper's Christmas book behind
+  the fixed key `demo-gift-juniper` (DemoData.GIFT_BOOK, Grandma, any time); `DEMO_V` adds it once to apps that loaded
+  the demo earlier, and `get_shared_book(GIFT_KEY)` loads the demo first.
+  Client: `Components/GiftBox` (LH.giftHtml; locked/ready/unwrapping/open; `unwrapped` event; preview=True in the
+  dialog), `Dialogs/Gift` (paper chips, From DropDown, 24 Dec / 25 Dec / Any time / Pick a date, live preview, link +
+  Copy + Share + Save the gift card), Book page "Gift it" button + badge ("Gift from Grandma · opens 25 Dec",
+  "Unwrapped on 25 Dec"), Read page (present first unless `UI.store` "opened:<key>"; Peek; Wrap it again).
+  Gift card = `LH.giftCard(book, gift, url)`: 1500 x 2100 PNG (5 x 7 in at 300 dpi) with the wrap paper border, cover,
+  "A book starring <name>", from, day and a QR code (qrcode-generator 1.4.4, theme/assets/lh-qr.js, copied from
+  ArviStay's ns-qr.js, loaded only when a card is made by `LH.qrReady`). `LH.shareOrSave` = share sheet on phones,
+  download elsewhere; `LH.lastQrText` / `window.LH_LAST_CARD` for tests.
+- **Bedtime** (engine only, lh-book.js `LH.reader`): `[data-rd=night]` toggles `.rd-night` (UI.store "bedtime"),
+  `buildPages()` appends `{kind: 'goodnight'}` (LH.goodnightSvg = S.goodnight in lh-scenes.js, not a library story;
+  paintIndex -1, no recording slot), speech rate .8 / pitch 1 / 1.8 s between pages (`LH.lastUtterance` for tests),
+  no confetti, `LH.music.level()` .15. `[data-rd=listen]` (shown in Bedtime) = Just listen: `.rd-dark` overlay inside
+  `.rd` (works in full screen), wake lock held while listening (`keepAwake` checks `full || listening`), `listenEnd()`
+  adds `.rd-dark-end` (black, "Sweet dreams") and releases it; Stop, Esc or a tap on the black screen close it. The
+  18:30 chip is `[data-rd-ask]` (night-yes / night-no). The reader's controller adds night(), setNight(), listening(),
+  dark(), pageKind(); `count` is live now (pages change with Bedtime).
+- CSS: the block "Christmas story, Gift it, Bedtime reading (2026-11-20)" at the end of app.css.
 
 ## Record my voice (Prepsto idea, 2026-11-05)
 

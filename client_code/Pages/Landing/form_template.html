@@ -5,7 +5,7 @@
         <div class="ui-wrap">
           <div>
             <h1>Classic bedtime stories, <em>starring your child</em></h1>
-            <p class="lp-lead">Build a cartoon look-alike of your little one, from curls to freckles. Then watch them step into eighteen stories (or one you write yourself), and download each book as a PDF to read, print, colour in or share.</p>
+            <p class="lp-lead">Build a cartoon look-alike of your little one, from curls to freckles. Then watch them step into <span anvil:dom-node="count_lead">nineteen</span> stories (or one you write yourself), and download each book as a PDF to read, print, colour in or share.</p>
             <div class="lp-cta" anvil:name="guest_cta">
               <a class="ui-btn primary lg" href="#studio"><i class="ic ic-wand"></i>Design your hero</a>
               <a class="ui-btn lg sun" href="#library">Browse the stories</a>
@@ -34,6 +34,22 @@
             </div>
             <div class="lpx-sticker s2"><i style="background:#6A4024"></i><i style="background:#D9692A"></i><i style="background:#EECB6E"></i><i style="background:#231C24"></i><i style="background:#FF8FB8"></i></div>
             <div class="lpx-sticker s3"><i class="ic ic-download"></i>PDF</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lp-gift" anvil:name="gift_strip" aria-labelledby="lp-gift-h">
+        <div class="ui-wrap">
+          <div class="lp-gift-in">
+            <div class="lp-gift-art" anvil:dom-node="gift_art" aria-hidden="true"></div>
+            <div class="lp-gift-copy">
+              <h2 id="lp-gift-h">A Christmas gift that can’t arrive late</h2>
+              <p>Made in five minutes, wrapped in a link, unwrapped on Christmas morning. Your little one taps the bow, the paper falls away, and there they are, the hero of The Night Before Christmas. Print the gift card for under the tree.</p>
+              <div class="lp-cta">
+                <a class="ui-btn primary" href="#story/christmas"><i class="ic ic-gift"></i>Make the Christmas book</a>
+                <a class="ui-btn" href="#read/demo-gift-juniper"><i class="ic ic-sparkle"></i>Unwrap an example</a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -74,7 +90,7 @@
 
       <section class="lp-section">
         <div class="ui-wrap">
-          <div class="lp-head"><h2>Eighteen stories, one little hero</h2><p>Tap a face to change who stars in the whole library.</p></div>
+          <div class="lp-head"><h2><span anvil:dom-node="count_head">Nineteen</span> stories, one little hero</h2><p>Tap a face to change who stars in the whole library.</p></div>
           <anvil-component type="RepeatingPanel" name="shelf_panel" prop:item_template="Little_Hero_Books.Items.ShelfCover" prop:role='["lp-shelf"]'></anvil-component>
           <div class="lp-plank"></div>
           <anvil-component type="Timer" name="pal_timer" prop:interval="4.2"></anvil-component>
@@ -86,12 +102,14 @@
         <div class="ui-wrap">
           <div class="lp-head"><h2>Little touches, big smiles</h2></div>
           <div class="ui-grid lp-feats">
-            <div class="ui-card lp-feature"><i class="ic ic-wand"></i><h3>A hero studio</h3><p>14 hairstyles, 8 skin tones, 5 face shapes, sparkly eyes, freckles, glasses, capes and crowns. “Surprise me” for wild ideas.</p></div>
-            <div class="ui-card lp-feature"><i class="ic ic-book"></i><h3>18 stories, or write your own</h3><p>Classic tales retold short and kind, three brand-new ones, and a page for writing your own: start blank or change any story, then pick a picture for every page.</p></div>
+            <div class="ui-card lp-feature"><i class="ic ic-wand"></i><h3>A hero studio</h3><p anvil:dom-node="studio_feat">30 hairstyles, 20 skin tones, 16 face shapes, hijab, patka and kippah, 15 kinds of glasses, capes and crowns. “Surprise me” for wild ideas.</p></div>
+            <div class="ui-card lp-feature"><i class="ic ic-book"></i><h3><span anvil:dom-node="count_feat">19</span> stories, or write your own</h3><p>Classic tales retold short and kind, three brand-new ones, The Night Before Christmas, and a page for writing your own: start blank or change any story, then pick a picture for every page.</p></div>
             <div class="ui-card lp-feature"><i class="ic ic-download"></i><h3>A real PDF book</h3><p>Cover, dedication page, the story and “The End”, made right in your browser. Print-ready with bleed for photo-book printers.</p></div>
             <div class="ui-card lp-feature"><i class="ic ic-brush"></i><h3>Colour me in</h3><p>Every book also comes as an outline colouring book: colour the pages on screen, or print them for the crayons.</p></div>
             <div class="ui-card lp-feature"><i class="ic ic-volume"></i><h3>Read to me</h3><p>The app reads each page aloud and turns the pages by itself. Lovely for wind-down time.</p></div>
             <div class="ui-card lp-feature"><i class="ic ic-link"></i><h3>Family links</h3><p>Share one book with grandparents. They can read and print it without an account.</p></div>
+            <div class="ui-card lp-feature"><i class="ic ic-gift"></i><h3>Gift it</h3><p>Wrap a book as a present from Grandma, Grandpa or Santa. The link shows the present and counts the sleeps; on the day, your child taps the bow to unwrap it.</p></div>
+            <div class="ui-card lp-feature"><i class="ic ic-moon"></i><h3>Bedtime reading</h3><p>Dim, warm pages, a slower reading voice and a Goodnight page at the end. Just listen reads the whole book with the screen dark.</p></div>
             <div class="ui-card lp-feature"><i class="ic ic-heart"></i><h3>A shelf that grows</h3><p>Siblings, cousins, best friends: up to 12 heroes, with reading stars for every bedtime.</p></div>
           </div>
         </div>
@@ -115,8 +133,9 @@
             <details><summary>Is it free?</summary><p>Yes. Designing heroes, making books and downloading the PDFs are all free.</p></details>
             <details><summary>Do I need to upload a photo of my child?</summary><p>No, never. You build the cartoon by picking features, so no photo of your child ever leaves your device.</p></details>
             <details><summary>What does the PDF look like?</summary><p>Twelve square pages: a cover with your child, a “This book belongs to” page with your dedication, nine illustrated story pages and a happy “The End”. It prints nicely at home. For a photo-book printer, choose the print-ready version: 300 dpi pages in 8 × 8 in, 8.5 × 8.5 in or 20 × 20 cm, with the extra 3 mm bleed edge printers ask for. There is a colour-me-in outline version too.</p></details>
-            <details><summary>Where do the stories come from?</summary><p>Fifteen are fairy tales and fables over a hundred years old and in the public domain (Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop and traditional folk tales). We retold them gently for ages 3 to 6: the bears make friends, the giant is just lonely and the troll only needed a picnic. Three (the Lost Little Star, the Puddle Parade and the Hiccupy Dragon) are brand-new stories written for Little Hero Books.</p></details>
+            <details><summary>Where do the stories come from?</summary><p>Sixteen are over a hundred years old and in the public domain. Fifteen are fairy tales and fables (Robert Southey, the Brothers Grimm, Hans Christian Andersen, Joseph Jacobs, Aesop and traditional folk tales) that we retold gently for ages 3 to 6: the bears make friends, the giant is just lonely and the troll only needed a picnic. The sixteenth is The Night Before Christmas, printed exactly as the poem first appeared in 1823, with your child listening to it on Christmas Eve. Three (the Lost Little Star, the Puddle Parade and the Hiccupy Dragon) are brand-new stories written for Little Hero Books.</p></details>
             <details><summary>Can I write my own story?</summary><p>Yes. Open “Write” to start from a blank page, or take any story from the library and change the words, the pictures and the number of pages. Your hero steps into every picture you choose, and your stories stay private to you. Make one into a book to read it aloud, print it or share it with family.</p></details>
+            <details><summary>Can I give it as a gift?</summary><p>Yes, and it can’t arrive late. On your book’s page press Gift it, pick the wrapping paper, who it’s from and the day it opens (Christmas Eve, Christmas Day, any day, or straight away). The book’s family link then shows a wrapped present that counts the sleeps, and on the day your child taps the bow to unwrap it. Save the gift card with its QR code to print and put under the tree. Grown-ups can peek inside first to check the spelling and the likeness.</p></details>
             <details><summary>Who can see my child’s name and cartoon?</summary><p>Only you, when you’re signed in. If you make a family link for a book, people with that link can see that one book. You can turn the link off any time.</p></details>
             <details><summary>Can I try it before signing up?</summary><p>Yes! Open the hero studio and read any story with your hero straight away. A free account lets you keep heroes, fill a bookshelf and download PDFs.</p></details>
           </div>

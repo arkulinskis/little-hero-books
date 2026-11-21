@@ -1,5 +1,8 @@
 """The story library: fifteen public-domain tales and three brand-new ones (original: True), retold short (300-500
-words) for ages 3-6 with the child as the main character. Stories people write themselves live in the user_stories
+words) for ages 3-6 with the child as the main character, plus a seasonal one (season: "christmas", added 2026-11-20):
+"The Night Before Christmas", the 1823 poem as first printed (verse: True, line breaks kept; about 650 words), with the
+child as the listener in a new first and last page. The library sorts a story with a season first while it is in season
+(client_code/books.py seasonal()). Stories people write themselves live in the user_stories
 table (UserStories.py); get(key) finds either kind. The pictures for every page are drawn in the browser (web/pages/_scenes.html,
 LH.SCENES[key][page]); keep the page counts in step (the flow test checks it).
 
@@ -358,6 +361,27 @@ STORIES: "list[dict]" = [
             "That evening the whole village had a popcorn party with all the popcorn from the hills. Pip flew {name} home across the sunset sky. And if Pip ever gets the hiccups again, they both know just what to do.",
         ],
     },
+    {
+        "key": "christmas",
+        "title": "{name}’s Night Before Christmas",
+        "plain": "The Night Before Christmas",
+        "source": "“A Visit from St. Nicholas”, first printed in the Troy Sentinel (1823) and attributed to Clement Clarke Moore, in the public domain. The poem is printed as first published; the opening and closing pages are new.",
+        "blurb": "The famous Christmas Eve poem, read to your hero at bedtime: a sleigh, eight tiny reindeer and a jolly visitor.",
+        "color": "#c8372d",
+        "season": "christmas",
+        "verse": True,
+        "pages": [
+            "It was Christmas Eve. The stockings were hung, the tree was twinkling, and {name} was much too excited to sleep. “Please read me the Christmas poem,” {he} whispered, “the one about the night before Christmas.” So the lamp was turned down low, the old book was opened, and the poem began…",
+            "’Twas the night before Christmas, when all thro’ the house,\nNot a creature was stirring, not even a mouse;\nThe stockings were hung by the chimney with care,\nIn hopes that St. Nicholas soon would be there;\nThe children were nestled all snug in their beds,\nWhile visions of sugar plums danc’d in their heads,\nAnd Mama in her ’kerchief, and I in my cap,\nHad just settled our brains for a long winter’s nap—",
+            "When out on the lawn there arose such a clatter,\nI sprung from the bed to see what was the matter,\nAway to the window I flew like a flash,\nTore open the shutters, and threw up the sash.\nThe moon on the breast of the new fallen snow,\nGave the lustre of mid-day to objects below;\nWhen, what to my wondering eyes should appear,\nBut a miniature sleigh, and eight tiny rein-deer,",
+            "With a little old driver, so lively and quick,\nI knew in a moment it must be St. Nick.\nMore rapid than eagles his coursers they came,\nAnd he whistled, and shouted, and call’d them by name:\n“Now! Dasher, now! Dancer, now! Prancer, and Vixen,\n“On! Comet, on! Cupid, on! Dunder and Blixem;\n“To the top of the porch! to the top of the wall!\n“Now dash away! dash away! dash away all!”",
+            "As dry leaves before the wild hurricane fly,\nWhen they meet with an obstacle, mount to the sky;\nSo up to the house-top the coursers they flew,\nWith the sleigh full of Toys—and St. Nicholas too:\nAnd then in a twinkling, I heard on the roof\nThe prancing and pawing of each little hoof.\nAs I drew in my head, and was turning around,\nDown the chimney St. Nicholas came with a bound:",
+            "He was dress’d all in fur, from his head to his foot,\nAnd his clothes were all tarnish’d with ashes and soot;\nA bundle of toys was flung on his back,\nAnd he look’d like a peddler just opening his pack:\nHis eyes—how they twinkled! his dimples how merry,\nHis cheeks were like roses, his nose like a cherry;\nHis droll little mouth was drawn up like a bow,\nAnd the beard of his chin was as white as the snow;",
+            "The stump of a pipe he held tight in his teeth,\nAnd the smoke it encircled his head like a wreath.\nHe had a broad face, and a little round belly\nThat shook when he laugh’d, like a bowl full of jelly:\nHe was chubby and plump, a right jolly old elf,\nAnd I laugh’d when I saw him in spite of myself;\nA wink of his eye and a twist of his head\nSoon gave me to know I had nothing to dread.",
+            "He spoke not a word, but went straight to his work,\nAnd fill’d all the stockings; then turn’d with a jirk,\nAnd laying his finger aside of his nose\nAnd giving a nod, up the chimney he rose.\nHe sprung to his sleigh, to his team gave a whistle,\nAnd away they all flew like the down of a thistle:\nBut I heard him exclaim, ere he drove out of sight—\nHappy Christmas to all, and to all a good night.",
+            "By the very last line, {name}’s eyes were closing. Outside, the snow fell softly, and far away, high above the rooftops, something jingled. In the morning the stockings were full to the top, and under the tree, tied with a red ribbon, was a tiny silver bell with a note: “For {name}. Happy Christmas!”",
+        ],
+    },
 ]
 BY_KEY: "dict[str, dict]" = {s["key"]: s for s in STORIES}
 TOKENS = {"name", "he", "He", "him", "his", "His", "child", "royal", "royals"}
@@ -380,7 +404,8 @@ def meta(s):
     n = words(s)
     out = {"key": s["key"], "title": s["title"], "plain": s["plain"], "source": s["source"], "blurb": s["blurb"],
            "color": s["color"], "pages": len(s["pages"]), "words": n,
-           "minutes": max(1 if s.get("custom") else 2, round(n / 110)), "original": bool(s.get("original"))}
+           "minutes": max(1 if s.get("custom") else 2, round(n / 110)), "original": bool(s.get("original")),
+           "season": s.get("season") or "", "verse": bool(s.get("verse"))}
     if s.get("custom"):
         out.update(custom=True, pics=list(s["pics"]), cover=s["cover"], base=s.get("base") or "",
                    updated=s.get("updated"))

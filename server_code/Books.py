@@ -3,17 +3,16 @@
 The shelf, the library and the reader load through here. A book is private to its maker unless they
 turn on a family link (share_key): anyone with that link can read it (#read/<key>), nothing else.
 The owner can record their voice reading it (Voice.py) and have its pictures painted (Painting.py); the family
-link plays those recordings and shows the painted pictures.
+link plays those recordings and shows the painted pictures. A book can also be wrapped as a present (Gifts.py):
+the family link then shows the present until its day.
 The PDF is made in the browser (web/pages/_book.html), so nothing here sends files.
 """
-import secrets
-
 import anvil.server
 from anvil.tables import app_tables
 import anvil.tables as tables
 
 from . import common as C
-from . import DemoData, Heroes, Painting, Stories, UserStories, Voice
+from . import DemoData, Gifts, Heroes, Painting, Stories, UserStories, Voice
 
 MAX_BOOKS = 200
 
@@ -80,6 +79,8 @@ def get_book(book_id):
     rows = Painting._rows(r) if b["mine"] else []
     b["paint"] = Painting.paint_for(r, rows)
     b["paint_state"] = Painting.state_for(r, rows)
+    b["gift"] = Gifts.gift_for(r) if b["mine"] else None
+    b["gifts_ready"] = Gifts.available()
     return C.ok(book=b, story=Stories.full(s))
 
 
@@ -131,6 +132,7 @@ def delete_book(book_id):
         return C.fail("You can only remove your own books.")
     Voice.delete_for(r)
     Painting.delete_for(r)
+    Gifts.delete_for(r)
     r.delete()
     return C.ok()
 
@@ -142,7 +144,7 @@ def share_book(book_id, on):
     r = _own_book(book_id, me)
     if r is None:
         return C.fail("You can only share your own books.")
-    r["share_key"] = secrets.token_urlsafe(9) if on else None
+    r["share_key"] = C.link_key() if on else None
     Voice.new_keys(r)  # audio addresses someone kept from the old link stop working too
     Painting.new_keys(r)  # and so do painted-picture addresses
     return C.ok(book=book_dict(r, me))
@@ -150,10 +152,12 @@ def share_book(book_id, on):
 
 @anvil.server.callable
 def get_shared_book(key):
-    """A book opened from a family link: the story, the hero, the dedication and the parent's recorded voice (if any).
-    Nothing about the parent."""
+    """A book opened from a family link: the story, the hero, the dedication and the parent's recorded voice (if any),
+    and the wrapping when it is a present (gift). Nothing about the parent."""
     if not isinstance(key, str) or len(key) < 8 or len(key) > 40:
         return C.fail("This link doesn't work. Ask for a new one.")
+    if key == DemoData.GIFT_KEY:
+        DemoData.ensure_loaded()  # the landing page's "Unwrap an example" may be someone's first visit
     r = app_tables.books.get(share_key=key)
     s = Stories.get(r["story"]) if r is not None else None
     if r is None or r["hero"] is None or s is None:
@@ -162,6 +166,7 @@ def get_shared_book(key):
     b["hero"].pop("id", None)
     b["voice"] = Voice.voice_for(r)
     b["paint"] = Painting.paint_for(r)
+    b["gift"] = Gifts.gift_for(r)
     return C.ok(book=b, story=Stories.full(s))
 
 

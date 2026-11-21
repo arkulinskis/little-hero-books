@@ -9,7 +9,7 @@ from anvil.js import window
 
 LH = window.LH
 STORY_KEYS = ["bears", "beanstalk", "turnip", "porridge", "emperor", "hen", "elves", "pea", "gingerbread", "duckling",
-              "goats", "tortoise", "lion", "stonesoup", "mice", "star", "puddles", "dragon"]
+              "goats", "tortoise", "lion", "stonesoup", "mice", "star", "puddles", "dragon", "christmas"]
 GENERIC = {"name": "Little Hero", "pronoun": "they", "look": None, "generic": True}
 PRONOUN_LABELS = {"she": "she / her", "he": "he / him", "they": "they / them"}
 
@@ -128,3 +128,39 @@ def skin_check(book, index, src):
 
 def has_paint(book):
     return bool(LH.hasPaint(book))
+
+
+# ---- Gift it (2026-11-20): the present, the countdown and the printable card (lh-book.js)
+def today():
+    """The viewer's own date, 'YYYY-MM-DD' (window.LH_TODAY overrides it in tests)."""
+    return str(LH.today())
+
+
+def gift_html(hero, gift, state, story=None):
+    """The wrapped present (state: locked, ready, unwrapping, open), with the book's cover inside when story is given."""
+    return LH.giftHtml(hero, gift, state, story)
+
+
+def gift_sleeps(open_on):
+    """Nights until the present opens (0 = today, past, or any time)."""
+    return int(LH.giftSleeps(open_on or None))
+
+
+def gift_day(open_on, long=False):
+    """'25 Dec', or 'Thursday 25 December' with long=True ('' for any time)."""
+    return str(LH.giftDay(open_on or None, bool(long)))
+
+
+def gift_card(book, gift, url):
+    """The 5 x 7 in gift card with a QR code to url, as a PNG (a JavaScript Blob). Waits until it is drawn."""
+    return LH.giftCard(book, gift, url)
+
+
+def share_or_save(blob, name, title):
+    """Phones: the share sheet with the file; elsewhere a download. Returns 'shared', 'cancelled' or 'saved'."""
+    return str(LH.shareOrSave(blob, name, title))
+
+
+def share_link(url, title, text):
+    """The phone's share sheet for a link. Returns 'shared', 'cancelled' or 'none' (no share sheet here)."""
+    return str(LH.shareLink(url, title, text))

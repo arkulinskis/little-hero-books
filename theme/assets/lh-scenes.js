@@ -1610,6 +1610,193 @@
       }
     ]
   };
+  /* ================================================================== The Night Before Christmas (2026-11-20)
+     The 1823 poem, read to the hero on Christmas Eve. The hero is the child of the house: in bed, at the window, peeking
+     round the armchair and the tree (never on the roof). Kits: xtree, stocking, mantelStockings, gifts, sleigh, reindeer,
+     sleighTeam, roofTop, armchair, milkCookies, bell, sack, sugarplums; LH.PEOPLE.stnick (robe + the nickhat).
+     LH.goodnightSvg(hero) is the Bedtime reader's Goodnight page (S.goodnight, not a library story). */
+  LH.PEOPLE.stnick = { size: 'adult', skin: 's2', face: 'chubby', hair: 'tufts', hairColor: 'white', eyes: 'smiley', facial: 'beard', outfit: 'robe', outfitColor: 'red', hat: 'nickhat', nose: 'button', cheeks: true };
+  var XG = '#3E9E5E', XG2 = '#2F7F4C', XR = '#D8433A', GOLD = '#FFD25E', FUR = '#A8714A';
+  function xtree(x, y, s, o) {
+    o = o || {};
+    var b = rect(-22, -70, 44, 70, C.wood2, INK, 4, 4) + path('M-62 0 L-52 -46 L52 -46 L62 0Z', XR, INK, 4) +
+      path('M-170 -70 L0 -270 L170 -70 Q85 -50 0 -66 Q-85 -50 -170 -70Z', XG2, INK, 4.5) +
+      path('M-136 -180 L0 -360 L136 -180 Q68 -160 0 -176 Q-68 -160 -136 -180Z', XG, INK, 4.5) +
+      path('M-96 -286 L0 -436 L96 -286 Q48 -268 0 -282 Q-48 -268 -96 -286Z', '#4DB06B', INK, 4.5) +
+      path('M-140 -112 Q0 -64 132 -126 M-104 -222 Q0 -186 100 -232 M-66 -318 Q0 -296 62 -326', 'none', GOLD, 6, ' stroke-dasharray="2 12" stroke-linecap="round"');
+    [[-110, -96, XR], [70, -104, C.sky3], [-30, -150, C.sun], [104, -200, C.pink], [-84, -212, C.sky3], [20, -246, XR], [-40, -320, C.sun], [46, -306, C.pink], [120, -84, C.sun]].forEach(function (d) {
+      b += circ(d[0], d[1], 13, d[2], INK, 3.5) + circ(d[0] - 4, d[1] - 4, 3.5, '#FFFFFF', null, 0, ' opacity=".8"');
+    });
+    if (o.lit) [[-60, -120], [40, -150], [-100, -170], [90, -160], [-20, -270], [60, -270], [0, -380], [-50, -260]].forEach(function (d) { b += circ(d[0], d[1], 16, '#FFF3B0', null, 0, ' opacity=".35"') + circ(d[0], d[1], 5, '#FFF3B0', INK, 2); });
+    return at(x, y, s, b + star(0, -442, 32, C.sun, INK, 4));
+  }
+  function stocking(x, y, s, c, o) {
+    o = o || {};
+    var b = (o.full ? star(-6, -14, 16, C.sun, INK, 3) + tube('M14 10 L16 -34 Q18 -50 32 -44', 7, '#FFFFFF') + path('M15 -6 l2 -6 M16 -22 l2 -6', 'none', XR, 4) : '') +
+      path('M-22 20 L-22 82 Q-22 106 2 110 L36 112 Q58 110 56 90 Q54 72 32 70 L22 70 L22 20Z', c, INK, 4) +
+      path('M-12 92 Q6 100 30 98', 'none', '#FFFFFF', 4, ' opacity=".7"') + rect(-28, 0, 56, 26, '#F7F3EA', INK, 4, 8) + path('M-6 0 q6 -14 12 0', 'none', INK, 3);
+    return at(x, y, s, b);
+  }
+  function mantelStockings(fx, fy, fs, full) {  // three stockings on fireplace(fx, fy, fs)'s mantel
+    return stocking(fx - 92 * fs, fy - 228 * fs, .62 * fs, XR, { full: full }) + stocking(fx, fy - 228 * fs, .62 * fs, XG, { full: full }) + stocking(fx + 92 * fs, fy - 228 * fs, .62 * fs, C.sky3, { full: full });
+  }
+  function giftBox(x, y, w, h, c, rib) {
+    return rect(x - w / 2, y - h, w, h, c, INK, 4, 6) + rect(x - 8, y - h, 16, h, rib, INK, 3, 3) + rect(x - w / 2, y - h * .6, w, 14, rib, INK, 3, 3) +
+      path('M' + x + ' ' + (y - h) + ' q-26 -22 -30 -2 q4 10 30 2 q26 -22 30 -2 q-4 10 -30 2', rib, INK, 3);
+  }
+  function gifts(x, y, s) {
+    return at(x, y, s, giftBox(-70, 0, 110, 86, C.sky3, C.sun) + giftBox(52, 0, 96, 120, XR, '#F7F3EA') + giftBox(-14, -86, 74, 56, C.sun, XG));
+  }
+  function sack(x, y, s) {
+    return at(x, y, s, star(-20, -150, 22, C.sun, INK, 3.5) + rect(10, -176, 34, 44, C.sky3, INK, 3.5, 6) + circ(-46, -132, 20, XR, INK, 3.5) +
+      blob([[-44, -70, 56], [10, -86, 62], [52, -62, 48], [0, -40, 60]], '#B07A4C', INK, 4) + path('M-36 -128 Q0 -112 34 -130', 'none', '#7A4E30', 6));
+  }
+  function sleigh(x, y, s, o) {
+    o = o || {};
+    var b = '';
+    if (o.sack) b += sack(-80, -110, .7);
+    if (o.nick) b += LH.figure(LH.PEOPLE.stnick, { x: 24, y: -40, s: .62, pose: o.pose || 'wave', mood: o.mood || 'laugh' });
+    b += path('M-180 2 L150 2 Q206 2 204 -46 Q202 -66 182 -62', 'none', INK, 12) + path('M-180 2 L150 2 Q206 2 204 -46 Q202 -66 182 -62', 'none', GOLD, 6) +
+      path('M-120 -36 L-120 2 M60 -36 L60 2', 'none', INK, 8) +
+      path('M-160 -40 L-170 -150 Q-172 -178 -140 -170 Q-110 -160 -96 -132 L86 -132 Q136 -132 150 -96 Q160 -56 120 -36Z', XR, INK, 4.5) +
+      path('M-150 -60 Q-20 -46 130 -58', 'none', GOLD, 6) + circ(-150, -150, 9, GOLD, INK, 3);
+    return at(x, y, s, b, o.flip);
+  }
+  function reindeer(x, y, s, o) {
+    o = o || {};
+    var fur = o.c || FUR, light = '#E3C39A', b = '';
+    var legs = o.fly ? ['M-46 -96 Q-78 -70 -104 -80', 'M-30 -92 Q-60 -60 -84 -64', 'M40 -96 Q70 -64 96 -70', 'M54 -100 Q90 -86 104 -100'] :
+      ['M-46 -96 L-48 0', 'M-26 -92 L-24 0', 'M36 -96 L34 0', 'M56 -100 L60 0'];
+    legs.forEach(function (d, i) { b += tube(d, 12, i % 2 ? LH.shade(fur, -.12) : fur); });
+    b += path('M64 -128 Q80 -168 96 -196', 'none', INK, 30) + path('M64 -128 Q80 -168 96 -196', 'none', fur, 22) +
+      ell(0, -112, 74, 38, fur, INK, 4) + ell(4, -96, 46, 16, light, null, 0, ' opacity=".7"') + circ(-72, -122, 11, '#FFFFFF', INK, 3) +
+      path('M-34 -146 Q8 -70 56 -146', 'none', XR, 8) + circ(10, -98, 8, GOLD, INK, 3) +
+      path('M86 -222 Q78 -256 92 -276 M88 -250 Q104 -256 112 -272 M84 -236 Q66 -244 62 -262 M106 -220 Q112 -250 130 -262 M114 -240 Q130 -238 140 -252', 'none', '#7A4E30', 7) +
+      ell(70, -214, 14, 7, fur, INK, 3).replace('/>', ' transform="rotate(-24 70 -214)"/>') +
+      ell(100, -204, 30, 22, fur, INK, 4) + ell(126, -196, 17, 13, light, INK, 3.5) + circ(138, -198, 6, INK) + circ(100, -212, 4.5, INK) + circ(101, -214, 1.5, '#FFFFFF');
+    return at(x, y, s, b, o.flip);
+  }
+  /* The sleigh and its eight reindeer (four pairs) flying up and to the right, the sleigh's runners at (x, y). */
+  function sleighTeam(x, y, s, o) {
+    o = o || {};
+    var out = '', front = '', k = s * .42, pts = [[x + 60 * s, y - 70 * s]];
+    for (var i = 3; i >= 0; i--) out += reindeer(x + (212 + i * 100) * s, y - (56 + i * 34) * s, k * .94, { fly: true, c: LH.shade(FUR, -.08) });
+    for (i = 0; i < 4; i++) pts.push([x + (230 + i * 100) * s, y - (100 + i * 34) * s]);
+    for (i = 3; i >= 0; i--) front += reindeer(x + (190 + i * 100) * s, y - (40 + i * 34) * s, k, { fly: true });
+    var rein = 'M' + pts.map(function (p) { return P(p[0]) + ' ' + P(p[1]); }).join(' L');
+    return out + path(rein, 'none', GOLD, 4 * s) + front + sleigh(x, y, s * .8, { nick: o.nick !== false, sack: true, pose: o.pose, mood: o.mood });
+  }
+  function skyDots(x0, y0, x1, y1, n, sd) { seed = sd || 7; var s = ''; for (var i = 0; i < n; i++) s += star(x0 + rnd() * (x1 - x0), y0 + rnd() * (y1 - y0), 5 + rnd() * 6, '#FFE9A8', null); return s; }
+  function moonBig(x, y, r) { return circ(x, y, r + 30, '#FFF3C4', null, 0, ' opacity=".25"') + circ(x, y, r, '#FFF3C4', INK, 4) + circ(x - r * .3, y - r * .2, r * .14, '#F2E2A0') + circ(x + r * .25, y + r * .3, r * .1, '#F2E2A0'); }
+  function snowGround(y) { return path('M-10 ' + y + ' Q250 ' + (y - 30) + ' 520 ' + (y - 6) + ' T1010 ' + (y - 12) + ' L1010 710 L-10 710Z', '#F4F6FF', INK, 4); }
+  /* A snowy house seen from outside at night; its big lit window (wx..wx+ww, wy..wy+wh) is where the hero looks out. */
+  function roofTop(o) {
+    o = o || {};
+    var wx = o.wx || 120, wy = o.wy || 470, ww = o.ww || 200, wh = o.wh || 150, x0 = o.x0 == null ? -20 : o.x0, x1 = o.x1 || 460;
+    return rect(x1 - 120, 250, 60, 120, '#B5654A', INK, 4) + blob([[x1 - 110, 248, 18], [x1 - 88, 242, 22], [x1 - 64, 250, 16]], '#FFFFFF', INK, 3.5) +
+      path('M' + (x0 - 20) + ' 420 L' + ((x0 + x1) / 2) + ' 250 L' + (x1 + 30) + ' 420Z', '#7A5A8C', INK, 4) +
+      path('M' + (x0 - 24) + ' 424 L' + ((x0 + x1) / 2) + ' 246 L' + (x1 + 34) + ' 424 L' + (x1 + 10) + ' 434 Q' + (x1 - 40) + ' 410 ' + ((x0 + x1) / 2) + ' 280 Q' + (x0 + 40) + ' 412 ' + (x0 - 2) + ' 436Z', '#FFFFFF', INK, 4) +
+      rect(x0, 420, x1 - x0, 290, '#FFE1B0', INK, 4) + rect(wx, wy, ww, wh, '#FFE07A', INK, 5, 8) + rect(wx - 8, wy + wh, ww + 16, 14, '#FFFFFF', INK, 3.5, 6);
+  }
+  function windowFront(wx, wy, ww, wh, wall) {  // the wall under a window, drawn after a hero standing at it (hides the legs)
+    return rect(wx - 10, wy + wh, ww + 20, 700 - wy - wh + 10, wall || '#FFE1B0', null, 0, 0) + path('M' + (wx - 10) + ' ' + (wy + wh) + ' h' + (ww + 20), 'none', INK, 4) + rect(wx - 8, wy + wh, ww + 16, 14, '#FFFFFF', INK, 3.5, 6) +
+      path('M' + wx + ' ' + wy + ' h' + ww + ' v' + wh + ' h' + (-ww) + 'Z', 'none', INK, 5);
+  }
+  function armchair(x, y, s, c) {
+    c = c || '#8A6BD8';
+    return at(x, y, s, rect(-110, -230, 220, 170, c, INK, 4.5, 40) + rect(-130, -120, 60, 120, LH.shade(c, -.1), INK, 4.5, 26) + rect(70, -120, 60, 120, LH.shade(c, -.1), INK, 4.5, 26) +
+      rect(-80, -96, 160, 60, LH.shade(c, .12), INK, 4.5, 18) + rect(-100, -40, 200, 40, c, INK, 4.5, 10) + rect(-96, 0, 18, 10, C.wood2, INK, 3, 3) + rect(78, 0, 18, 10, C.wood2, INK, 3, 3));
+  }
+  function milkCookies(x, y, s, o) {
+    o = o || {};
+    var b = ell(0, 0, 70, 14, '#FFFFFF', INK, 3.5) + path('M-60 -60 L-54 0 L-26 0 L-20 -60Z', 'rgba(220,235,255,.7)', INK, 3.5);
+    if (!o.empty) b += path('M-58 -40 L-54 0 L-26 0 L-22 -40Z', '#FFFFFF');
+    [[10, -10], [40, -8], [24, -26]].slice(0, o.empty ? 1 : 3).forEach(function (d) { b += circ(d[0], d[1], 17, '#D9A066', INK, 3) + circ(d[0] - 5, d[1] - 3, 2.5, '#5A3F2E') + circ(d[0] + 5, d[1] + 4, 2.5, '#5A3F2E'); });
+    if (!o.empty) b += carrot(64, -4, .5, 70);
+    return at(x, y, s, b);
+  }
+  function bell(x, y, s) {
+    return at(x, y, s, path('M0 -64 Q-36 -60 -40 -14 Q-42 0 -52 8 L52 8 Q42 0 40 -14 Q36 -60 0 -64Z', '#E6E1F5', INK, 4) + path('M-20 -40 q-6 18 -4 36', 'none', '#FFFFFF', 5, ' opacity=".8"') +
+      circ(0, 14, 10, GOLD, INK, 3.5) + path('M0 -64 q-30 -26 -34 -4 q6 12 34 4 q30 -26 34 -4 q-6 12 -34 4', XR, INK, 3.5));
+  }
+  function sugarplums(x, y) {
+    var s = '';
+    [[-50, 6], [0, -16], [50, 6], [0, 26]].forEach(function (d, i) { s += circ(x + d[0], y + d[1], 18, i % 2 ? '#8A6BD8' : C.pink, INK, 3) + circ(x + d[0] - 5, y + d[1] - 6, 2.5, '#FFFFFF') + circ(x + d[0] + 6, y + d[1] + 2, 2, '#FFFFFF') + path('M' + (x + d[0]) + ' ' + (y + d[1] - 18) + ' q4 -10 10 -10', 'none', '#3E8E4E', 3); });
+    return s;
+  }
+  function soot(x, y, s) { return blob([[x - 50 * s, y, 34 * s], [x, y - 20 * s, 44 * s], [x + 54 * s, y, 30 * s], [x + 10 * s, y + 20 * s, 34 * s]], '#C9C3D9', INK, 3.5); }
+  var dim = function () { return rect(0, 0, 1000, 700, '#1E1A40', null, 0).replace('/>', ' opacity=".34"/>'); };
+  var xRoom = function (o) {
+    o = o || {};
+    return room({ wall: o.wall || '#F3DCC0', floor: '#B9875A', dot: '#E7C79F', window: o.window === false ? null : (o.window || [600, 70, 190, 160]), night: o.night !== false, curtain: XG }) +
+      (o.window === false ? '' : windowSnow.apply(null, o.window || [600, 70, 190, 160])) + bunting(26, 0, 1000).split('#8A6BD8').join(XG).split('#4EA8F5').join(GOLD);
+  };
+  var xBedroom = function (o) {
+    o = o || {};
+    return room({ wall: '#DCD6FF', floor: '#B9875A', dot: '#C5BCF5', window: [o.wx || 120, 70, 230, 190], night: true, curtain: XR }) + windowSnow(o.wx || 120, 70, 230, 190);
+  };
+  S.christmas = {
+    cover: function (h) {
+      return xRoom({ window: [570, 80, 210, 170] }) + sleighTeam(590, 190, .26, {}) + fireplace(190, 610, .82) + mantelStockings(190, 610, .82) +
+        xtree(860, 690, .92, { lit: true }) + gifts(720, 690, .62) + h({ x: 470, y: 690, s: .95, pose: 'cheer', mood: 'laugh', look: PJ }) + sparkles(860, 300, 120, 6, 31);
+    },
+    pages: [
+      function (h) {  // Christmas Eve: too excited to sleep, the poem begins
+        return xBedroom({ wx: 120 }) + stocking(880, 360, .6, XR) + bed(660, 690, 320, 130, C.wood2, XG, { noQuilt: true }) +
+          h({ x: 700, y: 650, s: .78, pose: 'hold', mood: 'wow', look: PJ }) + quiltOf(660, 690, 320, 130, XG) + openBook(700, 548, .8) +
+          table(420, 690, 170) + candle(420, 572, .8) + txt(230, 380, 34, 'Christmas Eve!', '#FFFFFF', -6);
+      },
+      function (h) {  // 'Twas the night before Christmas: stockings by the chimney, children snug in their beds, sugar plums
+        return xRoom({ window: false, wall: '#E9D2B4' }) + fireplace(190, 620, .8) + mantelStockings(190, 620, .8) + mouseHole(350, 520, 1) + mouse(350, 690, .42) + txt(390, 600, 26, 'z', '#FFFFFF') +
+          bed(640, 690, 290, 120, C.wood2, XR, { noQuilt: true }) + h({ x: 760, y: 560, s: .66, pose: 'stand', mood: 'sleep', rot: -90, look: PJ }) + quiltOf(640, 690, 290, 120, XR) +
+          dim() + thought(700, 260, sugarplums(700, 256)) + moon(910, 90, 34);
+      },
+      function (h) {  // a clatter on the lawn; to the window; a miniature sleigh and eight tiny reindeer
+        return room({ wall: '#D9D0F2', floor: '#B9875A', dot: '#C5BCF5', window: false }) + rect(70, 60, 520, 380, C.night, INK, 6, 14) + skyDots(90, 80, 570, 300, 12, 41) +
+          moonBig(470, 150, 44) + path('M76 360 Q250 330 400 352 T584 340 L584 432 L76 432Z', '#F4F6FF', INK, 4) + sleighTeam(140, 290, .24, {}) +
+          path('M330 60 v380 M70 250 h520', 'none', INK, 6) + rect(40, 430, 580, 18, C.wood2, INK, 4, 6) +
+          path('M44 44 Q80 240 50 460 L20 460 L20 44Z', XR, INK, 4) + path('M616 44 Q580 240 610 460 L640 460 L640 44Z', XR, INK, 4) +
+          h({ x: 800, y: 690, s: .92, pose: 'point', mood: 'wow', look: PJ, flip: true }) + txt(820, 250, 40, 'Clatter!', C.sun, 6);
+      },
+      function (h) {  // the little old driver whistles and calls the reindeer by name
+        return sky(C.night) + stars(30, 380, 43) + moonBig(160, 120, 48) + snowGround(640) + sleighTeam(300, 330, .62, { pose: 'cheer', mood: 'laugh' }) +
+          txt(640, 110, 34, 'Now, Dasher! Now, Dancer!', C.sun, -4) + roofTop({ x0: 560, x1: 1040, wx: 700, wy: 470, ww: 210, wh: 160 }) +
+          h({ x: 805, y: 700, s: .62, pose: 'wave', mood: 'wow', look: PJ }) + windowFront(700, 470, 210, 160) + snowfall(16, 45).replace(/r="(\d+(\.\d+)?)"/g, function (m, r) { return 'r="' + (+r * .7).toFixed(1) + '"'; });
+      },
+      function (h) {  // up to the house-top; down the chimney he came with a bound
+        return xRoom({ window: [640, 70, 180, 150] }) + fireplace(330, 640, .95) + mantelStockings(330, 640, .95) + soot(330, 470, .9) +
+          LH.figure(LH.PEOPLE.stnick, { x: 330, y: 640, s: .62, pose: 'cheer', mood: 'wow' }) + txt(330, 230, 46, 'BUMP!', C.sun, -6) +
+          h({ x: 780, y: 690, s: .9, pose: 'hold', mood: 'wow', look: PJ, flip: true }) + armchair(800, 690, .88, '#8A6BD8');
+      },
+      function (h) {  // dressed all in fur, a bundle of toys, eyes that twinkled, cheeks like roses
+        return xRoom({ window: [100, 70, 180, 150] }) + sack(330, 640, 1.15) + LH.figure(LH.PEOPLE.stnick, { x: 420, y: 680, s: .9, pose: 'hips', mood: 'laugh' }) +
+          sparkles(420, 170, 70, 5, 51) + xtree(860, 690, .78, { lit: true }) + h({ x: 700, y: 690, s: .8, pose: 'wave', mood: 'laugh', look: PJ, flip: true });
+      },
+      function (h) {  // a little round belly that shook when he laughed, like a bowl full of jelly; a wink, nothing to dread
+        return xRoom({ window: [680, 70, 180, 150] }) + table(330, 690, 300) + jelly(270, 572, 1) + milkCookies(390, 572, .9) +
+          LH.figure(LH.PEOPLE.stnick, { x: 600, y: 690, s: .88, pose: 'hips', mood: 'laugh', flip: true }) + h({ x: 160, y: 690, s: .82, pose: 'cheer', mood: 'laugh', look: PJ }) +
+          path('M262 500 q-12 -10 0 -20 M282 500 q12 -10 0 -20', 'none', INK, 3) + txt(640, 160, 40, 'wink!', '#FFFFFF', 8) + star(700, 210, 16, C.sun, INK, 3);
+      },
+      function (h) {  // up the chimney he rose, away to the sleigh: Happy Christmas to all, and to all a good night
+        return sky(C.night) + stars(36, 420, 47) + moonBig(560, 210, 120) + sleighTeam(150, 320, .55, { pose: 'wave', mood: 'laugh' }) + snowGround(650) +
+          txt(300, 560, 36, 'Happy Christmas to all!', C.sun, -3) + roofTop({ x0: 600, x1: 1040, wx: 730, wy: 480, ww: 200, wh: 150 }) +
+          h({ x: 830, y: 700, s: .6, pose: 'wave', mood: 'laugh', look: PJ, flip: true }) + windowFront(730, 480, 200, 150);
+      },
+      function (h) {  // Christmas morning: full stockings, and a tiny silver bell under the tree
+        return xRoom({ night: false, window: [420, 70, 200, 160] }) + fireplace(160, 620, .78) + mantelStockings(160, 620, .78, true) + milkCookies(330, 690, .7, { empty: true }) +
+          xtree(820, 690, .95) + gifts(700, 690, .66) + h({ x: 520, y: 690, s: .95, pose: 'cheer', mood: 'laugh', look: PJ }) + bell(618, 350, .8) + sparkles(618, 330, 70, 5, 53);
+      }
+    ]
+  };
+  /* The Goodnight page the Bedtime reader adds after The End: the hero asleep under a moon (not a library story). */
+  S.goodnight = {
+    cover: function (h) { return S.goodnight.pages[0](h); },
+    pages: [function (h) {
+      return room({ wall: '#3C3670', floor: '#6E5A7E', dot: '#4A4284', window: [140, 80, 240, 200], night: true, curtain: '#8A6BD8' }) + dim() + moonBig(540, 140, 40).replace(/opacity="\.25"/, 'opacity=".18"') + stars(8, 260, 57) +
+        bed(640, 690, 300, 120, '#8A6BD8', '#463E8C', { noQuilt: true }) + h({ x: 760, y: 560, s: .68, pose: 'stand', mood: 'sleep', rot: -90 }) + quiltOf(640, 690, 300, 120, '#463E8C') + zzz(720, 380);
+    }]
+  };
+  LH.goodnightSvg = function (hero, o) { return LH.sceneSvg('goodnight', 0, hero, Object.assign({ clip: LH.uid('gn') }, o || {})); };
   LH.SCENES = S;
 
   /* The main character, or the "your hero here" outline in the generic book. */

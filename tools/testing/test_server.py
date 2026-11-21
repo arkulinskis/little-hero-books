@@ -129,11 +129,11 @@ assert bob["is_admin"] is False
 # ---------------------------------------------------------------------------------- the stories
 import re  # noqa: E402
 St = M["Stories"]
-assert len(St.STORIES) == 18 and len({s["key"] for s in St.STORIES}) == 18
+assert len(St.STORIES) == 19 and len({s["key"] for s in St.STORIES}) == 19
 assert len([s for s in St.STORIES if s.get("original")]) == 3
 for s in St.STORIES:
     assert len(s["pages"]) == 9, s["key"]
-    assert 300 <= St.words(s) <= 500, (s["key"], St.words(s))
+    assert 300 <= St.words(s) <= (700 if s.get("verse") else 500), (s["key"], St.words(s))
     assert set(re.findall(r"\{(\w+)\}", " ".join(s["pages"]) + s["title"])) <= St.TOKENS, s["key"]
     assert "{name}" in s["title"] and ("public domain" in s["source"] or (s.get("original") and "brand-new" in s["source"]))
 bad(call("get_story", "nope"))
@@ -145,7 +145,7 @@ DD = M["DemoData"]
 as_user(None)
 lib = call("get_library")
 assert DD.state() == "loaded", "demo loads on first visit"
-assert len(lib["stories"]) == 18 and lib["mine"] == [] and lib["heroes"] == [] and len(lib["examples"]) == len(DD.DEMO_HEROES)
+assert len(lib["stories"]) == 19 and lib["mine"] == [] and lib["heroes"] == [] and len(lib["examples"]) == len(DD.DEMO_HEROES)
 assert denied("get_shelf") and denied("save_hero", None, "X", "she", {}) and denied("make_book", "x", "bears")
 ex = lib["examples"][0]
 assert ok(call("get_hero", ex["id"]))["mine"] is False, "example heroes can be copied by anyone"

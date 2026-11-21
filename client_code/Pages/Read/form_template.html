@@ -3,15 +3,28 @@
     <div class="ui-wrap bk-wrap" anvil:name="found">
       <div class="bk-head">
         <div>
-          <anvil-component type="Label" name="eyebrow" prop:role='["eyebrow-label"]'></anvil-component>
           <anvil-component type="Label" name="title" prop:role='["bk-title"]'></anvil-component>
           <anvil-component type="Label" name="intro" prop:role='["bk-intro"]'></anvil-component>
         </div>
       </div>
-      <anvil-component type="Little_Hero_Books.Components.Reader" name="reader">
-        <anvil-component type="Button" name="pdf_button" prop:text="Download PDF" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
-      </anvil-component>
-      <anvil-component type="Little_Hero_Books.Components.MakeYours" name="cta"></anvil-component>
+      <div class="gf-page" anvil:name="gift_part">
+        <anvil-component type="Little_Hero_Books.Components.GiftBox" name="gift_box"></anvil-component>
+        <div class="gf-peek-row">
+          <anvil-component type="Button" name="peek_button" prop:text="Grown-up? Peek inside" prop:role='["btn", "btn-sm", "btn-ghost", "ic-lock"]'></anvil-component>
+        </div>
+      </div>
+      <div anvil:name="book_part">
+        <div class="gf-peeking" anvil:name="peek_note" role="status">
+          <i class="ic ic-gift"></i>
+          <anvil-component type="Label" name="peek_text" prop:role='["gf-peek-text"]'></anvil-component>
+          <anvil-component type="Button" name="rewrap_button" prop:text="Wrap it back up" prop:role='["btn", "btn-sm", "btn-primary", "ic-gift"]'></anvil-component>
+        </div>
+        <anvil-component type="Little_Hero_Books.Components.Reader" name="reader">
+          <anvil-component type="Button" name="pdf_button" prop:text="Download PDF" prop:role='["btn", "btn-sm", "btn-primary", "ic-download"]' container:dropzone="tools"></anvil-component>
+          <anvil-component type="Button" name="again_button" prop:text="Wrap it again" prop:role='["btn", "btn-sm", "ic-gift"]' prop:visible="false" container:dropzone="tools"></anvil-component>
+        </anvil-component>
+        <anvil-component type="Little_Hero_Books.Components.MakeYours" name="cta"></anvil-component>
+      </div>
     </div>
     <div class="ui-wrap ui-narrow" anvil:name="broken">
       <div class="ui-empty">

@@ -10,7 +10,8 @@ class Book(BookTemplate):
     """#book/<id>: a book on your shelf (or an example book) in the reader. Yours: PDF, family link, dedication,
     Record my voice (in the reader), Paint this book (Dialogs/Paint; a strip shows how the painting is going and
     paint_status is asked every 15 s until every page is back), Repaint this page (the page open in the reader, a new
-    seed), remove. Each painted picture that arrives gets the skin check here (lh.skin_check -> paint_verdict): the
+    seed), Gift it (Dialogs/Gift: wrap the family link as a present; a badge says who it's from and when it opens, then
+    "Unwrapped on 25 Dec"), remove. Each painted picture that arrives gets the skin check here (lh.skin_check -> paint_verdict): the
     server repaints it by itself if the child's skin came out wrong, and flags it after two tries. Someone else's example: PDF (signed in) and "Make one like this". Otherwise a friendly "private" page."""
 
     def __init__(self, args=(), **properties):
@@ -30,7 +31,7 @@ class Book(BookTemplate):
         self._data = b
         self.book = books.as_book(r["story"], b["hero"], id=b["id"], dedication=b["dedication"], created=b["created"],
                                   share_key=b.get("share_key"), shared=b.get("shared"), voice=b.get("voice") or {},
-                                  paint=b.get("paint") or {})
+                                  paint=b.get("paint") or {}, gift=b.get("gift"), gifts_ready=b.get("gifts_ready"))
         self._paint_state = b.get("paint_state")
         self._page, self._checking = 0, False
         mine = b["mine"]
@@ -43,7 +44,7 @@ class Book(BookTemplate):
         self.pages_badge.text = "%d story pages" % r["story"]["pages"]
         self.pdf_button.visible = mine or bool(me)
         self.signup_link.visible = not mine and not me
-        for c in (self.share_button, self.dedication_button, self.remove_button, self.paint_button):
+        for c in (self.share_button, self.dedication_button, self.remove_button, self.paint_button, self.gift_button):
             c.visible = mine
         self.copy_link.visible = not mine
         self.copy_link.url = router.href("studio", "copy", b["hero"]["id"])
@@ -54,6 +55,27 @@ class Book(BookTemplate):
         self.reader.book = self.book
         self._voice_badge()
         self._paint_draw()
+        self._gift_draw()
+
+    def _gift_draw(self):
+        g = self.book.get("gift") if self._data["mine"] else None
+        self.gift_badge.visible = bool(g)
+        self.gift_button.text = "Gift: wrapped" if g else "Gift it"
+        if not g:
+            return
+        if g.get("opened"):
+            self.gift_badge.text = "Unwrapped on %s" % lh.gift_day(g["opened"][:10])
+        elif g.get("open_on"):
+            self.gift_badge.text = "Gift from %s · opens %s" % (g["sender"], lh.gift_day(g["open_on"]))
+        else:
+            self.gift_badge.text = "Gift from %s · open any time" % g["sender"]
+
+    @handle("gift_button", "click")
+    def gift_button_click(self, **event_args):
+        from ...Dialogs.Gift import Gift
+        alert(Gift(book=self.book), buttons=[], large=True, role="lh-dialog")
+        self._share_label()
+        self._gift_draw()
 
     def _voice_badge(self):
         n = len(self.book.get("voice") or {})

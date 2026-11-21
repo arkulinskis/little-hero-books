@@ -5,7 +5,7 @@ from ... import books, router, state
 
 
 class Library(LibraryTemplate):
-    """#library, #library/<heroRef>: the eighteen stories (and, signed in, the ones you wrote). The "Starring" strip redraws every cover with the chosen
+    """#library, #library/<heroRef>: the nineteen stories (in season, The Night Before Christmas first) (and, signed in, the ones you wrote). The "Starring" strip redraws every cover with the chosen
     hero: one of yours, your unsaved studio draft, an example hero, or nobody (the generic "your hero here" book).
     Read a story (#story/<key>/<heroRef>) or make it into a book on your shelf."""
 
@@ -30,7 +30,7 @@ class Library(LibraryTemplate):
         self._choice = next((c for c in self._choices if c["ref"] == ref), self._choices[0])
         self.picks_panel.items = [{"choice": c, "on": c["ref"] == self._choice["ref"]} for c in self._choices]
         hero, own = self._choice["hero"], self._choice["own"]
-        self.stories_panel.items = [{"story": s, "hero": hero, "own": own} for s in self._lib["stories"]]
+        self.stories_panel.items = [{"story": s, "hero": hero, "own": own} for s in books.seasonal(self._lib["stories"])]
         mine = self._lib.get("mine") or []
         self.mine_part.visible = bool(mine)
         self.mine_panel.items = [{"story": s, "hero": hero, "own": own, "edit": True} for s in mine]

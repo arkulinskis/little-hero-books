@@ -48,7 +48,7 @@ class Shelf(ShelfTemplate):
 
         lead = heroes[0] if heroes else None
         made = set((b["hero"]["id"], b["story"]["key"]) for b in mine)
-        stories = books.stories()
+        stories = books.seasonal(books.stories())  # in season, The Night Before Christmas is the first next adventure
         nxt = [s for s in stories if lead and (lead["id"], s["key"]) not in made][:4]
         self.next_part.visible = bool(nxt)
         if lead:

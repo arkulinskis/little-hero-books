@@ -1,0 +1,53 @@
+<div class="ui gf-dlg">
+  <h2 class="dlg-h">Gift it</h2>
+  <anvil-component type="Label" name="intro" prop:role='["fine-print"]'></anvil-component>
+  <div class="gf-later" anvil:name="later_part" role="status">
+    <i class="ic ic-info"></i>
+    <anvil-component type="Label" name="later_text"></anvil-component>
+  </div>
+  <div class="gf-dlg-grid">
+    <div class="gf-dlg-preview">
+      <anvil-component type="Little_Hero_Books.Components.GiftBox" name="preview" prop:preview="true"></anvil-component>
+    </div>
+    <div class="gf-dlg-form" anvil:name="form_part">
+      <div class="lhp-label" id="gf-wrap-l">Wrapping paper</div>
+      <div class="gf-chips" role="group" aria-labelledby="gf-wrap-l">
+        <anvil-component type="Button" name="wrap_christmas" prop:text="Christmas" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+        <anvil-component type="Button" name="wrap_birthday" prop:text="Birthday" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+        <anvil-component type="Button" name="wrap_stars" prop:text="Starry night" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+        <anvil-component type="Button" name="wrap_crayons" prop:text="Crayons" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+      </div>
+      <div class="lhp-label">From</div>
+      <anvil-component type="DropDown" name="sender_box"></anvil-component>
+      <div class="lhp-label" id="gf-day-l">Open on</div>
+      <div class="gf-chips" role="group" aria-labelledby="gf-day-l">
+        <anvil-component type="Button" name="day_eve" prop:text="24 Dec" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+        <anvil-component type="Button" name="day_xmas" prop:text="25 Dec" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+        <anvil-component type="Button" name="day_any" prop:text="Any time" prop:role='["btn", "btn-sm", "gf-chip"]'></anvil-component>
+        <anvil-component type="Button" name="day_pick" prop:text="Pick a date" prop:role='["btn", "btn-sm", "gf-chip", "ic-calendar"]'></anvil-component>
+      </div>
+      <div anvil:name="date_part" class="gf-date">
+        <anvil-component type="DatePicker" name="date_box" prop:format="%d %B %Y" prop:placeholder="Pick the day it opens"></anvil-component>
+      </div>
+    </div>
+  </div>
+  <div class="gf-done" anvil:name="link_part">
+    <anvil-component type="Label" name="done_text" prop:role='["gf-done-text"]'></anvil-component>
+    <div class="bk-link">
+      <anvil-component type="TextBox" name="url_box" prop:enabled="true"></anvil-component>
+      <anvil-component type="Button" name="copy_button" prop:text="Copy" prop:role='["btn", "ic-copy"]'></anvil-component>
+    </div>
+    <div class="ui-row gf-share">
+      <anvil-component type="Button" name="share_button" prop:text="Share the link" prop:role='["btn", "btn-sm", "ic-share"]'></anvil-component>
+      <anvil-component type="Button" name="card_button" prop:text="Save the gift card" prop:role='["btn", "btn-sm", "btn-sun", "ic-download"]'></anvil-component>
+    </div>
+    <anvil-component type="Label" name="card_note" prop:role='["fine-print"]' prop:text="A 5 × 7 inch card with the cover, who it’s from, the day and a QR code that opens the present. Print it and put it under the tree."></anvil-component>
+  </div>
+  <div class="ui-row between fl-actions">
+    <anvil-component type="Button" name="remove_button" prop:text="Remove the wrapping" prop:role='["btn", "btn-sm", "btn-ghost", "btn-danger", "ic-x"]'></anvil-component>
+    <div class="ui-row end gf-actions">
+      <anvil-component type="Button" name="close_button" prop:text="Close" prop:role='["btn", "btn-ghost"]'></anvil-component>
+      <anvil-component type="Button" name="save_button" prop:text="Wrap it" prop:role='["btn", "btn-primary", "ic-gift"]'></anvil-component>
+    </div>
+  </div>
+</div>

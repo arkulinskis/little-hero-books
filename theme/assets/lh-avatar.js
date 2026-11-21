@@ -94,7 +94,7 @@
   /* Head coverings hide the hair; a story's crown then sits on top of them (topHat). */
   var COVERS = LH.COVERS = { hijab: true, turban: true };
   var EXTRA = { size: ['adult'], hair: ['tufts', 'bald'], hairColor: ['grey', 'white'], outfit: ['apron', 'robe', 'undies', 'tunic', 'suit'],
-                hat: ['elfhat', 'feather', 'kerchief'] };
+                hat: ['elfhat', 'feather', 'kerchief', 'nickhat'] };
   function allowed(key, v) {
     if (key === 'skin' || key === 'hairColor' || key === 'eyeColor' || key === 'outfitColor') {
       var table = { skin: LH.COL.skin, hairColor: LH.COL.hair, eyeColor: LH.COL.eye, outfitColor: LH.COL.cloth }[key];
@@ -525,6 +525,9 @@
     if (h === 'beanie') return path('M-79 -22 C-82 -108 82 -108 79 -22 Z', oc, ink, 4.5) + path('M-80 -38 L80 -38 L80 -20 L-80 -20Z', shade(oc, -.15), ink, 4.5) + circ(0, -104, 17, '#F7F3EA', ink, 4);
     if (h === 'headband') return path('M-76 -26 C-64 -96 64 -96 76 -26', 'none', ink, 18) + path('M-76 -26 C-64 -96 64 -96 76 -26', 'none', oc, 10) + star(42, -76, 17, '#FFC93C', ink, 3.5);
     if (h === 'elfhat') return path('M-78 -32 C-66 -96 34 -112 76 -158 C72 -112 80 -72 78 -32 Z', oc, ink, 4.5) + path('M-80 -42 L80 -42 L80 -26 L-80 -26Z', '#F7F3EA', ink, 4) + circ(76, -158, 13, '#FFC93C', ink, 4);
+    // St Nicholas's floppy fur-trimmed cap (The Night Before Christmas, 2026-11-20): it droops over to one side
+    if (h === 'nickhat') return path('M-76 -34 C-74 -110 30 -128 70 -112 C104 -98 116 -62 104 -30 C92 -60 78 -76 56 -78 C70 -60 76 -46 76 -34 Z', oc, ink, 4.5) +
+      path('M-84 -48 Q0 -62 84 -48 L84 -22 Q0 -36 -84 -22Z', '#F7F3EA', ink, 4) + circ(106, -24, 16, '#F7F3EA', ink, 4);
     if (h === 'feather') return path('M10 -104 C40 -150 76 -140 70 -126 C56 -128 34 -116 18 -96Z', '#EF5A36', ink, 3.5) + path('M-48 -70 L-40 -112 L40 -112 L48 -70Z', oc, ink, 4.5) + ell(0, -70, 82, 13, shade(oc, -.15), ink, 4.5);
     if (h === 'kerchief') return path('M-80 -10 C-86 -80 -46 -100 0 -100 C46 -100 86 -80 80 -10 C60 -40 30 -50 0 -50 C-30 -50 -60 -40 -80 -10Z', oc, ink, 4.5) + circ(-30, -76, 5, '#fff') + circ(16, -84, 5, '#fff') + circ(48, -60, 5, '#fff');
     var dk = shade(oc, -.22);

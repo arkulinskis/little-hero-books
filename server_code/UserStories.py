@@ -165,11 +165,12 @@ def delete_story(key):
         return C.ok(books=0)
     if r["owner"] != me:
         return C.fail("You can only remove your own stories.")
-    from . import Painting, Voice
+    from . import Gifts, Painting, Voice
     n = 0
     for b in app_tables.books.search(owner=me, story=key):
         Voice.delete_for(b)
         Painting.delete_for(b)
+        Gifts.delete_for(b)
         b.delete()
         n += 1
     r.delete()

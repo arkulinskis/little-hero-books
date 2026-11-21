@@ -88,6 +88,12 @@ def row_by_id(table, row_id):
         return None
 
 
+def link_key():
+    """A family-link key: 128 random bits (22 characters), so nobody can guess one and open a book (or a gift)."""
+    import secrets
+    return secrets.token_urlsafe(16)
+
+
 def rate_limited(key, limit, seconds):
     """True if this browser session already did `key` `limit` times in the last `seconds`."""
     stamp = now()

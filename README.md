@@ -1,8 +1,8 @@
 # Little Hero Books
 
 Personalised picture books for little ones. A parent designs a cartoon look-alike of their child (face, skin tone,
-hair, eyes, clothes, hats, glasses, plus name and pronouns), then picks from eighteen short stories (fifteen public-domain
-fairy tales and fables, three brand-new ones; 300-500 words) for ages 3-6, or writes their own. Every illustration has a space where the child goes; the app draws the child into it, and
+hair, eyes, clothes, hats, glasses, plus name and pronouns), then picks from nineteen short stories (fifteen public-domain
+fairy tales and fables, three brand-new ones; 300-500 words, and The Night Before Christmas, the 1823 poem as first printed) for ages 3-6, or writes their own. Every illustration has a space where the child goes; the app draws the child into it, and
 the finished 12-page book can be read on screen (page turns, "Read to me", "Colour me in") or downloaded as a square
 8 x 8 in PDF, a print-ready PDF with bleed for photo-book printers, or a colour-me-in outline book.
 Theme: happy, joyous kindergarten ("Crayon Classroom"); the books themselves have a softer storybook finish. Built on [Anvil](https://anvil.works).
@@ -17,8 +17,10 @@ Theme: happy, joyous kindergarten ("Crayon Classroom"); the books themselves hav
 Keep this list current: it is the first thing read before every change.
 
 **For everyone (no account needed):**
-- **Landing page:** an open-book hero picture that cycles through five example kids, a 12-book shelf that changes star
-  when you tap a face, how it works, features, safety, FAQ.
+- **Landing page:** an open-book hero picture that cycles through five example kids, a Christmas gift strip (15 Nov to
+  26 Dec: "Make the Christmas book" + "Unwrap an example", the demo present `#read/demo-gift-juniper`), a shelf of every
+  story that changes star when you tap a face (the seasonal story first in season), how it works, features (the studio's
+  numbers are counted from `LH.OPTIONS` when the page opens), safety, FAQ (incl. "Can I give it as a gift?").
 - **Hero studio** (`#studio`): ages 1 to 12 (the body grows), 20 skin tones, 16 face shapes, 15 noses, cheeks and
   freckles, 12 face paints and little marks (dimples, beauty spot, birthmark, plaster, stars, whiskers...), 30 hairstyles
   (incl. locs, cornrows, Bantu knots, space buns) x 23 hair colours, 17 eye shapes x 18 eye colours, 17 eyebrows,
@@ -26,11 +28,15 @@ Keep this list current: it is the first thing read before every change.
   21 hats and head coverings (incl. hijab, patka, kippah; a story's crown sits on top of them), 16 glasses. Live preview with poses (Hello, Wave, Hooray, Skip), "Surprise me", Undo, the child's name and pronouns
   (she / he / they), and "Try it in a story" (the current hero on a story cover). Guests keep a draft in the browser;
   pressing Save as a guest goes to sign-up and saves the hero automatically afterwards.
-- **Story library** (`#library`): 18 stories. 15 classics (Three Bears, Enormous Turnip, Magic Porridge Pot, Emperor's New
+- **Story library** (`#library`): 19 stories. 15 classics (Three Bears, Enormous Turnip, Magic Porridge Pot, Emperor's New
   Clothes, Beanstalk, Little Red Hen, Elves and the Shoemaker, Princess and the Pea, Gingerbread Man, Ugly Duckling, Three
   Billy Goats Gruff, Tortoise and the Hare = "the Great Race", and since 2026-11-17 The Lion and the Mouse, Stone Soup,
   The Town Mouse and the Country Mouse) and 3 brand-new ones marked "New story" (The Lost Little Star, The Puddle
-  Parade, The Hiccupy Dragon). Signed in, "Your stories" lists the stories you wrote. A "Starring" strip redraws every cover with
+  Parade, The Hiccupy Dragon), and since 2026-11-20 **The Night Before Christmas** ("<name>'s Night Before Christmas",
+  a "Christmas" badge): the 1823 Troy Sentinel text of "A Visit from St. Nicholas" as first printed, eight lines a page with
+  the lines kept (on screen and in the PDF), framed by a new first page (Christmas Eve, the hero asks for the poem) and
+  last page (Christmas morning, a tiny silver bell under the tree); from 15 Nov to 31 Dec it sorts first in the library,
+  the landing shelf and "Next adventures". Signed in, "Your stories" lists the stories you wrote. A "Starring" strip redraws every cover with
   the chosen hero: yours, your studio draft, one of 4 example heroes, or the **blank book** (the generic version with a
   "your hero here" outline in every picture).
 - **Story preview** (`#story/<key>/<hero>`): the reader with any hero. "Change this story" starts your own copy.
@@ -43,7 +49,18 @@ Keep this list current: it is the first thing read before every change.
 - **Colour me in** (a reader button): every picture turns into an outline drawing; pick one of 14 crayons (or the
   rubber) and tap shapes to colour them. Colours stay while you turn pages (not saved).
 - **Family links** (`#read/<key>`): a shared book anyone with the link can read and download. If the parent recorded
-  their voice, "Read to me" plays it page by page (the speech voice reads the pages they didn't record).
+  their voice, "Read to me" plays it page by page (the speech voice reads the pages they didn't record). New links
+  have 128-bit keys (2026-11-20).
+- **Gift it** (2026-11-20): a wrapped family link opens on a present (Christmas, Birthday, Starry night or Crayons
+  paper, a "To <name>" tag with the hero's face). Before its day (the viewer's own date): "Opens in 5 sleeps!", the
+  present wiggles when tapped, no reader; "Grown-up? Peek inside" opens the book without unwrapping it. From its day:
+  "Tap the bow!": the bow unties, the lid flies off, the paper falls away, the cover rises, confetti, the reader opens
+  at the cover (a fade with reduced motion). "Wrap it again" replays it.
+- **Bedtime** (a reader button in every reader, 2026-11-20): warm dim pages and softened pictures, Read to me slower
+  (rate .8) with longer pauses, no confetti, quieter music, and a **Goodnight page** after The End (the hero asleep
+  under a moon; never in the PDF, no recording). **Just listen** reads to the end on an almost black screen (small moon,
+  "Page 4 of 12", Stop / Esc), then goes black and releases the wake lock. After 18:30 a one-time "Bedtime? Dim the
+  pages" chip; the choice is remembered (`UI.store` "bedtime").
 - Sign-up with email and password or Google, a feedback form, and the Privacy & Terms page (footer link, `#legal`).
 
 **For members:**
@@ -121,14 +138,15 @@ What this project uses besides its own code. Generated by `APP_MAKER/tools/libra
 
 | Name | How it gets in | Used here for |
 |---|---|---|
+| [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | Loaded from a CDN | the QR code on the printable Gift it card that opens the wrapped book (its own copy, theme/assets/lh-qr.js, loaded only when a card is made) |
 | [Image Enhancer](https://github.com/arkulinskis/image-enhancer) | Outside web service | Paint this book: every page's picture repainted in a picture-book style (Painting.py) |
 | [Arkvital music library (ArkMusic)](https://arkvital-media.addanapp.workers.dev) | Outside web service | Background music: the user's licensed Audiio tracks, streamed from our own Cloudflare R2 bucket by a small shared player. |
 | [YouTube embeds](https://developers.google.com/youtube/player_parameters) | Outside web service | Plays a YouTube video inside the page (the privacy-friendlier youtube-nocookie address). |
 | [Google Fonts](https://fonts.google.com) | Loaded from a CDN | Baloo 2, Fredoka, Nunito |
 
-**Built into the browser:** Canvas 2D, Speech synthesis, Web Audio API, Camera, microphone and screen, MediaRecorder, Screen Wake Lock, localStorage, Clipboard, File downloads (Blob), Fullscreen.
+**Built into the browser:** Canvas 2D, Speech synthesis, Web Audio API, Camera, microphone and screen, MediaRecorder, Web Share, Screen Wake Lock, localStorage, Clipboard, File downloads (Blob), Fullscreen.
 
-**Anvil platform:** Anvil, Anvil Data Tables, Anvil JS bridge (anvil.js), Anvil Secrets, Anvil Users, Anvil Google service, Anvil HTTP.
+**Anvil platform:** Anvil, Anvil Data Tables, Anvil Email, Anvil JS bridge (anvil.js), Anvil Secrets, Anvil Users, Anvil Google service, Anvil HTTP, Anvil timezones (anvil.tz).
 
 **Build and test tools (not shipped):** Node.js, Headless Chrome (DevTools Protocol), PyYAML, Pillow.
 

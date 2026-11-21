@@ -1182,3 +1182,133 @@ html.rd-full-on { overflow: hidden; }
   .wr-tiles, .anvil-role-wr-tiles > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wr-cover { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ===== Christmas story, Gift it, Bedtime reading (2026-11-20) ===== */
+/* verse pages (The Night Before Christmas, 1823): the poem's lines kept, a wrapped line hangs under its first word */
+.rd-text.verse { text-align: left; width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; min-height: 0;
+  font-size: clamp(1rem, 2.1vw, 1.32rem); line-height: 1.45; }
+.rd-line { display: block; padding-left: 1.2em; text-indent: -1.2em; }
+.rd-full .rd-text.verse { font-size: clamp(.95rem, 1.45vw, 1.4rem); }
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 560px) { .rd-full .rd-text.verse { font-size: 13px; line-height: 1.35; } }
+.anvil-role-badge-xmas, .anvil-role-badge-gift { background: #fde0dc; color: #9b2a1e; }
+:root[data-theme="dark"] :is(.anvil-role-badge-xmas, .anvil-role-badge-gift) { background: #4a2a33; color: #ffcabd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.anvil-role-badge-xmas, .anvil-role-badge-gift) { background: #4a2a33; color: #ffcabd; } }
+
+/* the Goodnight page (Bedtime only) */
+.rd-gn { text-align: center; }
+.rd-gn h2 { font: 800 clamp(1.8rem, 5vw, 2.8rem)/1.05 "Baloo 2", system-ui, sans-serif !important; margin: 16px 0 4px; color: #4a3f6b; text-wrap: balance; }
+.rd-gn p { font: 500 1.15rem/1.5 Fredoka, Nunito, sans-serif; margin: 0 0 6px; }
+
+/* Bedtime reading: warm, dim pages (text stays 4.5:1 or better) */
+.rd-ask { width: var(--rd-w); margin: 0 auto 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px;
+  border-radius: var(--radius-sm); background: #2e2752; color: #f3e6cf; }
+.rd-ask > .ui-ic { width: 22px; height: 22px; color: #ffd25e; flex: none; }
+.rd-ask > span { flex: 1 1 200px; font-weight: 700; }
+.rd-ask .ui-btn.ghost { color: #f3e6cf; }
+.rd-ask .ui-btn.ghost:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+.rd-night .rd-book:not(.out) { background: #2a2340; color: #f3e6cf; box-shadow: 0 24px 44px rgba(0, 0, 0, .35); }
+.rd-night .rd-book:not(.out)::before { background: linear-gradient(90deg, rgba(0, 0, 0, .3), transparent); }
+.rd-night .rd-book:not(.out) :is(.rd-text, .rd-ded .msg, .rd-ded .who, .rd-gn p) { color: #f3e6cf; }
+.rd-night .rd-book:not(.out) .lh-name { color: #ffb38a; }
+.rd-night .rd-book:not(.out) .rd-pic { border-color: #3a3152; background: #3a3152; box-shadow: none; }
+.rd-night .rd-book:not(.out) :is(.rd-pic svg, .rd-pic img, .rd-ded .frame > *, .rd-end .fig > *) { filter: brightness(.72) saturate(.78) sepia(.12); }
+.rd-night .rd-book:not(.out) .rd-num { background: #4a3f6b; color: #f3e6cf; }
+.rd-night .rd-book:not(.out) .rd-cov { box-shadow: inset 0 0 0 999px rgba(20, 14, 40, .38); }
+.rd-night .rd-book:not(.out) .rd-cov h2 { background: #3a3152; color: #f7ecd6 !important; box-shadow: none; }
+.rd-night .rd-book:not(.out) :is(.rd-cov h2 small, .rd-ded .belongs) { color: #ffb38a; }
+.rd-night .rd-book:not(.out) .rd-ded .frame { border-color: #3a3152; box-shadow: none; }
+.rd-night .rd-book:not(.out) .rd-end h2 { color: #ff9a7a !important; text-shadow: none; }
+.rd-night .rd-book:not(.out) .rd-end p { color: #d4cbec; }
+.rd-night .rd-book:not(.out) .rd-gn h2 { color: #ffd9a0 !important; }
+.rd-night .rd-nav { background: #b88a2e; color: #1e1a33; box-shadow: 0 5px 14px rgba(0, 0, 0, .35); }
+.rd-night.rd-full { background: radial-gradient(ellipse at 50% 28%, #2a2244, #0e0b18 72%); }
+
+/* Just listen: an almost black screen while the book is read; then black */
+.rd-dark { position: fixed; inset: 0; z-index: 1500; display: grid; place-items: center; background: #050409; color: #a299c2;
+  animation: kit-fade var(--dur-slow) var(--ease-out); transition: background-color 3s ease; }
+.rd-dark-in { display: grid; justify-items: center; gap: 14px; padding: 24px; text-align: center; }
+.rd-dark-moon { width: 48px; height: 48px; fill: #f2d98a; opacity: .55; }
+.rd-dark-page { margin: 0; font: 700 .95rem/1.3 var(--font-body); font-variant-numeric: tabular-nums; }
+.rd-dark-stop { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid #3d3656;
+  background: transparent; color: #bdb4da; font: 700 .95rem/1 var(--font-body); cursor: pointer;
+  transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-press) var(--ease-out); }
+.rd-dark-stop:hover { border-color: #6a6190; color: #ece6ff; }
+.rd-dark-stop:active { transform: scale(.97); }
+.rd-dark-stop:focus-visible { outline: 3px solid #8a6bd8; outline-offset: 3px; }
+.rd-dark-stop .ui-ic { width: 18px; height: 18px; }
+.rd-dark-bye { display: none; margin: 0; color: #7a7299; font: 600 .95rem/1.4 var(--font-body); }
+.rd-dark.rd-dark-end { background: #000; cursor: pointer; }
+.rd-dark-end :is(.rd-dark-moon, .rd-dark-page, .rd-dark-stop) { opacity: 0; pointer-events: none; transition: opacity 3s ease; }
+.rd-dark-end .rd-dark-bye { display: block; animation: rd-bye 9s ease forwards; }
+@keyframes rd-bye { 0% { opacity: 0; } 15% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Gift it: the wrapped present (LH.giftHtml) */
+.gf-host { display: grid; justify-items: center; gap: 10px; }
+.gf { position: relative; width: min(100%, 360px); }
+.gf-stage { position: relative; aspect-ratio: 400 / 430; }
+.gf-hit { position: absolute; inset: 0; z-index: 2; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 24px; transform-origin: 50% 92%; }
+.gf-hit:focus-visible { outline: 3px solid var(--c-brand); outline-offset: 4px; }
+.gf-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.gf-svg g { transform-box: fill-box; }
+.gf-left { transform-origin: 0% 100%; } .gf-right { transform-origin: 100% 100%; }
+.gf-lid, .gf-bow, .gf-tag { transform-origin: 50% 50%; }
+.gf-book { position: absolute; left: 21%; right: 21%; top: 26%; z-index: 1; opacity: 0; transform: translateY(40px) scale(.8); pointer-events: none; }
+.gf-book .lh-cover { width: 100%; }
+.gf[data-state="ready"] .gf-bow { animation: gf-bow 1.6s var(--ease-in-out) infinite; }
+@keyframes gf-bow { 50% { transform: scale(1.08) rotate(-3deg); } }
+.gf[data-state="unwrapping"] .gf-bow { animation: gf-untie .45s var(--ease-out) forwards; }
+.gf[data-state="unwrapping"] .gf-tag { animation: gf-gone .3s var(--ease-out) forwards; }
+.gf[data-state="unwrapping"] .gf-lid { animation: gf-lid .6s var(--ease-out) .3s forwards; }
+.gf[data-state="unwrapping"] .gf-left { animation: gf-left .7s var(--ease-in-out) .55s forwards; }
+.gf[data-state="unwrapping"] .gf-right { animation: gf-right .7s var(--ease-in-out) .55s forwards; }
+.gf:is([data-state="unwrapping"], [data-state="open"]) .gf-book { animation: gf-rise .6s var(--ease-expo) .95s forwards; }
+.gf[data-state="open"] .gf-hit { visibility: hidden; }
+@keyframes gf-untie { to { transform: scale(1.7) rotate(30deg); opacity: 0; } }
+@keyframes gf-gone { to { opacity: 0; } }
+@keyframes gf-lid { to { transform: translate(-40px, -170px) rotate(-28deg); opacity: 0; } }
+@keyframes gf-left { to { transform: translate(-50px, 60px) rotate(-55deg); opacity: 0; } }
+@keyframes gf-right { to { transform: translate(50px, 60px) rotate(55deg); opacity: 0; } }
+@keyframes gf-rise { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .gf[data-state] :is(.gf-bow, .gf-tag, .gf-lid, .gf-left, .gf-right) { animation: none; }
+  .gf[data-state="unwrapping"] .gf-hit { animation: gf-gone .3s ease forwards; }
+  .gf:is([data-state="unwrapping"], [data-state="open"]) .gf-book { animation: none; opacity: 1; transform: none; transition: opacity .3s ease; }
+}
+.anvil-role-gf-say { font: 800 clamp(1.4rem, 4vw, 2rem)/1.15 var(--font-display); color: var(--c-link); text-align: center; text-wrap: balance; }
+.gf-page { display: grid; justify-items: center; gap: 6px; padding: 4px 0 28px; }
+.gf-peek-row { margin-top: 4px; }
+.gf-peeking { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 760px; margin: 0 auto 16px; padding: 12px 16px;
+  border-radius: var(--radius-sm); background: var(--c-brand-soft); color: var(--c-ink); }
+.gf-peeking > .ic { width: 22px; height: 22px; color: var(--c-link); }
+.anvil-role-gf-peek-text { flex: 1 1 220px; font-weight: 700; }
+/* the Gift dialog */
+.gf-dlg-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; align-items: start; margin-top: 12px; }
+.gf-dlg-preview .gf { width: min(100%, 250px); }
+.gf-dlg-preview .anvil-role-gf-say { font-size: 1.15rem; }
+.gf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+.anvil-role-gf-on > button, .anvil-role-gf-on > button:hover { background: var(--c-accent); border-color: var(--c-edge); color: #2b2350; }
+.gf-date { margin: -4px 0 8px; }
+.gf-later { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--c-warn-soft); color: var(--c-ink); }
+.gf-later > .ic { flex: none; width: 20px; height: 20px; margin-top: 2px; color: var(--c-warn); }
+.gf-done { margin-top: 14px; padding: 14px; border-radius: var(--radius-sm); background: var(--c-surface-2); }
+.anvil-role-gf-done-text { font-weight: 800; margin-bottom: 8px; }
+.gf-share { gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.gf-actions { gap: 8px; }
+@media (max-width: 600px) {
+  .gf-dlg-grid { grid-template-columns: minmax(0, 1fr); }
+  .gf-dlg-preview .gf { width: min(100%, 210px); }
+}
+/* the landing page's Christmas gift strip (15 Nov to 26 Dec) */
+.lp-gift { padding: 4px 0 22px; }
+.lp-gift-in { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 26px; align-items: center; padding: 22px 26px;
+  border-radius: var(--radius); background: #fff0ea; border: 2.5px solid var(--c-edge); box-shadow: var(--shadow); }
+:root[data-theme="dark"] .lp-gift-in { background: #3a2433; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lp-gift-in { background: #3a2433; } }
+.lp-gift-art svg { display: block; width: 100%; height: auto; }
+.lp-gift h2 { font: 800 clamp(1.45rem, 3vw, 2.05rem)/1.1 var(--font-display); margin: 0 0 6px; text-wrap: balance; }
+.lp-gift p { margin: 0 0 14px; color: var(--c-muted); max-width: 62ch; text-wrap: pretty; }
+@media (max-width: 640px) {
+  .lp-gift-in { grid-template-columns: minmax(0, 1fr); text-align: center; padding: 18px 16px; gap: 10px; }
+  .lp-gift-art { width: 140px; margin: 0 auto; }
+  .lp-gift .lp-cta { justify-content: center; }
+}

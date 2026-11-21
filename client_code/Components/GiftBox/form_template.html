@@ -1,0 +1,32 @@
+---
+custom_component: true
+events:
+- description: The present was unwrapped (the bow tapped on or after its day, and the paper fell away)
+  name: unwrapped
+help_text: |-
+  A book wrapped as a present (Gift it): the paper, the bow and a "To <name>" tag drawn by LH.giftHtml in
+  theme/assets/lh-book.js. Before its day it is locked (a tap wiggles it and says how many sleeps are left); from its
+  day "Tap the bow!" unwraps it: the bow unties, the lid flies off, the paper falls away and the book's cover rises.
+properties:
+- default_binding_prop: true
+  description: '{wrap, sender, open_on (YYYY-MM-DD or None = any time), opened}'
+  name: gift
+  type: object
+- description: The hero (name for the tag, look for the face)
+  name: hero
+  type: object
+- description: The story (its cover rises out of the box when it is unwrapped)
+  name: story
+  type: object
+- default_value: false
+  description: A preview (the Gift dialog) that can't be tapped open
+  name: preview
+  type: boolean
+toolbox_item:
+  group: Little Hero Books
+  title: Wrapped present
+---
+<div class="gf-host">
+  <div anvil:dom-node="mount"></div>
+  <anvil-component type="Label" name="say" prop:role='["gf-say"]'></anvil-component>
+</div>

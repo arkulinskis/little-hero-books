@@ -74,7 +74,9 @@
     stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/>',
     redo: '<path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>',
     expand: '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>',
-    shrink: '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>'
+    shrink: '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>',
+    gift: '<rect x="3.5" y="8" width="17" height="4.5" rx="1"/><path d="M5 12.5V20h14v-7.5"/><path d="M12 8v12"/><path d="M12 8c-1.5-3.5-5.5-4.5-6-2s3 2 6 2c3 0 6.5.5 6-2s-4.5-1.5-6 2"/>',
+    share: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/>'
   };
   /* Light / dark: applied here, in <head>, so the first paint already has the right colours.
      Python (client_code/state.py) calls UI.setTheme when someone picks Auto / Light / Dark. */

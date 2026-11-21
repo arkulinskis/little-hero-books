@@ -168,6 +168,48 @@ db_schema:
     indexes: []
     server: full
     title: Feedback
+  gifts:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: book
+      target: books
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: wrap
+      type: string
+    - admin_ui:
+        order: 2
+        width: 200
+      name: sender
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: open_on
+      type: date
+    - admin_ui:
+        order: 4
+        width: 200
+      name: opened
+      type: datetime
+    - admin_ui:
+        order: 5
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 6
+        width: 200
+      name: updated
+      type: datetime
+    indexes: []
+    server: full
+    title: Gifts
   heroes:
     client: none
     columns:
@@ -545,22 +587,23 @@ db_schema:
     server: full
     title: Voice pages
 metadata:
-  description: "Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Eighteen stories for ages 3 to 6."
-  logo_img: "asset:icon-512.png"
-  title: "Little Hero Books: picture books starring your child"
+  description: Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or
+    write your own. Nineteen stories for ages 3 to 6.
+  logo_img: asset:icon-512.png
+  title: 'Little Hero Books: picture books starring your child'
 name: Little Hero Books
 native_deps:
   head_html: |
-    <script src="_/theme/legal-kit.js?v=b7e2d98788"></script>
+    <script src="_/theme/legal-kit.js?v=bc50f79cc8"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/littleherobooks.json and run seo.py, not here) -->
     <link rel="canonical" href="https://littleheroapp.com/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <meta name="keywords" content="personalised children&#x27;s book, custom picture book, book with my child&#x27;s name, personalized storybook PDF, fairy tales for kids, bedtime stories ages 3 to 6, child cartoon avatar, printable picture book, personalised colouring book, inclusive kids books, gift for grandchildren">
+    <meta name="keywords" content="personalised children&#x27;s book, custom picture book, book with my child&#x27;s name, personalized storybook PDF, fairy tales for kids, bedtime stories ages 3 to 6, child cartoon avatar, printable picture book, personalised colouring book, inclusive kids books, gift for grandchildren, personalised Christmas book, Night Before Christmas with my child&#x27;s name, digital Christmas gift for kids">
     <meta name="author" content="Arkvital">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Little Hero Books">
     <meta property="og:title" content="Little Hero Books: picture books starring your child">
-    <meta property="og:description" content="Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Eighteen stories for ages 3 to 6.">
+    <meta property="og:description" content="Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Nineteen stories for ages 3 to 6.">
     <meta property="og:locale" content="en_CA">
     <meta property="og:url" content="https://littleheroapp.com/">
     <meta property="og:image" content="https://littleheroapp.com/_/theme/og-image.png">
@@ -568,19 +611,19 @@ native_deps:
     <meta property="og:image:alt" content="Little Hero Books: Design your child as a cartoon, then read stories starring them">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Little Hero Books: picture books starring your child">
-    <meta name="twitter:description" content="Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Eighteen stories for ages 3 to 6.">
+    <meta name="twitter:description" content="Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Nineteen stories for ages 3 to 6.">
     <meta name="twitter:image" content="https://littleheroapp.com/_/theme/og-image.png">
     <link rel="alternate" type="text/plain" title="Little Hero Books for AI assistants" href="https://littleheroapp.com/llms.txt">
-    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Service", "@id": "https://littleheroapp.com/#app", "name": "Little Hero Books", "url": "https://littleheroapp.com/", "description": "Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Eighteen stories for ages 3 to 6.", "image": "https://littleheroapp.com/_/theme/og-image.png", "serviceType": "Design your child as a cartoon, then read stories starring them", "provider": {"@id": "https://arkvital.com/#org"}, "areaServed": "Worldwide", "availableChannel": {"@type": "ServiceChannel", "serviceUrl": "https://littleheroapp.com/", "name": "Web browser", "availableLanguage": "en"}, "audience": {"@type": "Audience", "audienceType": "Parents and grandparents of children aged about 3 to 6"}}, {"@type": "WebSite", "@id": "https://littleheroapp.com/#site", "url": "https://littleheroapp.com/", "name": "Little Hero Books", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
+    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Service", "@id": "https://littleheroapp.com/#app", "name": "Little Hero Books", "url": "https://littleheroapp.com/", "description": "Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Nineteen stories for ages 3 to 6.", "image": "https://littleheroapp.com/_/theme/og-image.png", "serviceType": "Design your child as a cartoon, then read stories starring them", "provider": {"@id": "https://arkvital.com/#org"}, "areaServed": "Worldwide", "availableChannel": {"@type": "ServiceChannel", "serviceUrl": "https://littleheroapp.com/", "name": "Web browser", "availableLanguage": "en"}, "audience": {"@type": "Audience", "audienceType": "Parents and grandparents of children aged about 3 to 6"}}, {"@type": "WebSite", "@id": "https://littleheroapp.com/#site", "url": "https://littleheroapp.com/", "name": "Little Hero Books", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
     <noscript><div class="seo-noscript">
     <h1>Little Hero Books: picture books starring your child</h1>
-    <p>Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Eighteen stories for ages 3 to 6.</p>
-    <p>Little Hero Books makes personalised picture books. A parent designs a cartoon look-alike of their child (ages 1 to 12; face, skin tone, hair, eyes, clothes, hats and head coverings, glasses, name and pronouns), then picks from eighteen short stories for ages 3 to 6 (fifteen public-domain fairy tales and fables, three brand-new ones), or writes their own story, starting blank or from any story in the library.</p>
+    <p>Design a cartoon look-alike of your child, then read, colour, paint or print fairy tales starring them, or write your own. Nineteen stories for ages 3 to 6.</p>
+    <p>Little Hero Books makes personalised picture books. A parent designs a cartoon look-alike of their child (ages 1 to 12; face, skin tone, hair, eyes, clothes, hats and head coverings, glasses, name and pronouns), then picks from nineteen short stories for ages 3 to 6 (fifteen public-domain fairy tales and fables, three brand-new ones, and The Night Before Christmas, the 1823 poem as first printed), or writes their own story, starting blank or from any story in the library.</p>
     <p>Every illustration has a space where the child goes, and the app draws the child into it. The finished 12-page book can be read on screen with page turns and Read to me, coloured in with on-screen crayons, or downloaded as an 8 x 8 inch PDF, a print-ready PDF with bleed for photo-book printers, or a colour-me-in book.</p>
-    <p>Parents can record their own voice reading each page, share a family link so grandparents can read along, and have the whole book repainted in one of six art styles, from watercolour to clay, while the child keeps the look they designed.</p>
+    <p>Parents can record their own voice reading each page, share a family link so grandparents can read along, and have the whole book repainted in one of six art styles, from watercolour to clay, while the child keeps the look they designed. A book can be wrapped as a present (Gift it): the family link shows a wrapped present with an &quot;opens in 5 sleeps&quot; countdown until the day you pick, with a printable gift card and QR code, so it can never arrive late. Bedtime mode dims the pages, reads more slowly, ends on a Goodnight page and can read the whole book with the screen dark.</p>
     <p>Who it's for: Parents and grandparents of children aged about 3 to 6</p>
-    <h2>What it does</h2><ul><li>A hero studio for ages 1 to 12 with 20 skin tones, 30 hairstyles and 20 outfits</li><li>Head coverings including hijab, patka and kippah</li><li>Eighteen stories for ages 3 to 6 (fifteen classic tales and three new ones), with your child drawn into every picture</li><li>Write your own story: start blank or change any story, and pick a library picture for every page</li><li>Read on screen with Read to me, or record your own voice page by page</li><li>Colour me in: every picture becomes an outline to colour with on-screen crayons</li><li>Paint this book: repaint every picture in one of six art styles</li><li>Download an 8 x 8 inch PDF, a print-ready PDF with bleed, or a colour-me-in book</li><li>Family links so grandparents can read the book too</li></ul>
-    <h2>Questions</h2><h3>Which stories are included?</h3><p>Eighteen stories: fifteen public-domain fairy tales and fables, such as The Three Bears, Jack and the Beanstalk, The Lion and the Mouse and Stone Soup, and three brand-new ones (The Lost Little Star, The Puddle Parade, The Hiccupy Dragon), each 300 to 500 words for children aged 3 to 6. Parents can also write their own stories.</p><h3>Can I print the book?</h3><p>Yes. Download an 8 x 8 inch PDF for a home printer, a print-ready PDF with bleed for photo-book printers (8 x 8 in, 8.5 x 8.5 in or 20 x 20 cm), or a colour-me-in book.</p><h3>Do I upload a photo of my child?</h3><p>No. You design a cartoon look-alike by choosing features; no photo is needed.</p><h3>Can the pictures look painted?</h3><p>Yes. Paint this book repaints every picture in one of six styles (Storybook, Watercolour, 3D cartoon, Clay, Comic book, Fairy-tale painting), keeping the look you designed.</p>
+    <h2>What it does</h2><ul><li>A hero studio for ages 1 to 12 with 20 skin tones, 30 hairstyles and 20 outfits</li><li>Head coverings including hijab, patka and kippah</li><li>Nineteen stories for ages 3 to 6 (fifteen classic tales, three new ones and The Night Before Christmas), with your child drawn into every picture</li><li>Write your own story: start blank or change any story, and pick a library picture for every page</li><li>Read on screen with Read to me, or record your own voice page by page</li><li>Colour me in: every picture becomes an outline to colour with on-screen crayons</li><li>Paint this book: repaint every picture in one of six art styles</li><li>Download an 8 x 8 inch PDF, a print-ready PDF with bleed, or a colour-me-in book</li><li>Family links so grandparents can read the book too</li><li>Gift it: wrap a book as a present that unwraps on Christmas morning (or any day), with a printable gift card and QR code</li><li>Bedtime mode: dim warm pages, a slower reading voice, a Goodnight page and Just listen with the screen dark</li></ul>
+    <h2>Questions</h2><h3>Which stories are included?</h3><p>Nineteen stories: fifteen public-domain fairy tales and fables, such as The Three Bears, Jack and the Beanstalk, The Lion and the Mouse and Stone Soup, three brand-new ones (The Lost Little Star, The Puddle Parade, The Hiccupy Dragon), each 300 to 500 words for children aged 3 to 6, and The Night Before Christmas (the 1823 poem as first printed, with the child as the listener). Parents can also write their own stories.</p><h3>Can I print the book?</h3><p>Yes. Download an 8 x 8 inch PDF for a home printer, a print-ready PDF with bleed for photo-book printers (8 x 8 in, 8.5 x 8.5 in or 20 x 20 cm), or a colour-me-in book.</p><h3>Do I upload a photo of my child?</h3><p>No. You design a cartoon look-alike by choosing features; no photo is needed.</p><h3>Can the pictures look painted?</h3><p>Yes. Paint this book repaints every picture in one of six styles (Storybook, Watercolour, 3D cartoon, Clay, Comic book, Fairy-tale painting), keeping the look you designed.</p><h3>Can I give a book as a Christmas present?</h3><p>Yes. Gift it wraps a book&#x27;s family link as a present from Grandma, Grandpa, Santa or the whole family. Until the day you pick, the link shows a wrapped present and how many sleeps are left; on the day the child taps the bow to unwrap it. You can print a gift card with a QR code to put under the tree. A link can&#x27;t arrive late, and it&#x27;s free.</p>
     <p><a href="https://littleheroapp.com/about">About Little Hero Books</a> &middot; <a href="https://littleheroapp.com/llms.txt">Little Hero Books for AI assistants</a> &middot; Made by <a href="https://arkvital.com">Arkvital</a>, Montreal, Canada. Little Hero Books needs JavaScript in your browser.</p>
     </div></noscript>
     <!-- seo:end -->
@@ -608,13 +651,13 @@ native_deps:
 
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qgsqghg" data-button="false" data-label="Submit feedback" async></script>
-    <link rel="stylesheet" href="_/theme/icons.css?v=6b26c299be">
-    <link rel="stylesheet" href="_/theme/app.css?v=e7be0a7372">
-    <script src="_/theme/lh-kit.js?v=308d905bc9"></script>
+    <link rel="stylesheet" href="_/theme/icons.css?v=cb9271d8e4">
+    <link rel="stylesheet" href="_/theme/app.css?v=d37e551196">
+    <script src="_/theme/lh-kit.js?v=0b9c4a7bb6"></script>
     <script src="_/theme/ark-music.js?v=6d0ae6dcf6"></script>
-    <script src="_/theme/lh-avatar.js?v=a46710ceb7"></script>
-    <script src="_/theme/lh-scenes.js?v=5f74f2774e"></script>
-    <script src="_/theme/lh-book.js?v=1dbb9df8b7"></script>
+    <script src="_/theme/lh-avatar.js?v=bf2491c90d"></script>
+    <script src="_/theme/lh-scenes.js?v=a3ae770aa9"></script>
+    <script src="_/theme/lh-book.js?v=ad316f6a90"></script>
 package_name: Little_Hero_Books
 runtime_options:
   client_version: '3'
